@@ -31,7 +31,7 @@ public class ParallelAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
         return await Task.WhenAll(GetEnumerableTasks());
     }
 
-    public Task GetTotalProgressTask()
+    public Task GetOverallProgressTask()
     {
         return _totalProgressTask;
     }

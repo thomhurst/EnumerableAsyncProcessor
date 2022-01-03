@@ -42,7 +42,7 @@ public class OneAtATimeAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult
         return await Task.WhenAll(GetEnumerableTasks());
     }
 
-    public Task GetTotalProgressTask()
+    public Task GetOverallProgressTask()
     {
         return _taskCompletionSource.Task;
     }

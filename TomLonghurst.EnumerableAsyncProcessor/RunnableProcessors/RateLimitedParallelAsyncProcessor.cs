@@ -30,7 +30,7 @@ public class RateLimitedParallelAsyncProcessor<TResult> : IRunnableAsyncRegulato
         return await Task.WhenAll(GetEnumerableTasks());
     }
 
-    public Task GetTotalProgressTask()
+    public Task GetOverallProgressTask()
     {
         return _totalProgressTask;
     }

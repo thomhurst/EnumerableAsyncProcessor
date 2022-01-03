@@ -2,12 +2,12 @@
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class RateLimitedParallelProcessor<TResult> : IRunnableAsyncRegulator<TResult>
+public class RateLimitedParallelAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
 {
     private readonly List<Task<Task<TResult>>> _initialTasks;
     private readonly Task _totalProgressTask;
 
-    public RateLimitedParallelProcessor(List<Task<Task<TResult>>> initialTasks, int levelsOfParallelism)
+    public RateLimitedParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int levelsOfParallelism)
     {
         _initialTasks = initialTasks;
 

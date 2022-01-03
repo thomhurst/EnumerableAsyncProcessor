@@ -15,17 +15,17 @@ public class AsyncProcessorBuilderWithAction<TSource, TResult>
 
     public IRunnableAsyncRegulator<TResult> ProcessInBatches(int batchSize)
     {
-        return new AsyncBatchProcessor<TResult>(_unStartedTasks, batchSize);
+        return new BatchAsyncProcessor<TResult>(_unStartedTasks, batchSize);
     }
     
     public IRunnableAsyncRegulator<TResult> ProcessInParallel(int levelOfParallelism)
     {
-        return new RateLimitedParallelProcessor<TResult>(_unStartedTasks, levelOfParallelism);
+        return new RateLimitedParallelAsyncProcessor<TResult>(_unStartedTasks, levelOfParallelism);
     }
     
     public IRunnableAsyncRegulator<TResult> ProcessInParallel()
     {
-        return new ParallelProcessor<TResult>(_unStartedTasks);
+        return new ParallelAsyncProcessor<TResult>(_unStartedTasks);
     }
     
     public IRunnableAsyncRegulator<TResult> ProcessOneAtATime()

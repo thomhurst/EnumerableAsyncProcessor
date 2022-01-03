@@ -3,13 +3,13 @@ using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class AsyncBatchProcessor<TResult> : IRunnableAsyncRegulator<TResult>
+public class BatchAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
 {
     private readonly List<Task<Task<TResult>>> _initialTasks;
     private readonly int _batchSize;
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
-    public AsyncBatchProcessor(List<Task<Task<TResult>>> initialTasks, int batchSize)
+    public BatchAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int batchSize)
     {
         _initialTasks = initialTasks;
         _batchSize = batchSize;

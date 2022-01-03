@@ -3,12 +3,12 @@ using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class ParallelProcessor<TResult> : IRunnableAsyncRegulator<TResult>
+public class ParallelAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
 {
     private readonly List<Task<Task<TResult>>> _initialTasks;
     private readonly Task _totalProgressTask;
 
-    public ParallelProcessor(List<Task<Task<TResult>>> initialTasks)
+    public ParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks)
     {
         _initialTasks = initialTasks;
 

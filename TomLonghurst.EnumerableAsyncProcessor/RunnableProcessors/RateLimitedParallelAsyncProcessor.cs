@@ -7,12 +7,13 @@ public class RateLimitedParallelAsyncProcessor<TResult> : IRunnableAsyncRegulato
     private readonly List<Task<Task<TResult>>> _initialTasks;
     private readonly Task _totalProgressTask;
 
-    public RateLimitedParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int levelsOfParallelism)
+    public RateLimitedParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int levelsOfParallelism,
+        CancellationToken cancellationToken)
     {
         _initialTasks = initialTasks;
 
         _totalProgressTask = Parallel.ForEachAsync(_initialTasks,
-            new ParallelOptions { MaxDegreeOfParallelism = levelsOfParallelism },
+            new ParallelOptions { MaxDegreeOfParallelism = levelsOfParallelism, CancellationToken = cancellationToken},
             async (task, token) =>
             {
                 task.Start();

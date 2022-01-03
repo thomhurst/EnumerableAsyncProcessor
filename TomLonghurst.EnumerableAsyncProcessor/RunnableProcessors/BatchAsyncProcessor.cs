@@ -7,12 +7,15 @@ public class BatchAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
 {
     private readonly List<Task<Task<TResult>>> _initialTasks;
     private readonly int _batchSize;
+    private readonly CancellationToken _cancellationToken;
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
-    public BatchAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int batchSize)
+    public BatchAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int batchSize,
+        CancellationToken cancellationToken)
     {
         _initialTasks = initialTasks;
         _batchSize = batchSize;
+        _cancellationToken = cancellationToken;
 
         _ = Process();
     }
@@ -25,6 +28,7 @@ public class BatchAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
 
             foreach (var currentBatch in batchedTasks)
             {
+                _cancellationToken.ThrowIfCancellationRequested();
                 TaskHelper.StartAll(currentBatch);
                 await Task.WhenAll(currentBatch);
             }

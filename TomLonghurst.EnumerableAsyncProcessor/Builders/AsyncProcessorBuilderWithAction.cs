@@ -13,23 +13,23 @@ public class AsyncProcessorBuilderWithAction<TSource, TResult>
         _unStartedTasks = TaskHelper.CreateTasksWithoutStarting(items, taskSelector);
     }
 
-    public IRunnableAsyncRegulator<TResult> ProcessInBatches(int batchSize)
+    public IRunnableAsyncRegulator<TResult> ProcessInBatches(int batchSize, CancellationToken cancellationToken = default)
     {
-        return new BatchAsyncProcessor<TResult>(_unStartedTasks, batchSize);
+        return new BatchAsyncProcessor<TResult>(_unStartedTasks, batchSize, cancellationToken);
     }
     
-    public IRunnableAsyncRegulator<TResult> ProcessInParallel(int levelOfParallelism)
+    public IRunnableAsyncRegulator<TResult> ProcessInParallel(int levelOfParallelism, CancellationToken cancellationToken = default)
     {
-        return new RateLimitedParallelAsyncProcessor<TResult>(_unStartedTasks, levelOfParallelism);
+        return new RateLimitedParallelAsyncProcessor<TResult>(_unStartedTasks, levelOfParallelism, cancellationToken);
     }
     
-    public IRunnableAsyncRegulator<TResult> ProcessInParallel()
+    public IRunnableAsyncRegulator<TResult> ProcessInParallel(CancellationToken cancellationToken = default)
     {
-        return new ParallelAsyncProcessor<TResult>(_unStartedTasks);
+        return new ParallelAsyncProcessor<TResult>(_unStartedTasks, cancellationToken);
     }
     
-    public IRunnableAsyncRegulator<TResult> ProcessOneAtATime()
+    public IRunnableAsyncRegulator<TResult> ProcessOneAtATime(CancellationToken cancellationToken = default)
     {
-        return new OneAtATimeAsyncProcessor<TResult>(_unStartedTasks);
+        return new OneAtATimeAsyncProcessor<TResult>(_unStartedTasks, cancellationToken);
     }
 }

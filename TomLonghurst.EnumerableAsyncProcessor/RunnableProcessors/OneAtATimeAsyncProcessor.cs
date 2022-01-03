@@ -5,11 +5,13 @@ namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 public class OneAtATimeAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
 {
     private readonly List<Task<Task<TResult>>> _initialTasks;
+    private readonly CancellationToken _cancellationToken;
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
-    public OneAtATimeAsyncProcessor(List<Task<Task<TResult>>> initialTasks)
+    public OneAtATimeAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken)
     {
         _initialTasks = initialTasks;
+        _cancellationToken = cancellationToken;
 
         _ = Process();
     }
@@ -20,6 +22,7 @@ public class OneAtATimeAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult
         {
             foreach (var task in _initialTasks)
             {
+                _cancellationToken.ThrowIfCancellationRequested();
                 task.Start();
                 await task.Unwrap();
             }

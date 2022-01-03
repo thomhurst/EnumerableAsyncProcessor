@@ -9,7 +9,7 @@ public class AsyncProcessorBuilderWithItems<TSource>
         _items = items;
     }
 
-    public AsyncProcessorBuilderWithAction<TSource, TResult> WithAction<TResult>(Func<TSource, Task<TResult>> taskSelector)
+    public AsyncProcessorBuilderWithAction<TSource, TResult> SelectAsync<TResult>(Func<TSource, Task<TResult>> taskSelector)
     {
         return new AsyncProcessorBuilderWithAction<TSource, TResult>(_items, taskSelector);
     }

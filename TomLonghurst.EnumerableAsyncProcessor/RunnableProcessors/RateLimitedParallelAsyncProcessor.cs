@@ -20,14 +20,14 @@ public class RateLimitedParallelAsyncProcessor<TResult> : IRunnableAsyncRegulato
             });
     }
 
-    public IEnumerable<Task<TResult>> GetInnerTasks()
+    public IEnumerable<Task<TResult>> GetEnumerableTasks()
     {
         return _initialTasks.Select(x => x.Unwrap());
     }
 
     public async Task<IEnumerable<TResult>> GetResults()
     {
-        return await Task.WhenAll(GetInnerTasks());
+        return await Task.WhenAll(GetEnumerableTasks());
     }
 
     public Task GetTotalProgressTask()

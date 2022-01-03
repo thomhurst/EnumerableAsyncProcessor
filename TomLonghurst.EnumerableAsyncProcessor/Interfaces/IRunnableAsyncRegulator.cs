@@ -2,7 +2,7 @@
 
 public interface IRunnableAsyncRegulator<TResult>
 {
-    IEnumerable<Task<TResult>> GetInnerTasks();
+    IEnumerable<Task<TResult>> GetEnumerableTasks();
     Task<IEnumerable<TResult>> GetResults();
     Task GetTotalProgressTask();
 }

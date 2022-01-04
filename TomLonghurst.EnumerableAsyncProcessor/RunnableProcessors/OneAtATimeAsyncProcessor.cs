@@ -12,9 +12,9 @@ public class OneAtATimeAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
     {
         try
         {
-            foreach (var task in _initialTasks)
+            foreach (var task in InitialTasks)
             {
-                _cancellationToken.ThrowIfCancellationRequested();
+                CancellationToken.ThrowIfCancellationRequested();
                 task.Start();
                 await task.Unwrap();
             }

@@ -4,13 +4,13 @@ namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
 public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
 {
-    protected readonly List<Task<Task<TResult>>> _initialTasks;
-    protected readonly CancellationToken _cancellationToken;
+    protected readonly List<Task<Task<TResult>>> InitialTasks;
+    protected readonly CancellationToken CancellationToken;
 
     protected AbstractAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken)
     {
-        _initialTasks = initialTasks;
-        _cancellationToken = cancellationToken;
+        InitialTasks = initialTasks;
+        CancellationToken = cancellationToken;
 
         cancellationToken.Register(() => initialTasks.ForEach(x => x.Dispose()));
     }
@@ -19,7 +19,7 @@ public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
     
     public IEnumerable<Task<TResult>> GetEnumerableTasks()
     {
-        return _initialTasks.Select(x => x.Unwrap());
+        return InitialTasks.Select(x => x.Unwrap());
     }
 
     public async Task<IEnumerable<TResult>> GetResults()

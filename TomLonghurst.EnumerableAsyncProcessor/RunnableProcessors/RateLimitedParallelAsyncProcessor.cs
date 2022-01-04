@@ -13,8 +13,8 @@ public class RateLimitedParallelAsyncProcessor<TResult> : AbstractAsyncProcessor
 
     internal override Task Process()
     {
-        return _totalProgressTask = Parallel.ForEachAsync(_initialTasks,
-            new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = _cancellationToken},
+        return _totalProgressTask = Parallel.ForEachAsync(InitialTasks,
+            new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken},
             async (task, token) =>
             {
                 task.Start();

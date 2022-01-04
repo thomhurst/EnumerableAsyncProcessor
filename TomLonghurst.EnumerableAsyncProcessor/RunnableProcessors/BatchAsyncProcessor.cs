@@ -17,11 +17,11 @@ public class BatchAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
     {
         try
         {
-            var batchedTasks = _initialTasks.Chunk(_batchSize);
+            var batchedTasks = InitialTasks.Chunk(_batchSize);
 
             foreach (var currentBatch in batchedTasks)
             {
-                _cancellationToken.ThrowIfCancellationRequested();
+                CancellationToken.ThrowIfCancellationRequested();
                 TaskHelper.StartAll(currentBatch);
                 await Task.WhenAll(currentBatch);
             }

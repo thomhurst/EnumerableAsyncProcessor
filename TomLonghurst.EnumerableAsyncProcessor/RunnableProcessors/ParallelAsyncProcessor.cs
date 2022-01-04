@@ -11,8 +11,8 @@ public class ParallelAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
 
     internal override Task Process()
     {
-        return _totalProgressTask = Parallel.ForEachAsync(_initialTasks,
-            new ParallelOptions { MaxDegreeOfParallelism = -1, CancellationToken = _cancellationToken },
+        return _totalProgressTask = Parallel.ForEachAsync(InitialTasks,
+            new ParallelOptions { MaxDegreeOfParallelism = -1, CancellationToken = CancellationToken },
             async (task, token) =>
             {
                 task.Start();

@@ -34,7 +34,7 @@ public class RateLimitedParallelAsyncProcessorTests
         
         await Task.WhenAll(innerTasks.Take(parallelLimit));
         // Delay to allow remaining Tasks to start
-        await Task.Delay(500);
+        await Task.Delay(100);
 
         var expectedStartedTasks = Math.Min(parallelLimit, taskCount);
 
@@ -81,7 +81,7 @@ public class RateLimitedParallelAsyncProcessorTests
         
         await Task.WhenAll(processor.GetEnumerableTasks().Take(40));
         // Delay to allow remaining Tasks to start
-        await Task.Delay(500);
+        await Task.Delay(100);
         
         Assert.That(started, Is.EqualTo(45));
         
@@ -110,13 +110,13 @@ public class RateLimitedParallelAsyncProcessorTests
         Enumerable.Range(0, 40).ForEach(i => taskCompletionSources[i].SetResult());
         await Task.WhenAll(processor.GetEnumerableTasks().Take(40));
         // Delay to allow remaining Tasks to start
-        await Task.Delay(500);
+        await Task.Delay(100);
         
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(40));
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(10));
 
         // Delay to allow remaining Tasks to start
-        await Task.Delay(500);
+        await Task.Delay(100);
         
         cancellationTokenSource.Cancel();
         taskCompletionSources.Skip(40).ForEach(taskCompletionSource => taskCompletionSource.SetResult());
@@ -150,7 +150,7 @@ public class RateLimitedParallelAsyncProcessorTests
         
         await Task.WhenAll(processor.GetEnumerableTasks().Take(47));
         // Delay to allow remaining Tasks to start
-        await Task.Delay(500);
+        await Task.Delay(100);
         
         Assert.That(started, Is.EqualTo(50));
         

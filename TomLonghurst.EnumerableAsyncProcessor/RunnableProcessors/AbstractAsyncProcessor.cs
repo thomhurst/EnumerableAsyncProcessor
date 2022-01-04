@@ -37,7 +37,7 @@ public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
     }
 }
 
-public abstract class AbstractAsyncProcessor : IAsyncProcessor
+public abstract class AbstractAsyncProcessor : IAsyncProcessor, IDisposable
 {
     protected readonly List<Task<Task>> InitialTasks;
     protected readonly CancellationToken CancellationToken;
@@ -58,4 +58,10 @@ public abstract class AbstractAsyncProcessor : IAsyncProcessor
     }
     
     public abstract Task Task { get; }
+
+    public void Dispose()
+    {
+        Task?.Dispose();
+        InitialTasks.ForEach(x => x.Dispose());
+    }
 }

@@ -1,62 +1,49 @@
+using System.Collections.Immutable;
+
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class OneAtATimeAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
+public class OneAtATimeAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
 {
-    private readonly TaskCompletionSource _taskCompletionSource = new();
-
-    public OneAtATimeAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
+    public OneAtATimeAsyncProcessor(ImmutableList<TSource> items, Func<TSource, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
     }
 
     internal override async Task Process()
     {
-        try
+        foreach (var itemisedTaskCompletionSourceContainer in ItemisedTaskCompletionSourceContainers)
         {
-            foreach (var task in InitialTasks)
+            try
             {
-                CancellationToken.ThrowIfCancellationRequested();
-                task.Start();
-                await task.Unwrap();
+                await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
+                itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult();
             }
-
-            _taskCompletionSource.TrySetResult();
-        }
-        catch (Exception e)
-        {
-            _taskCompletionSource.TrySetException(e);
-            Dispose();
+            catch (Exception e)
+            {
+                itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetException(e);
+            }
         }
     }
-
-    public override Task ContinuationTask => _taskCompletionSource.Task;
 }
 
 public class OneAtATimeAsyncProcessor : AbstractAsyncProcessor
 {
-    private readonly TaskCompletionSource _taskCompletionSource = new();
-
-    public OneAtATimeAsyncProcessor(List<Task<Task>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
+    public OneAtATimeAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
     }
 
     internal override async Task Process()
     {
-        try
+        foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
         {
-            foreach (var task in InitialTasks)
+            try
             {
-                CancellationToken.ThrowIfCancellationRequested();
-                task.Start();
-                await task.Unwrap();
+                await TaskSelector();
+                taskCompletionSource.SetResult();
             }
-
-            _taskCompletionSource.TrySetResult();
-        }
-        catch (Exception e)
-        {
-            _taskCompletionSource.TrySetException(e);
+            catch (Exception e)
+            {
+                taskCompletionSource.SetException(e);
+            }
         }
     }
-
-    public override Task Task => _taskCompletionSource.Task;
 }

@@ -1,12 +1,12 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 
-namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
+namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
-public class BatchAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
+public class ResultBatchAsyncProcessor<TSource, TResult> : ResultAbstractAsyncProcessor<TSource, TResult>
 {
     private readonly int _batchSize;
 
-    internal BatchAsyncProcessor(int batchSize, ImmutableList<TSource> items, Func<TSource, Task> taskSelector,
+    internal ResultBatchAsyncProcessor(int batchSize, IReadOnlyCollection<TSource> items, Func<TSource, Task<TResult>> taskSelector,
         CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _batchSize = batchSize;
@@ -22,7 +22,7 @@ public class BatchAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
         }
     }
 
-    private Task ProcessBatch(ItemisedTaskCompletionSourceContainer<TSource>[] currentItemBatch)
+    private Task ProcessBatch(ItemisedTaskCompletionSourceContainer<TSource, TResult>[] currentItemBatch)
     {
         foreach (var currentItem in currentItemBatch)
         {
@@ -32,12 +32,12 @@ public class BatchAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
         return Task.WhenAll(currentItemBatch.Select(x => x.TaskCompletionSource.Task));
     }
 
-    private async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource> currentItem)
+    private async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource, TResult> currentItem)
     {
         try
         {
-            await TaskSelector(currentItem.Item);
-            currentItem.TaskCompletionSource.SetResult();
+            var result = await TaskSelector(currentItem.Item);
+            currentItem.TaskCompletionSource.SetResult(result);
         }
         catch (Exception e)
         {
@@ -46,11 +46,12 @@ public class BatchAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
     }
 }
 
-public class BatchAsyncProcessor : AbstractAsyncProcessor
+public class ResultBatchAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<TResult>
 {
     private readonly int _batchSize;
 
-    internal BatchAsyncProcessor(int batchSize, int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
+    internal ResultBatchAsyncProcessor(int batchSize, int count, Func<Task<TResult>> taskSelector,
+        CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
         _batchSize = batchSize;
     }
@@ -59,13 +60,15 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
     {
         var batchedTaskCompletionSources = EnumerableTaskCompletionSources.Chunk(_batchSize).ToArray();
 
-        foreach (var currentTaskCompletionSourceBatch in batchedTaskCompletionSources)
+        for (var i = 0; i < batchedTaskCompletionSources.Length; i++)
         {
+            var currentTaskCompletionSourceBatch = batchedTaskCompletionSources[i];
+
             await ProcessBatch(currentTaskCompletionSourceBatch);
         }
     }
 
-    private Task ProcessBatch(TaskCompletionSource[] currentTaskCompletionSourceBatch)
+    private Task ProcessBatch(TaskCompletionSource<TResult>[] currentTaskCompletionSourceBatch)
     {
         foreach (var taskCompletionSource in currentTaskCompletionSourceBatch)
         {
@@ -75,12 +78,12 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
         return Task.WhenAll(currentTaskCompletionSourceBatch.Select(x => x.Task));
     }
 
-    private async Task ProcessItem(TaskCompletionSource taskCompletionSource)
+    private async Task ProcessItem(TaskCompletionSource<TResult> taskCompletionSource)
     {
         try
         {
-            await TaskSelector();
-            taskCompletionSource.SetResult();
+            var result = await TaskSelector();
+            taskCompletionSource.SetResult(result);
         }
         catch (Exception e)
         {

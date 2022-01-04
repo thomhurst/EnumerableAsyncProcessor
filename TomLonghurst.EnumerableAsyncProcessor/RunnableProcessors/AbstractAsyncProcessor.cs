@@ -1,60 +1,44 @@
-﻿using TomLonghurst.EnumerableAsyncProcessor.Extensions;
+﻿using System.Collections.Immutable;
 using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>, IDisposable
+public abstract class AbstractAsyncProcessor : AbstractAsyncProcessor_Base
 {
-    protected readonly List<Task<Task<TResult>>> InitialTasks;
-    protected readonly List<Task<TResult>> UnwrappedTasks;
-    private readonly CancellationTokenSource _cancellationTokenSource;
-    protected CancellationToken CancellationToken => _cancellationTokenSource.Token;
+    protected readonly Func<Task> TaskSelector;
 
-
-    protected AbstractAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationTokenSource cancellationTokenSource)
+    protected AbstractAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, cancellationTokenSource)
     {
-        InitialTasks = initialTasks;
-        UnwrappedTasks = InitialTasks.Select(x => x.Unwrap()).ToList();
-        _cancellationTokenSource = cancellationTokenSource;
-
-        cancellationTokenSource.Token.Register(Dispose);
-        cancellationTokenSource.Token.ThrowIfCancellationRequested();
-    }
-
-    internal abstract Task Process();
-    
-    public IEnumerable<Task<TResult>> GetEnumerableTasks()
-    {
-        return UnwrappedTasks;
-    }
-
-    public async Task<IEnumerable<TResult>> GetResults()
-    {
-        return await Task.WhenAll(GetEnumerableTasks());
-    }
-
-    public abstract Task ContinuationTask { get; }
-
-    public void Dispose()
-    {
-        _cancellationTokenSource.Cancel();
-        _cancellationTokenSource.Dispose();
-
-        InitialTasks.ForEach(t => t.TryStart());
+        TaskSelector = taskSelector;
     }
 }
 
-public abstract class AbstractAsyncProcessor : IAsyncProcessor, IDisposable
+public abstract class AbstractAsyncProcessor<TSource> : AbstractAsyncProcessor_Base
 {
-    protected readonly List<Task<Task>> InitialTasks;
-    protected readonly List<Task> UnwrappedTasks;
+    protected readonly IEnumerable<ItemisedTaskCompletionSourceContainer<TSource>> ItemisedTaskCompletionSourceContainers;
+    protected readonly Func<TSource, Task> TaskSelector;
+
+    protected AbstractAsyncProcessor(ImmutableList<TSource> items, Func<TSource, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items.Count, cancellationTokenSource)
+    {
+        ItemisedTaskCompletionSourceContainers = items.Select((item, index) =>
+            new ItemisedTaskCompletionSourceContainer<TSource>(item, EnumerableTaskCompletionSources[index]));
+        TaskSelector = taskSelector;
+    }
+}
+
+public abstract class AbstractAsyncProcessor_Base : IAsyncProcessor, IDisposable
+{
+    protected readonly List<TaskCompletionSource> EnumerableTaskCompletionSources;
+    protected readonly List<Task> EnumerableTasks;
     private readonly CancellationTokenSource _cancellationTokenSource;
     protected readonly CancellationToken CancellationToken;
 
-    protected AbstractAsyncProcessor(List<Task<Task>> initialTasks, CancellationTokenSource cancellationTokenSource)
+
+    protected AbstractAsyncProcessor_Base(int count, CancellationTokenSource cancellationTokenSource)
     {
-        InitialTasks = initialTasks;
-        UnwrappedTasks = InitialTasks.Select(x => x.Unwrap()).ToList();
+        EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(x => new TaskCompletionSource()).ToList();
+        EnumerableTasks = EnumerableTaskCompletionSources.Select(x => x.Task).ToList();
+        Task = Task.WhenAll(EnumerableTasks);
         
         _cancellationTokenSource = cancellationTokenSource;
         CancellationToken = cancellationTokenSource.Token;
@@ -62,21 +46,20 @@ public abstract class AbstractAsyncProcessor : IAsyncProcessor, IDisposable
         cancellationTokenSource.Token.Register(Dispose);
         cancellationTokenSource.Token.ThrowIfCancellationRequested();
     }
-        
+
     internal abstract Task Process();
     
     public IEnumerable<Task> GetEnumerableTasks()
     {
-        return UnwrappedTasks;
+        return EnumerableTasks;
     }
     
-    public abstract Task Task { get; }
+    public Task Task { get; }
 
     public void Dispose()
     {
         _cancellationTokenSource.Cancel();
+        EnumerableTaskCompletionSources.ForEach(t => t.TrySetCanceled(CancellationToken));
         _cancellationTokenSource.Dispose();
-        
-        InitialTasks.ForEach(t => t.TryStart());
     }
 }

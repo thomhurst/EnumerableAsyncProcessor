@@ -1,12 +1,11 @@
-﻿using System.Collections.Immutable;
+﻿
+namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
-namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
-
-public class RateLimitedParallelAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
+public class ResultRateLimitedParallelAsyncProcessor<TSource, TResult> : ResultAbstractAsyncProcessor<TSource, TResult>
 {
     private readonly int _levelsOfParallelism;
     
-    public RateLimitedParallelAsyncProcessor(ImmutableList<TSource> items, Func<TSource, Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    public ResultRateLimitedParallelAsyncProcessor(IReadOnlyCollection<TSource> items, Func<TSource, Task<TResult>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }
@@ -19,8 +18,8 @@ public class RateLimitedParallelAsyncProcessor<TSource> : AbstractAsyncProcessor
             {
                 try
                 {
-                    await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
-                    itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult();
+                    var result = await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
+                    itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult(result);
                 }
                 catch (Exception e)
                 {
@@ -30,11 +29,11 @@ public class RateLimitedParallelAsyncProcessor<TSource> : AbstractAsyncProcessor
     }
 }
 
-public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
+public class ResultRateLimitedParallelAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<TResult>
 {
     private readonly int _levelsOfParallelism;
 
-    public RateLimitedParallelAsyncProcessor(int count, Func<Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
+    public ResultRateLimitedParallelAsyncProcessor(int count, Func<Task<TResult>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }
@@ -48,8 +47,8 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
             {
                 try
                 {
-                    await TaskSelector();
-                    taskCompletionSource.SetResult();
+                    var result = await TaskSelector();
+                    taskCompletionSource.SetResult(result);
                 }
                 catch (Exception e)
                 {

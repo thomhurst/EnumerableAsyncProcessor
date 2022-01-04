@@ -113,6 +113,10 @@ public class RateLimitedParallelAsyncProcessorTests
 
         Enumerable.Range(0, 40).ForEach(i => taskCompletionSources[i].SetResult());
         await Task.WhenAll(processor.GetEnumerableTasks().Take(40));
+        // Delay to allow remaining Tasks to start
+        await Task.Delay(500);
+        
+        Assert.That(started, Is.EqualTo(45));
 
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(40));
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(10));

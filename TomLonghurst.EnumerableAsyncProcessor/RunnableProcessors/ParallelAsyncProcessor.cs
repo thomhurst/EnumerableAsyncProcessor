@@ -1,49 +1,17 @@
-﻿namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
+﻿using System.Collections.Immutable;
 
-public class ParallelAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
+namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
+
+public class ParallelAsyncProcessor<TSource> : RateLimitedParallelAsyncProcessor<TSource>
 {
-    private Task _totalProgressTask;
-
-    public ParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
+    public ParallelAsyncProcessor(ImmutableList<TSource> items, Func<TSource, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, -1, cancellationTokenSource)
     {
     }
-
-    internal override Task Process()
-    {
-        _totalProgressTask = Task.WhenAll(UnwrappedTasks);
-        
-        return Parallel.ForEachAsync(InitialTasks,
-            new ParallelOptions { MaxDegreeOfParallelism = -1, CancellationToken = CancellationToken },
-            async (task, token) =>
-            {
-                task.Start();
-                await task.Unwrap();
-            });
-    }
-
-    public override Task ContinuationTask => _totalProgressTask;
 }
 
-public class ParallelAsyncProcessor : AbstractAsyncProcessor
+public class ParallelAsyncProcessor : RateLimitedParallelAsyncProcessor
 {
-    private Task _totalProgressTask;
-
-    public ParallelAsyncProcessor(List<Task<Task>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
+    public ParallelAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, -1, cancellationTokenSource)
     {
     }
-
-    internal override Task Process()
-    {
-        _totalProgressTask = Task.WhenAll(UnwrappedTasks);
-        
-        return  Parallel.ForEachAsync(InitialTasks,
-            new ParallelOptions { MaxDegreeOfParallelism = -1, CancellationToken = CancellationToken },
-            async (task, token) =>
-            {
-                task.Start();
-                await task.Unwrap();
-            });
-    }
-
-    public override Task Task => _totalProgressTask;
 }

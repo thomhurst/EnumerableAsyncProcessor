@@ -29,3 +29,33 @@ public class OneAtATimeAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
 
     public override Task ContinuationTask => _taskCompletionSource.Task;
 }
+
+public class OneAtATimeAsyncProcessor : AbstractAsyncProcessor
+{
+    private readonly TaskCompletionSource _taskCompletionSource = new();
+
+    public OneAtATimeAsyncProcessor(List<Task<Task>> initialTasks, CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+    {
+    }
+
+    internal override async Task Process()
+    {
+        try
+        {
+            foreach (var task in InitialTasks)
+            {
+                CancellationToken.ThrowIfCancellationRequested();
+                task.Start();
+                await task.Unwrap();
+            }
+
+            _taskCompletionSource.TrySetResult();
+        }
+        catch (Exception e)
+        {
+            _taskCompletionSource.TrySetException(e);
+        }
+    }
+
+    public override Task Task => _taskCompletionSource.Task;
+}

@@ -13,4 +13,9 @@ public class AsyncProcessorBuilderWithItems<TSource>
     {
         return new AsyncProcessorBuilderWithAction<TSource, TResult>(_items, taskSelector);
     }
+    
+    public AsyncProcessorBuilderWithAction<TSource> ForEachAsync(Func<TSource, Task> taskSelector)
+    {
+        return new AsyncProcessorBuilderWithAction<TSource>(_items, taskSelector);
+    }
 }

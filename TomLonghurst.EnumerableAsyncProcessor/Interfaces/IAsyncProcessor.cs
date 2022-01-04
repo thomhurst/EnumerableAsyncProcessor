@@ -23,3 +23,20 @@ public interface IAsyncProcessor<TResult>
      */
     Task ContinuationTask { get; }
 }
+
+public interface IAsyncProcessor
+{
+ /**
+     * <summary>
+     * A collection of all the asynchronous Tasks, which could be pending or complete.
+     * </summary>
+     */
+ IEnumerable<Task> GetEnumerableTasks();
+
+ /**
+     * <summary>
+     * A task representing the overall progress.
+     * </summary>
+     */
+ Task Task { get; }
+}

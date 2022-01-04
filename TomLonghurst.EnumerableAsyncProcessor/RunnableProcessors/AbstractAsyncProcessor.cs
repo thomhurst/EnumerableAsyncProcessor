@@ -29,3 +29,26 @@ public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
 
     public abstract Task ContinuationTask { get; }
 }
+
+public abstract class AbstractAsyncProcessor : IAsyncProcessor
+{
+    protected readonly List<Task<Task>> InitialTasks;
+    protected readonly CancellationToken CancellationToken;
+
+    protected AbstractAsyncProcessor(List<Task<Task>> initialTasks, CancellationToken cancellationToken)
+    {
+        InitialTasks = initialTasks;
+        CancellationToken = cancellationToken;
+
+        cancellationToken.Register(() => initialTasks.ForEach(x => x.Dispose()));
+    }
+        
+    internal abstract Task Process();
+    
+    public IEnumerable<Task> GetEnumerableTasks()
+    {
+        return InitialTasks.Select(x => x.Unwrap());
+    }
+    
+    public abstract Task Task { get; }
+}

@@ -41,3 +41,41 @@ public class AsyncProcessorBuilderWithAction<TSource, TResult>
         return oneAtATimeAsyncProcessor;
     }
 }
+
+public class AsyncProcessorBuilderWithAction<TSource>
+{
+    private readonly List<Task<Task>> _unStartedTasks;
+
+    public AsyncProcessorBuilderWithAction(IEnumerable<TSource> items, Func<TSource,Task> taskSelector)
+    {
+        _unStartedTasks = TaskHelper.CreateTasksWithoutStarting(items, taskSelector);
+    }
+
+    public IAsyncProcessor ProcessInBatches(int batchSize, CancellationToken cancellationToken = default)
+    {
+        var batchAsyncProcessor = new BatchAsyncProcessor(_unStartedTasks, batchSize, cancellationToken);
+        batchAsyncProcessor.Process();
+        return batchAsyncProcessor;
+    }
+    
+    public IAsyncProcessor ProcessInParallel(int levelOfParallelism, CancellationToken cancellationToken = default)
+    {
+        var rateLimitedParallelAsyncProcessor = new RateLimitedParallelAsyncProcessor(_unStartedTasks, levelOfParallelism, cancellationToken);
+        rateLimitedParallelAsyncProcessor.Process();
+        return rateLimitedParallelAsyncProcessor;
+    }
+    
+    public IAsyncProcessor ProcessInParallel(CancellationToken cancellationToken = default)
+    {
+        var parallelAsyncProcessor = new ParallelAsyncProcessor(_unStartedTasks, cancellationToken);
+        parallelAsyncProcessor.Process();
+        return parallelAsyncProcessor;
+    }
+    
+    public IAsyncProcessor ProcessOneAtATime(CancellationToken cancellationToken = default)
+    {
+        var oneAtATimeAsyncProcessor = new OneAtATimeAsyncProcessor(_unStartedTasks, cancellationToken);
+        oneAtATimeAsyncProcessor.Process();
+        return oneAtATimeAsyncProcessor;
+    }
+}

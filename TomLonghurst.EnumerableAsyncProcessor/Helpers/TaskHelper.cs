@@ -14,4 +14,17 @@ internal static class TaskHelper
             task.Start();
         }
     }
+    
+    internal static List<Task<Task>> CreateTasksWithoutStarting<TSource>(IEnumerable<TSource> source, Func<TSource, Task> taskSelector)
+    {
+        return source.Select(item => new Task<Task>(() => taskSelector(item))).ToList();
+    }
+
+    internal static void StartAll(IEnumerable<Task<Task>> currentBatch)
+    {
+        foreach (var task in currentBatch)
+        {
+            task.Start();
+        }
+    }
 }

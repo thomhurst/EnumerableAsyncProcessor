@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 

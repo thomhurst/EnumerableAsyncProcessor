@@ -1,26 +1,19 @@
 using TomLonghurst.EnumerableAsyncProcessor.Helpers;
-using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class BatchAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
+public class BatchAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
 {
-    private readonly List<Task<Task<TResult>>> _initialTasks;
     private readonly int _batchSize;
-    private readonly CancellationToken _cancellationToken;
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
     public BatchAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int batchSize,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
     {
-        _initialTasks = initialTasks;
         _batchSize = batchSize;
-        _cancellationToken = cancellationToken;
-
-        _ = Process();
     }
 
-    private async Task Process()
+    internal override async Task Process()
     {
         try
         {
@@ -41,17 +34,7 @@ public class BatchAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
         }
     }
 
-    public IEnumerable<Task<TResult>> GetEnumerableTasks()
-    {
-        return _initialTasks.Select(x => x.Unwrap());
-    }
-
-    public async Task<IEnumerable<TResult>> GetResults()
-    {
-        return await Task.WhenAll(GetEnumerableTasks());
-    }
-
-    public Task GetOverallProgressTask()
+    public override Task GetOverallProgressTask()
     {
         return _taskCompletionSource.Task;
     }

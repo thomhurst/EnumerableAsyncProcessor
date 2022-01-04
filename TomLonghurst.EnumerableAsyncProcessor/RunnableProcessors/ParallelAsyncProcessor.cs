@@ -1,19 +1,18 @@
-﻿using System.Threading.Channels;
-using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
+﻿namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
-
-public class ParallelAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
+public class ParallelAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
 {
-    private readonly List<Task<Task<TResult>>> _initialTasks;
-    private readonly Task _totalProgressTask;
+    private Task _totalProgressTask;
 
-    public ParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken)
+    public ParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
     {
-        _initialTasks = initialTasks;
+        cancellationToken.Register(() => initialTasks.ForEach(x => x.Dispose()));
+    }
 
-        _totalProgressTask = Parallel.ForEachAsync(_initialTasks,
-            new ParallelOptions { MaxDegreeOfParallelism = -1, CancellationToken = cancellationToken },
+    internal override Task Process()
+    {
+        return _totalProgressTask = Parallel.ForEachAsync(_initialTasks,
+            new ParallelOptions { MaxDegreeOfParallelism = -1, CancellationToken = _cancellationToken },
             async (task, token) =>
             {
                 task.Start();
@@ -21,17 +20,7 @@ public class ParallelAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
             });
     }
 
-    public IEnumerable<Task<TResult>> GetEnumerableTasks()
-    {
-        return _initialTasks.Select(x => x.Unwrap());
-    }
-
-    public async Task<IEnumerable<TResult>> GetResults()
-    {
-        return await Task.WhenAll(GetEnumerableTasks());
-    }
-
-    public Task GetOverallProgressTask()
+    public override Task GetOverallProgressTask()
     {
         return _totalProgressTask;
     }

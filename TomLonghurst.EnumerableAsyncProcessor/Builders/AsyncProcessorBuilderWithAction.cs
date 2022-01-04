@@ -13,23 +13,31 @@ public class AsyncProcessorBuilderWithAction<TSource, TResult>
         _unStartedTasks = TaskHelper.CreateTasksWithoutStarting(items, taskSelector);
     }
 
-    public IRunnableAsyncRegulator<TResult> ProcessInBatches(int batchSize, CancellationToken cancellationToken = default)
+    public IAsyncProcessor<TResult> ProcessInBatches(int batchSize, CancellationToken cancellationToken = default)
     {
-        return new BatchAsyncProcessor<TResult>(_unStartedTasks, batchSize, cancellationToken);
+        var batchAsyncProcessor = new BatchAsyncProcessor<TResult>(_unStartedTasks, batchSize, cancellationToken);
+        batchAsyncProcessor.Process();
+        return batchAsyncProcessor;
     }
     
-    public IRunnableAsyncRegulator<TResult> ProcessInParallel(int levelOfParallelism, CancellationToken cancellationToken = default)
+    public IAsyncProcessor<TResult> ProcessInParallel(int levelOfParallelism, CancellationToken cancellationToken = default)
     {
-        return new RateLimitedParallelAsyncProcessor<TResult>(_unStartedTasks, levelOfParallelism, cancellationToken);
+        var rateLimitedParallelAsyncProcessor = new RateLimitedParallelAsyncProcessor<TResult>(_unStartedTasks, levelOfParallelism, cancellationToken);
+        rateLimitedParallelAsyncProcessor.Process();
+        return rateLimitedParallelAsyncProcessor;
     }
     
-    public IRunnableAsyncRegulator<TResult> ProcessInParallel(CancellationToken cancellationToken = default)
+    public IAsyncProcessor<TResult> ProcessInParallel(CancellationToken cancellationToken = default)
     {
-        return new ParallelAsyncProcessor<TResult>(_unStartedTasks, cancellationToken);
+        var parallelAsyncProcessor = new ParallelAsyncProcessor<TResult>(_unStartedTasks, cancellationToken);
+        parallelAsyncProcessor.Process();
+        return parallelAsyncProcessor;
     }
     
-    public IRunnableAsyncRegulator<TResult> ProcessOneAtATime(CancellationToken cancellationToken = default)
+    public IAsyncProcessor<TResult> ProcessOneAtATime(CancellationToken cancellationToken = default)
     {
-        return new OneAtATimeAsyncProcessor<TResult>(_unStartedTasks, cancellationToken);
+        var oneAtATimeAsyncProcessor = new OneAtATimeAsyncProcessor<TResult>(_unStartedTasks, cancellationToken);
+        oneAtATimeAsyncProcessor.Process();
+        return oneAtATimeAsyncProcessor;
     }
 }

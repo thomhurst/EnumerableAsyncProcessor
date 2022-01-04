@@ -1,22 +1,14 @@
-using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
-
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class OneAtATimeAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult>
+public class OneAtATimeAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
 {
-    private readonly List<Task<Task<TResult>>> _initialTasks;
-    private readonly CancellationToken _cancellationToken;
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
-    public OneAtATimeAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken)
+    public OneAtATimeAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
     {
-        _initialTasks = initialTasks;
-        _cancellationToken = cancellationToken;
-
-        _ = Process();
     }
 
-    private async Task Process()
+    internal override async Task Process()
     {
         try
         {
@@ -35,17 +27,7 @@ public class OneAtATimeAsyncProcessor<TResult> : IRunnableAsyncRegulator<TResult
         }
     }
 
-    public IEnumerable<Task<TResult>> GetEnumerableTasks()
-    {
-        return _initialTasks.Select(x => x.Unwrap());
-    }
-
-    public async Task<IEnumerable<TResult>> GetResults()
-    {
-        return await Task.WhenAll(GetEnumerableTasks());
-    }
-
-    public Task GetOverallProgressTask()
+    public override Task GetOverallProgressTask()
     {
         return _taskCompletionSource.Task;
     }

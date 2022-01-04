@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using TomLonghurst.EnumerableAsyncProcessor.Builders;
 using TomLonghurst.EnumerableAsyncProcessor.Extensions;
-using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 using TomLonghurst.EnumerableAsyncProcessor.UnitTests.Extensions;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.UnitTests;

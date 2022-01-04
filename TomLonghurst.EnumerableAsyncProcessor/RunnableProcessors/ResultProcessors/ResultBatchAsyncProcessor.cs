@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
+﻿namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
 public class ResultBatchAsyncProcessor<TSource, TResult> : ResultAbstractAsyncProcessor<TSource, TResult>
 {

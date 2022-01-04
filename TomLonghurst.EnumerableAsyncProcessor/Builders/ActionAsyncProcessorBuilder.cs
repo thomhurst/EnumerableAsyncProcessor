@@ -1,4 +1,3 @@
-using TomLonghurst.EnumerableAsyncProcessor.Helpers;
 using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;

@@ -29,9 +29,9 @@ public abstract class ResultAbstractAsyncProcessor_Base<TResult> : IAsyncProcess
 {
     protected readonly List<TaskCompletionSource<TResult>> EnumerableTaskCompletionSources;
     protected readonly List<Task<TResult>> EnumerableTasks;
-
-    private readonly CancellationTokenSource _cancellationTokenSource;
     protected readonly CancellationToken CancellationToken;
+    
+    private readonly CancellationTokenSource _cancellationTokenSource;
 
 
     protected ResultAbstractAsyncProcessor_Base(int count, CancellationTokenSource cancellationTokenSource)

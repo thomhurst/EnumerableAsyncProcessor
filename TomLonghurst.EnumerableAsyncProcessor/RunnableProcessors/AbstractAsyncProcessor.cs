@@ -30,8 +30,9 @@ public abstract class AbstractAsyncProcessor_Base : IAsyncProcessor, IDisposable
 {
     protected readonly List<TaskCompletionSource> EnumerableTaskCompletionSources;
     protected readonly List<Task> EnumerableTasks;
-    private readonly CancellationTokenSource _cancellationTokenSource;
     protected readonly CancellationToken CancellationToken;
+    
+    private readonly CancellationTokenSource _cancellationTokenSource;
 
 
     protected AbstractAsyncProcessor_Base(int count, CancellationTokenSource cancellationTokenSource)

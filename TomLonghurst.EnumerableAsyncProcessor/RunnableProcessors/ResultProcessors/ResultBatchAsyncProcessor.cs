@@ -14,20 +14,20 @@ public class ResultBatchAsyncProcessor<TSource, TResult> : ResultAbstractAsyncPr
     {
         var batchedItems = ItemisedTaskCompletionSourceContainers.Chunk(_batchSize).ToArray();
 
-        foreach (var currentItemBatch in batchedItems)
+        foreach (var currentBatch in batchedItems)
         {
-            await ProcessBatch(currentItemBatch);
+            await ProcessBatch(currentBatch);
         }
     }
 
-    private Task ProcessBatch(ItemisedTaskCompletionSourceContainer<TSource, TResult>[] currentItemBatch)
+    private Task ProcessBatch(ItemisedTaskCompletionSourceContainer<TSource, TResult>[] currentBatch)
     {
-        foreach (var currentItem in currentItemBatch)
+        foreach (var currentItem in currentBatch)
         {
             _ = ProcessItem(currentItem);
         }
 
-        return Task.WhenAll(currentItemBatch.Select(x => x.TaskCompletionSource.Task));
+        return Task.WhenAll(currentBatch.Select(x => x.TaskCompletionSource.Task));
     }
 
     private async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource, TResult> currentItem)
@@ -58,10 +58,8 @@ public class ResultBatchAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<T
     {
         var batchedTaskCompletionSources = EnumerableTaskCompletionSources.Chunk(_batchSize).ToArray();
 
-        for (var i = 0; i < batchedTaskCompletionSources.Length; i++)
+        foreach (var currentTaskCompletionSourceBatch in batchedTaskCompletionSources)
         {
-            var currentTaskCompletionSourceBatch = batchedTaskCompletionSources[i];
-
             await ProcessBatch(currentTaskCompletionSourceBatch);
         }
     }

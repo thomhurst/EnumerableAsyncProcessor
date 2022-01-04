@@ -16,20 +16,20 @@ public class BatchAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
     {
         var batchedItems = ItemisedTaskCompletionSourceContainers.Chunk(_batchSize).ToArray();
 
-        foreach (var currentItemBatch in batchedItems)
+        foreach (var currentBatch in batchedItems)
         {
-            await ProcessBatch(currentItemBatch);
+            await ProcessBatch(currentBatch);
         }
     }
 
-    private Task ProcessBatch(ItemisedTaskCompletionSourceContainer<TSource>[] currentItemBatch)
+    private Task ProcessBatch(ItemisedTaskCompletionSourceContainer<TSource>[] currentBatch)
     {
-        foreach (var currentItem in currentItemBatch)
+        foreach (var currentItem in currentBatch)
         {
             _ = ProcessItem(currentItem);
         }
 
-        return Task.WhenAll(currentItemBatch.Select(x => x.TaskCompletionSource.Task));
+        return Task.WhenAll(currentBatch.Select(x => x.TaskCompletionSource.Task));
     }
 
     private async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource> currentItem)

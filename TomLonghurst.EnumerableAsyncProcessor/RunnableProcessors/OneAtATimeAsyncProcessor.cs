@@ -12,15 +12,7 @@ public class OneAtATimeAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
     {
         foreach (var itemisedTaskCompletionSourceContainer in ItemisedTaskCompletionSourceContainers)
         {
-            try
-            {
-                await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
-                itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult();
-            }
-            catch (Exception e)
-            {
-                itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetException(e);
-            }
+            await ProcessItem(itemisedTaskCompletionSourceContainer);
         }
     }
 }
@@ -35,15 +27,7 @@ public class OneAtATimeAsyncProcessor : AbstractAsyncProcessor
     {
         foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
         {
-            try
-            {
-                await TaskSelector();
-                taskCompletionSource.SetResult();
-            }
-            catch (Exception e)
-            {
-                taskCompletionSource.SetException(e);
-            }
+            await ProcessItem(taskCompletionSource);
         }
     }
 }

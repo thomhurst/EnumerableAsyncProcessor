@@ -10,15 +10,7 @@ public class ResultOneAtATimeAsyncProcessor<TSource, TResult> : ResultAbstractAs
     {
         foreach (var itemisedTaskCompletionSourceContainer in ItemisedTaskCompletionSourceContainers)
         {
-            try
-            {
-                var result = await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
-                itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult(result);
-            }
-            catch (Exception e)
-            {
-                itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetException(e);
-            }
+            await ProcessItem(itemisedTaskCompletionSourceContainer);
         }
     }
 }
@@ -33,15 +25,7 @@ public class ResultOneAtATimeAsyncProcessor<TResult> : ResultAbstractAsyncProces
     {
         foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
         {
-            try
-            {
-                var result = await TaskSelector();
-                taskCompletionSource.SetResult(result);
-            }
-            catch (Exception e)
-            {
-                taskCompletionSource.SetException(e);
-            }
+            await ProcessItem(taskCompletionSource);
         }
     }
 }

@@ -2,6 +2,30 @@
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
+public abstract class ResultAbstractAsyncProcessor<TResult> : ResultAbstractAsyncProcessor_Base<TResult>
+{
+    protected readonly Func<Task<TResult>> TaskSelector;
+
+    protected ResultAbstractAsyncProcessor(int count, Func<Task<TResult>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, cancellationTokenSource)
+    {
+        TaskSelector = taskSelector;
+    }
+    
+    protected async Task ProcessItem(TaskCompletionSource<TResult> taskCompletionSource)
+    {
+        try
+        {
+            CancellationToken.ThrowIfCancellationRequested();
+            var result = await TaskSelector();
+            taskCompletionSource.SetResult(result);
+        }
+        catch (Exception e)
+        {
+            taskCompletionSource.SetException(e);
+        }
+    }
+}
+
 public abstract class ResultAbstractAsyncProcessor<TSource, TResult> : ResultAbstractAsyncProcessor_Base<TResult>
 {
     protected readonly IEnumerable<ItemisedTaskCompletionSourceContainer<TSource, TResult>> ItemisedTaskCompletionSourceContainers;
@@ -13,15 +37,19 @@ public abstract class ResultAbstractAsyncProcessor<TSource, TResult> : ResultAbs
             new ItemisedTaskCompletionSourceContainer<TSource, TResult>(item, EnumerableTaskCompletionSources[index]));
         TaskSelector = taskSelector;
     }
-}
-
-public abstract class ResultAbstractAsyncProcessor<TResult> : ResultAbstractAsyncProcessor_Base<TResult>
-{
-    protected readonly Func<Task<TResult>> TaskSelector;
-
-    protected ResultAbstractAsyncProcessor(int count, Func<Task<TResult>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, cancellationTokenSource)
+    
+    protected async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource, TResult> itemisedTaskCompletionSourceContainer)
     {
-        TaskSelector = taskSelector;
+        try
+        {
+            CancellationToken.ThrowIfCancellationRequested();
+            var result = await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
+            itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult(result);
+        }
+        catch (Exception e)
+        {
+            itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetException(e);
+        }
     }
 }
 

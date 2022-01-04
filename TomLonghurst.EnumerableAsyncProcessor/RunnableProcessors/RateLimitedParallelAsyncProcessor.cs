@@ -17,15 +17,7 @@ public class RateLimitedParallelAsyncProcessor<TSource> : AbstractAsyncProcessor
             new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken},
             async (itemisedTaskCompletionSourceContainer, _) =>
             {
-                try
-                {
-                    await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
-                    itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult();
-                }
-                catch (Exception e)
-                {
-                    itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetException(e);
-                }
+                await ProcessItem(itemisedTaskCompletionSourceContainer);
             });
     }
 }
@@ -46,15 +38,7 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
                 { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken },
             async (taskCompletionSource, _) =>
             {
-                try
-                {
-                    await TaskSelector();
-                    taskCompletionSource.SetResult();
-                }
-                catch (Exception e)
-                {
-                    taskCompletionSource.SetException(e);
-                }
+                await ProcessItem(taskCompletionSource);
             });
     }
 }

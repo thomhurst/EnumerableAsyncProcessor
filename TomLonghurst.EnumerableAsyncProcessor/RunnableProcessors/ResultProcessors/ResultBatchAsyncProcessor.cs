@@ -29,19 +29,6 @@ public class ResultBatchAsyncProcessor<TSource, TResult> : ResultAbstractAsyncPr
 
         return Task.WhenAll(currentBatch.Select(x => x.TaskCompletionSource.Task));
     }
-
-    private async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource, TResult> currentItem)
-    {
-        try
-        {
-            var result = await TaskSelector(currentItem.Item);
-            currentItem.TaskCompletionSource.SetResult(result);
-        }
-        catch (Exception e)
-        {
-            currentItem.TaskCompletionSource.SetException(e);
-        }
-    }
 }
 
 public class ResultBatchAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<TResult>
@@ -72,18 +59,5 @@ public class ResultBatchAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<T
         }
 
         return Task.WhenAll(currentTaskCompletionSourceBatch.Select(x => x.Task));
-    }
-
-    private async Task ProcessItem(TaskCompletionSource<TResult> taskCompletionSource)
-    {
-        try
-        {
-            var result = await TaskSelector();
-            taskCompletionSource.SetResult(result);
-        }
-        catch (Exception e)
-        {
-            taskCompletionSource.SetException(e);
-        }
     }
 }

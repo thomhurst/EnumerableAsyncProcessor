@@ -11,6 +11,20 @@ public abstract class AbstractAsyncProcessor : AbstractAsyncProcessor_Base
     {
         TaskSelector = taskSelector;
     }
+    
+    protected async Task ProcessItem(TaskCompletionSource taskCompletionSource)
+    {
+        try
+        {
+            CancellationToken.ThrowIfCancellationRequested();
+            await TaskSelector();
+            taskCompletionSource.SetResult();
+        }
+        catch (Exception e)
+        {
+            taskCompletionSource.SetException(e);
+        }
+    }
 }
 
 public abstract class AbstractAsyncProcessor<TSource> : AbstractAsyncProcessor_Base
@@ -23,6 +37,20 @@ public abstract class AbstractAsyncProcessor<TSource> : AbstractAsyncProcessor_B
         ItemisedTaskCompletionSourceContainers = items.Select((item, index) =>
             new ItemisedTaskCompletionSourceContainer<TSource>(item, EnumerableTaskCompletionSources[index]));
         TaskSelector = taskSelector;
+    }
+    
+    protected async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource> itemisedTaskCompletionSourceContainer)
+    {
+        try
+        {
+            CancellationToken.ThrowIfCancellationRequested();
+            await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
+            itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult();
+        }
+        catch (Exception e)
+        {
+            itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetException(e);
+        }
     }
 }
 

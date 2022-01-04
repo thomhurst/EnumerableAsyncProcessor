@@ -31,19 +31,6 @@ public class BatchAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
 
         return Task.WhenAll(currentBatch.Select(x => x.TaskCompletionSource.Task));
     }
-
-    private async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource> currentItem)
-    {
-        try
-        {
-            await TaskSelector(currentItem.Item);
-            currentItem.TaskCompletionSource.SetResult();
-        }
-        catch (Exception e)
-        {
-            currentItem.TaskCompletionSource.SetException(e);
-        }
-    }
 }
 
 public class BatchAsyncProcessor : AbstractAsyncProcessor
@@ -73,18 +60,5 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
         }
 
         return Task.WhenAll(currentTaskCompletionSourceBatch.Select(x => x.Task));
-    }
-
-    private async Task ProcessItem(TaskCompletionSource taskCompletionSource)
-    {
-        try
-        {
-            await TaskSelector();
-            taskCompletionSource.SetResult();
-        }
-        catch (Exception e)
-        {
-            taskCompletionSource.SetException(e);
-        }
     }
 }

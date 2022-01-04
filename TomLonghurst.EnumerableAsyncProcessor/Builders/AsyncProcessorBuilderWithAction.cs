@@ -8,7 +8,7 @@ public class AsyncProcessorBuilderWithAction<TSource, TResult>
 {
     private readonly List<Task<Task<TResult>>> _unStartedTasks;
 
-    public AsyncProcessorBuilderWithAction(IEnumerable<TSource> items, Func<TSource,Task<TResult>> taskSelector)
+    internal AsyncProcessorBuilderWithAction(IEnumerable<TSource> items, Func<TSource,Task<TResult>> taskSelector)
     {
         _unStartedTasks = TaskHelper.CreateTasksWithoutStarting(items, taskSelector);
     }

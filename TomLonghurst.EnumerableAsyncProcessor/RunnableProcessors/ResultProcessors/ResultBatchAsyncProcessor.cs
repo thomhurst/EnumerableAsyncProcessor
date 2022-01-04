@@ -24,7 +24,7 @@ public class ResultBatchAsyncProcessor<TSource, TResult> : ResultAbstractAsyncPr
     {
         foreach (var currentItem in currentItemBatch)
         {
-            ProcessItem(currentItem);
+            _ = ProcessItem(currentItem);
         }
 
         return Task.WhenAll(currentItemBatch.Select(x => x.TaskCompletionSource.Task));
@@ -70,7 +70,7 @@ public class ResultBatchAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<T
     {
         foreach (var taskCompletionSource in currentTaskCompletionSourceBatch)
         {
-            ProcessItem(taskCompletionSource);
+            _ = ProcessItem(taskCompletionSource);
         }
 
         return Task.WhenAll(currentTaskCompletionSourceBatch.Select(x => x.Task));

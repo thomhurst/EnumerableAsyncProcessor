@@ -14,7 +14,7 @@ public class ResultRateLimitedParallelAsyncProcessor<TSource, TResult> : ResultA
     {
         return Parallel.ForEachAsync(ItemisedTaskCompletionSourceContainers,
             new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken},
-            async (itemisedTaskCompletionSourceContainer, token) =>
+            async (itemisedTaskCompletionSourceContainer, _) =>
             {
                 try
                 {
@@ -43,7 +43,7 @@ public class ResultRateLimitedParallelAsyncProcessor<TResult> : ResultAbstractAs
         return Parallel.ForEachAsync(EnumerableTaskCompletionSources,
             new ParallelOptions
                 { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken },
-            async (taskCompletionSource, token) =>
+            async (taskCompletionSource, _) =>
             {
                 try
                 {

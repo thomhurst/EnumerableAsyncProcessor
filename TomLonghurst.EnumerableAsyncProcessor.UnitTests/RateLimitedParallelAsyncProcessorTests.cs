@@ -19,7 +19,7 @@ public class RateLimitedParallelAsyncProcessorTests
     {
         var taskCompletionSource = new TaskCompletionSource<string>();
         var blockingTask = taskCompletionSource.Task;
-        var innerTasks = Enumerable.Range(0, taskCount).Select(i => new Task<Task>(() => blockingTask, TaskCreationOptions.LongRunning)).ToArray();
+        var innerTasks = Enumerable.Range(0, taskCount).Select(_ => new Task<Task>(() => blockingTask, TaskCreationOptions.LongRunning)).ToArray();
 
         var started = 0;
 
@@ -63,7 +63,7 @@ public class RateLimitedParallelAsyncProcessorTests
         var taskCount = 50;
         var parallelLimit = 5;
 
-        var taskCompletionSources = Enumerable.Range(0, taskCount).Select(i => new TaskCompletionSource()).ToArray();
+        var taskCompletionSources = Enumerable.Range(0, taskCount).Select(_ => new TaskCompletionSource()).ToArray();
         var innerTasks = taskCompletionSources.Select(x => x.Task);
 
         var started = 0;
@@ -96,7 +96,7 @@ public class RateLimitedParallelAsyncProcessorTests
         var parallelLimit = 5;
         var cancellationTokenSource = new CancellationTokenSource();
 
-        var taskCompletionSources = Enumerable.Range(0, taskCount).Select(i => new TaskCompletionSource()).ToArray();
+        var taskCompletionSources = Enumerable.Range(0, taskCount).Select(_ => new TaskCompletionSource()).ToArray();
         var innerTasks = taskCompletionSources.Select(x => x.Task);
         
         var processor = innerTasks
@@ -132,7 +132,7 @@ public class RateLimitedParallelAsyncProcessorTests
         var taskCount = 50;
         var parallelLimit = 5;
 
-        var taskCompletionSources = Enumerable.Range(0, taskCount).Select(i => new TaskCompletionSource()).ToArray();
+        var taskCompletionSources = Enumerable.Range(0, taskCount).Select(_ => new TaskCompletionSource()).ToArray();
         var innerTasks = taskCompletionSources.Select(x => x.Task);
 
         var started = 0;

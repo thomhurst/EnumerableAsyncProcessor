@@ -36,7 +36,7 @@ public abstract class ResultAbstractAsyncProcessor_Base<TResult> : IAsyncProcess
 
     protected ResultAbstractAsyncProcessor_Base(int count, CancellationTokenSource cancellationTokenSource)
     {
-        EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(x => new TaskCompletionSource<TResult>()).ToList();
+        EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(_ => new TaskCompletionSource<TResult>()).ToList();
         EnumerableTasks = EnumerableTaskCompletionSources.Select(x => x.Task).ToList();
         ContinuationTask = Task.WhenAll(EnumerableTasks);
         

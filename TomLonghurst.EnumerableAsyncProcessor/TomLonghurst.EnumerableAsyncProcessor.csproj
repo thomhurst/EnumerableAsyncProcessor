@@ -11,5 +11,15 @@
             <_Parameter1>$(MSBuildProjectName).UnitTests</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
-    
+
+    <PropertyGroup>
+        <Authors>Tom Longhurst</Authors>
+        <Description>Various Enumerable Async Processors - Batch / Parallel / Rate Limited / One at a time</Description>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/thomhurst/EnumerableAsyncProcessor</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/thomhurst/EnumerableAsyncProcessor</RepositoryUrl>
+        <PackageTags>async enumerable ienumerable linq array list processor delegate task tasks</PackageTags>
+    </PropertyGroup>
+
+
 </Project>

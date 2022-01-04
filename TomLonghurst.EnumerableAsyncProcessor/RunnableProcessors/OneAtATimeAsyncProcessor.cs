@@ -4,7 +4,7 @@ public class OneAtATimeAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
 {
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
-    public OneAtATimeAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+    public OneAtATimeAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
     }
 
@@ -34,7 +34,7 @@ public class OneAtATimeAsyncProcessor : AbstractAsyncProcessor
 {
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
-    public OneAtATimeAsyncProcessor(List<Task<Task>> initialTasks, CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+    public OneAtATimeAsyncProcessor(List<Task<Task>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
     }
 

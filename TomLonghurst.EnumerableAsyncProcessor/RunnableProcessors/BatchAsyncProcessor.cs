@@ -8,7 +8,7 @@ public class BatchAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
     public BatchAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int batchSize,
-        CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+        CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
         _batchSize = batchSize;
     }
@@ -43,7 +43,7 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
     private readonly TaskCompletionSource _taskCompletionSource = new();
 
     public BatchAsyncProcessor(List<Task<Task>> initialTasks, int batchSize,
-        CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+        CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
         _batchSize = batchSize;
     }

@@ -6,7 +6,7 @@ public class RateLimitedParallelAsyncProcessor<TResult> : AbstractAsyncProcessor
     private Task _totalProgressTask;
 
     public RateLimitedParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, int levelsOfParallelism,
-        CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+        CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }
@@ -31,7 +31,7 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
     private Task _totalProgressTask;
 
     public RateLimitedParallelAsyncProcessor(List<Task<Task>> initialTasks, int levelsOfParallelism,
-        CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+        CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }

@@ -4,9 +4,8 @@ public class ParallelAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
 {
     private Task _totalProgressTask;
 
-    public ParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+    public ParallelAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
-        cancellationToken.Register(() => initialTasks.ForEach(x => x.Dispose()));
     }
 
     internal override Task Process()
@@ -27,9 +26,9 @@ public class ParallelAsyncProcessor : AbstractAsyncProcessor
 {
     private Task _totalProgressTask;
 
-    public ParallelAsyncProcessor(List<Task<Task>> initialTasks, CancellationToken cancellationToken) : base(initialTasks, cancellationToken)
+    public ParallelAsyncProcessor(List<Task<Task>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
-        cancellationToken.Register(() => initialTasks.ForEach(x => x.Dispose()));
+        
     }
 
     internal override Task Process()

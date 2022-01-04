@@ -5,15 +5,16 @@ namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>, IDisposable
 {
     protected readonly List<Task<Task<TResult>>> InitialTasks;
-    protected readonly CancellationToken CancellationToken;
+    private readonly CancellationTokenSource _cancellationTokenSource;
+    protected CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
-    protected AbstractAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationToken cancellationToken)
+    protected AbstractAsyncProcessor(List<Task<Task<TResult>>> initialTasks, CancellationTokenSource cancellationTokenSource)
     {
         InitialTasks = initialTasks;
-        CancellationToken = cancellationToken;
+        _cancellationTokenSource = cancellationTokenSource;
 
-        cancellationToken.Register(Dispose);
-        cancellationToken.ThrowIfCancellationRequested();
+        cancellationTokenSource.Token.Register(Dispose);
+        cancellationTokenSource.Token.ThrowIfCancellationRequested();
     }
         
     internal abstract Task Process();
@@ -32,22 +33,25 @@ public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
 
     public void Dispose()
     {
+        _cancellationTokenSource.Cancel();
         ContinuationTask?.Dispose();
-        InitialTasks.ForEach(x => x.Dispose());
+        _cancellationTokenSource.Dispose();
     }
 }
 
 public abstract class AbstractAsyncProcessor : IAsyncProcessor, IDisposable
 {
     protected readonly List<Task<Task>> InitialTasks;
-    protected readonly CancellationToken CancellationToken;
+    private readonly CancellationTokenSource _cancellationTokenSource;
+    protected CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
-    protected AbstractAsyncProcessor(List<Task<Task>> initialTasks, CancellationToken cancellationToken)
+    protected AbstractAsyncProcessor(List<Task<Task>> initialTasks, CancellationTokenSource cancellationTokenSource)
     {
         InitialTasks = initialTasks;
-        CancellationToken = cancellationToken;
+        _cancellationTokenSource = cancellationTokenSource;
 
-        cancellationToken.Register(() => initialTasks.ForEach(x => x.Dispose()));
+        cancellationTokenSource.Token.Register(Dispose);
+        cancellationTokenSource.Token.ThrowIfCancellationRequested();
     }
         
     internal abstract Task Process();
@@ -61,7 +65,8 @@ public abstract class AbstractAsyncProcessor : IAsyncProcessor, IDisposable
 
     public void Dispose()
     {
+        _cancellationTokenSource.Cancel();
         Task?.Dispose();
-        InitialTasks.ForEach(x => x.Dispose());
+        _cancellationTokenSource.Dispose();
     }
 }

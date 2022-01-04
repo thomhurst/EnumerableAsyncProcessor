@@ -9,7 +9,7 @@ public class ItemActionAsyncProcessorBuilder<TSource, TResult>
     private readonly List<Task<Task<TResult>>> _unStartedTasks;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
-    internal ItemActionAsyncProcessorBuilder(IEnumerable<TSource> items, Func<TSource,Task<TResult>> taskSelector, CancellationToken cancellationToken = default)
+    internal ItemActionAsyncProcessorBuilder(IEnumerable<TSource> items, Func<TSource,Task<TResult>> taskSelector, CancellationToken cancellationToken)
     {
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _unStartedTasks = TaskHelper.CreateTasksWithoutStarting(items, taskSelector, _cancellationTokenSource.Token);
@@ -49,7 +49,7 @@ public class ItemActionAsyncProcessorBuilder<TSource>
     private readonly List<Task<Task>> _unStartedTasks;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
-    public ItemActionAsyncProcessorBuilder(IEnumerable<TSource> items, Func<TSource,Task> taskSelector, CancellationToken cancellationToken = default)
+    public ItemActionAsyncProcessorBuilder(IEnumerable<TSource> items, Func<TSource,Task> taskSelector, CancellationToken cancellationToken)
     {
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _unStartedTasks = TaskHelper.CreateTasksWithoutStarting(items, taskSelector, _cancellationTokenSource.Token);

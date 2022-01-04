@@ -10,7 +10,9 @@ public class ParallelAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
 
     internal override Task Process()
     {
-        return _totalProgressTask = Parallel.ForEachAsync(InitialTasks,
+        _totalProgressTask = Task.WhenAll(UnwrappedTasks);
+        
+        return Parallel.ForEachAsync(InitialTasks,
             new ParallelOptions { MaxDegreeOfParallelism = -1, CancellationToken = CancellationToken },
             async (task, token) =>
             {
@@ -28,12 +30,13 @@ public class ParallelAsyncProcessor : AbstractAsyncProcessor
 
     public ParallelAsyncProcessor(List<Task<Task>> initialTasks, CancellationTokenSource cancellationTokenSource) : base(initialTasks, cancellationTokenSource)
     {
-        
     }
 
     internal override Task Process()
     {
-        return _totalProgressTask = Parallel.ForEachAsync(InitialTasks,
+        _totalProgressTask = Task.WhenAll(UnwrappedTasks);
+        
+        return  Parallel.ForEachAsync(InitialTasks,
             new ParallelOptions { MaxDegreeOfParallelism = -1, CancellationToken = CancellationToken },
             async (task, token) =>
             {

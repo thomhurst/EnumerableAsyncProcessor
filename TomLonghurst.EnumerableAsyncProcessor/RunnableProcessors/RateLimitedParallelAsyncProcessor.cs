@@ -13,12 +13,14 @@ public class RateLimitedParallelAsyncProcessor<TResult> : AbstractAsyncProcessor
 
     internal override Task Process()
     {
-        return _totalProgressTask = Parallel.ForEachAsync(InitialTasks,
+        _totalProgressTask = Task.WhenAll(UnwrappedTasks);
+        
+        return Parallel.ForEachAsync(InitialTasks,
             new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken},
             async (task, token) =>
             {
                 task.Start();
-                await task.Unwrap();
+                await await task;
             });
     }
 
@@ -38,12 +40,14 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal override Task Process()
     {
-        return _totalProgressTask = Parallel.ForEachAsync(InitialTasks,
+        _totalProgressTask = Task.WhenAll(UnwrappedTasks);
+        
+        return Parallel.ForEachAsync(InitialTasks,
             new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken},
             async (task, token) =>
             {
                 task.Start();
-                await task.Unwrap();
+                await await task;
             });
     }
 

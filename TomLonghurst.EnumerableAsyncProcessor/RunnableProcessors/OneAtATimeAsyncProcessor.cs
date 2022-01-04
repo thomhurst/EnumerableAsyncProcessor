@@ -24,6 +24,7 @@ public class OneAtATimeAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
         catch (Exception e)
         {
             _taskCompletionSource.TrySetException(e);
+            Dispose();
         }
     }
 

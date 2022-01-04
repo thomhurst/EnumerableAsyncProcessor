@@ -66,6 +66,7 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
         catch (Exception e)
         {
             _taskCompletionSource.TrySetException(e);
+            Dispose();
         }
     }
 

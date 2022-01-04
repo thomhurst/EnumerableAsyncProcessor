@@ -2,7 +2,7 @@
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
+public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>, IDisposable
 {
     protected readonly List<Task<Task<TResult>>> InitialTasks;
     protected readonly CancellationToken CancellationToken;
@@ -12,7 +12,8 @@ public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
         InitialTasks = initialTasks;
         CancellationToken = cancellationToken;
 
-        cancellationToken.Register(() => initialTasks.ForEach(x => x.Dispose()));
+        cancellationToken.Register(Dispose);
+        cancellationToken.ThrowIfCancellationRequested();
     }
         
     internal abstract Task Process();
@@ -28,6 +29,12 @@ public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
     }
 
     public abstract Task ContinuationTask { get; }
+
+    public void Dispose()
+    {
+        ContinuationTask?.Dispose();
+        InitialTasks.ForEach(x => x.Dispose());
+    }
 }
 
 public abstract class AbstractAsyncProcessor : IAsyncProcessor

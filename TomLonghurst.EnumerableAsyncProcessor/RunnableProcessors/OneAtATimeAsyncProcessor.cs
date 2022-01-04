@@ -27,8 +27,5 @@ public class OneAtATimeAsyncProcessor<TResult> : AbstractAsyncProcessor<TResult>
         }
     }
 
-    public override Task GetOverallProgressTask()
-    {
-        return _taskCompletionSource.Task;
-    }
+    public override Task ContinuationTask => _taskCompletionSource.Task;
 }

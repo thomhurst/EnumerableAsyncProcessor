@@ -27,5 +27,5 @@ public abstract class AbstractAsyncProcessor<TResult> : IAsyncProcessor<TResult>
         return await Task.WhenAll(GetEnumerableTasks());
     }
 
-    public abstract Task GetOverallProgressTask();
+    public abstract Task ContinuationTask { get; }
 }

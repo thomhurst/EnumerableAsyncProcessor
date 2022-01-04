@@ -22,8 +22,5 @@ public class RateLimitedParallelAsyncProcessor<TResult> : AbstractAsyncProcessor
             });
     }
 
-    public override Task GetOverallProgressTask()
-    {
-        return _totalProgressTask;
-    }
+    public override Task ContinuationTask => _totalProgressTask;
 }

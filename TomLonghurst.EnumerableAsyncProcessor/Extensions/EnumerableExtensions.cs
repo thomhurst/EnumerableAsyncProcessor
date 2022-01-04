@@ -4,8 +4,8 @@ namespace TomLonghurst.EnumerableAsyncProcessor.Extensions;
 
 public static class EnumerableExtensions
 {
-    public static AsyncProcessorBuilderWithItems<T> ToAsyncProcessorBuilder<T>(this IEnumerable<T> items)
+    public static ItemAsyncProcessorBuilder<T> ToAsyncProcessorBuilder<T>(this IEnumerable<T> items)
     {
-        return new AsyncProcessorBuilderWithItems<T>(items);
+        return new ItemAsyncProcessorBuilder<T>(items);
     }
 }

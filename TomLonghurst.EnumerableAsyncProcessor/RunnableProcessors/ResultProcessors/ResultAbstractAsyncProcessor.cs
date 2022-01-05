@@ -5,11 +5,11 @@ namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcess
 
 public abstract class ResultAbstractAsyncProcessor<TResult> : ResultAbstractAsyncProcessor_Base<TResult>
 {
-    protected readonly Func<Task<TResult>> TaskSelector;
+    private readonly Func<Task<TResult>> _taskSelector;
 
     protected ResultAbstractAsyncProcessor(int count, Func<Task<TResult>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, cancellationTokenSource)
     {
-        TaskSelector = taskSelector;
+        _taskSelector = taskSelector;
     }
     
     protected async Task ProcessItem(TaskCompletionSource<TResult> taskCompletionSource)
@@ -17,7 +17,7 @@ public abstract class ResultAbstractAsyncProcessor<TResult> : ResultAbstractAsyn
         try
         {
             CancellationToken.ThrowIfCancellationRequested();
-            var result = await TaskSelector();
+            var result = await _taskSelector();
             taskCompletionSource.SetResult(result);
         }
         catch (Exception e)
@@ -30,13 +30,14 @@ public abstract class ResultAbstractAsyncProcessor<TResult> : ResultAbstractAsyn
 public abstract class ResultAbstractAsyncProcessor<TSource, TResult> : ResultAbstractAsyncProcessor_Base<TResult>
 {
     protected readonly IEnumerable<ItemisedTaskCompletionSourceContainer<TSource, TResult>> ItemisedTaskCompletionSourceContainers;
-    protected readonly Func<TSource, Task<TResult>> TaskSelector;
+
+    private readonly Func<TSource, Task<TResult>> _taskSelector;
 
     protected ResultAbstractAsyncProcessor(IReadOnlyCollection<TSource> items, Func<TSource, Task<TResult>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items.Count, cancellationTokenSource)
     {
         ItemisedTaskCompletionSourceContainers = items.Select((item, index) =>
             new ItemisedTaskCompletionSourceContainer<TSource, TResult>(item, EnumerableTaskCompletionSources[index]));
-        TaskSelector = taskSelector;
+        _taskSelector = taskSelector;
     }
     
     protected async Task ProcessItem(ItemisedTaskCompletionSourceContainer<TSource, TResult> itemisedTaskCompletionSourceContainer)
@@ -44,7 +45,7 @@ public abstract class ResultAbstractAsyncProcessor<TSource, TResult> : ResultAbs
         try
         {
             CancellationToken.ThrowIfCancellationRequested();
-            var result = await TaskSelector(itemisedTaskCompletionSourceContainer.Item);
+            var result = await _taskSelector(itemisedTaskCompletionSourceContainer.Item);
             itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult(result);
         }
         catch (Exception e)
@@ -99,5 +100,6 @@ public abstract class ResultAbstractAsyncProcessor_Base<TResult> : IAsyncProcess
         _cancellationTokenSource.Cancel();
         EnumerableTaskCompletionSources.ForEach(t => t.TrySetCanceled(CancellationToken));
         _cancellationTokenSource.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

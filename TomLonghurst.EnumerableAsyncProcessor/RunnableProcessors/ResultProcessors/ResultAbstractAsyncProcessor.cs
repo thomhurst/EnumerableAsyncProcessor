@@ -84,12 +84,12 @@ public abstract class ResultAbstractAsyncProcessor_Base<TResult> : IAsyncProcess
         return _enumerableTasks;
     }
 
-    public async Task<IEnumerable<TResult>> GetResults()
+    public Task<TResult[]> GetResults()
     {
-        return await Task.WhenAll(GetEnumerableTasks());
+        return _results;
     }
 
-    public TaskAwaiter<IEnumerable<TResult>> GetAwaiter()
+    public TaskAwaiter<TResult[]> GetAwaiter()
     {
         return GetResults().GetAwaiter();
     }

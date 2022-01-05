@@ -16,9 +16,9 @@ public interface IAsyncProcessor<TResult>
      * A task that will contain the mapped results when complete
      * </summary>
      */
-    Task<IEnumerable<TResult>> GetResults();
+    Task<TResult[]> GetResults();
     
-    TaskAwaiter<IEnumerable<TResult>> GetAwaiter();
+    TaskAwaiter<TResult[]> GetAwaiter();
 }
 
 public interface IAsyncProcessor

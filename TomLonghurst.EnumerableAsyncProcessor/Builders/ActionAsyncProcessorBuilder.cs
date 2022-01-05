@@ -10,7 +10,7 @@ public class ActionAsyncProcessorBuilder<TResult>
     private readonly Func<Task<TResult>> _taskSelector;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
-    internal ActionAsyncProcessorBuilder(int count, Func<Task<TResult>> taskSelector, CancellationToken cancellationToken = default)
+    internal ActionAsyncProcessorBuilder(int count, Func<Task<TResult>> taskSelector, CancellationToken cancellationToken)
     {
         _count = count;
         _taskSelector = taskSelector;
@@ -52,7 +52,7 @@ public class ActionAsyncProcessorBuilder
     private readonly Func<Task> _taskSelector;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
-    public ActionAsyncProcessorBuilder(int count, Func<Task> taskSelector, CancellationToken cancellationToken = default)
+    public ActionAsyncProcessorBuilder(int count, Func<Task> taskSelector, CancellationToken cancellationToken)
     {
         _count = count;
         _taskSelector = taskSelector;

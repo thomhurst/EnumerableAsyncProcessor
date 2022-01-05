@@ -1,4 +1,5 @@
-﻿using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
+﻿using System.Runtime.CompilerServices;
+using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
@@ -56,17 +57,18 @@ public abstract class ResultAbstractAsyncProcessor<TSource, TResult> : ResultAbs
 public abstract class ResultAbstractAsyncProcessor_Base<TResult> : IAsyncProcessor<TResult>, IDisposable
 {
     protected readonly List<TaskCompletionSource<TResult>> EnumerableTaskCompletionSources;
-    protected readonly List<Task<TResult>> EnumerableTasks;
     protected readonly CancellationToken CancellationToken;
-    
+
+    private readonly List<Task<TResult>> _enumerableTasks;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly Task<TResult[]> _results;
 
 
     protected ResultAbstractAsyncProcessor_Base(int count, CancellationTokenSource cancellationTokenSource)
     {
         EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(_ => new TaskCompletionSource<TResult>()).ToList();
-        EnumerableTasks = EnumerableTaskCompletionSources.Select(x => x.Task).ToList();
-        ContinuationTask = Task.WhenAll(EnumerableTasks);
+        _enumerableTasks = EnumerableTaskCompletionSources.Select(x => x.Task).ToList();
+        _results = Task.WhenAll(_enumerableTasks);
         
         _cancellationTokenSource = cancellationTokenSource;
         CancellationToken = cancellationTokenSource.Token;
@@ -79,7 +81,7 @@ public abstract class ResultAbstractAsyncProcessor_Base<TResult> : IAsyncProcess
     
     public IEnumerable<Task<TResult>> GetEnumerableTasks()
     {
-        return EnumerableTasks;
+        return _enumerableTasks;
     }
 
     public async Task<IEnumerable<TResult>> GetResults()
@@ -87,7 +89,10 @@ public abstract class ResultAbstractAsyncProcessor_Base<TResult> : IAsyncProcess
         return await Task.WhenAll(GetEnumerableTasks());
     }
 
-    public Task ContinuationTask { get; }
+    public TaskAwaiter<IEnumerable<TResult>> GetAwaiter()
+    {
+        return GetResults().GetAwaiter();
+    }
 
     public void Dispose()
     {

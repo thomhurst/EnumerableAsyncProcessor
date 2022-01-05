@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
@@ -57,17 +58,18 @@ public abstract class AbstractAsyncProcessor<TSource> : AbstractAsyncProcessor_B
 public abstract class AbstractAsyncProcessor_Base : IAsyncProcessor, IDisposable
 {
     protected readonly List<TaskCompletionSource> EnumerableTaskCompletionSources;
-    protected readonly List<Task> EnumerableTasks;
     protected readonly CancellationToken CancellationToken;
-    
+
+    private readonly List<Task> EnumerableTasks;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly Task _overallTask;
 
 
     protected AbstractAsyncProcessor_Base(int count, CancellationTokenSource cancellationTokenSource)
     {
         EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(_ => new TaskCompletionSource()).ToList();
         EnumerableTasks = EnumerableTaskCompletionSources.Select(x => x.Task).ToList();
-        Task = Task.WhenAll(EnumerableTasks);
+        _overallTask = Task.WhenAll(EnumerableTasks);
         
         _cancellationTokenSource = cancellationTokenSource;
         CancellationToken = cancellationTokenSource.Token;
@@ -82,8 +84,16 @@ public abstract class AbstractAsyncProcessor_Base : IAsyncProcessor, IDisposable
     {
         return EnumerableTasks;
     }
-    
-    public Task Task { get; }
+
+    public TaskAwaiter GetAwaiter()
+    {
+        return WaitAsync().GetAwaiter();
+    }
+
+    public Task WaitAsync()
+    {
+        return _overallTask;
+    }
 
     public void Dispose()
     {

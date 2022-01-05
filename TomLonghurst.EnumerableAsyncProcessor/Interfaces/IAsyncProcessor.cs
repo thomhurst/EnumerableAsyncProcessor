@@ -1,4 +1,6 @@
-﻿namespace TomLonghurst.EnumerableAsyncProcessor.Interfaces;
+﻿using System.Runtime.CompilerServices;
+
+namespace TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 
 public interface IAsyncProcessor<TResult>
 {
@@ -16,12 +18,7 @@ public interface IAsyncProcessor<TResult>
      */
     Task<IEnumerable<TResult>> GetResults();
     
-    /**
-     * <summary>
-     * A task representing the overall progress.
-     * </summary>
-     */
-    Task ContinuationTask { get; }
+    TaskAwaiter<IEnumerable<TResult>> GetAwaiter();
 }
 
 public interface IAsyncProcessor
@@ -33,10 +30,7 @@ public interface IAsyncProcessor
      */
  IEnumerable<Task> GetEnumerableTasks();
 
- /**
-     * <summary>
-     * A task representing the overall progress.
-     * </summary>
-     */
- Task Task { get; }
+ TaskAwaiter GetAwaiter();
+
+ Task WaitAsync();
 }

@@ -48,7 +48,7 @@ public class RateLimitedParallelAsyncProcessorTests
 
         taskCompletionSource.SetResult("Blah");
         
-        await processor.Task;
+        await processor;
 
         Assert.That(started, Is.EqualTo(taskCount));
         Assert.That(innerTasks.Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(taskCount));
@@ -120,7 +120,7 @@ public class RateLimitedParallelAsyncProcessorTests
         
         cancellationTokenSource.Cancel();
         taskCompletionSources.Skip(40).ForEach(taskCompletionSource => taskCompletionSource.SetResult());
-        Assert.ThrowsAsync<TaskCanceledException>(() => processor.Task);
+        Assert.ThrowsAsync<TaskCanceledException>(() => processor.WaitAsync());
 
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(40));
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.Canceled), Is.EqualTo(10));

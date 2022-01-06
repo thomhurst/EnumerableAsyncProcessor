@@ -28,10 +28,12 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 ### Rate Limited Parallel Processor
 
 **Types**  
-- `RateLimitedParallelAsyncProcessor` (No source object - No return object - When calling .ForEachAsync)
-- `RateLimitedParallelAsyncProcessor<TSource>` (Source object - No return object - When calling .ForEachAsync)
-- `ResultRateLimitedParallelAsyncProcessor<TResult>` (No source object - Does return object - When calling .SelectAsync)
-- `ResultRateLimitedParallelAsyncProcessor<TSource, TResult>` (Source object - Does return object - When calling .SelectAsync)
+| Type                                                        | Source Object | Return Object | Method             |
+|-------------------------------------------------------------|---------------|---------------|--------------------|
+| `RateLimitedParallelAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
+| `RateLimitedParallelAsyncProcessor<TSource>`                | ✔             | ❌             | .ForEachAsync(...) |
+| `ResultRateLimitedParallelAsyncProcessor<TResult>`          | ❌             | ✔             | .SelectAsync(...)  |
+| `ResultRateLimitedParallelAsyncProcessor<TSource, TResult>` | ✔             | ✔             | .SelectAsync(...)  |
 
 **How it works**  
 Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start. But if you set a limit of 100, only 100 should ever run at any one time
@@ -52,10 +54,13 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ### One At A Time
 
 **Types**  
-- `OneAtATimeAsyncProcessor` (No source object - No return object - When calling .ForEachAsync)
-- `OneAtATimeAsyncProcessor<TSource>` (Source object - No return object - When calling .ForEachAsync)
-- `ResultOneAtATimeAsyncProcessor<TResult>` (No source object - Does return object - When calling .SelectAsync)
-- `ResultOneAtATimeAsyncProcessor<TSource, TResult>` (Source object - Does return object - When calling .SelectAsync)
+
+| Type                                               | Source Object | Return Object | Method             |
+|----------------------------------------------------|---------------|---------------|--------------------|
+| `OneAtATimeAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
+| `OneAtATimeAsyncProcessor<TSource>`                | ✔             | ❌             | .ForEachAsync(...) |
+| `ResultOneAtATimeAsyncProcessor<TResult>`          | ❌             | ✔             | .SelectAsync(...)  |
+| `ResultOneAtATimeAsyncProcessor<TSource, TResult>` | ✔             | ✔             | .SelectAsync(...)  |
 
 **How it works**  
 Processes your Asynchronous Tasks One at a Time. Only one will ever progress at a time. As one finishes, another will start
@@ -79,10 +84,12 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ### Batch
 
 **Types**  
-- `BatchAsyncProcessor` (No source object - No return object - When calling .ForEachAsync)
-- `BatchAsyncProcessor<TSource>` (Source object - No return object - When calling .ForEachAsync)
-- `ResultBatchAsyncProcessor<TResult>` (No source object - Does return object - When calling .SelectAsync)
-- `ResultBatchAsyncProcessor<TSource, TResult>` (Source object - Does return object - When calling .SelectAsync)
+| Type                                          | Source Object | Return Object | Method             |
+|-----------------------------------------------|---------------|---------------|--------------------|
+| `BatchAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
+| `BatchAsyncProcessor<TSource>`                | ✔             | ❌             | .ForEachAsync(...) |
+| `ResultBatchAsyncProcessor<TResult>`          | ❌             | ✔             | .SelectAsync(...)  |
+| `ResultBatchAsyncProcessor<TSource, TResult>` | ✔             | ✔             | .SelectAsync(...)  |
 
 **How it works**  
 Processes your Asynchronous Tasks in Batches. The next batch will not start until every Task in previous batch has finished
@@ -107,10 +114,12 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ### Parallel
 
 **Types**  
-- `ParallelAsyncProcessor` (No source object - No return object - When calling .ForEachAsync)
-- `ParallelAsyncProcessor<TSource>` (Source object - No return object - When calling .ForEachAsync)
-- `ResultParallelAsyncProcessor<TResult>` (No source object - Does return object - When calling .SelectAsync)
-- `ResultParallelAsyncProcessor<TSource, TResult>` (Source object - Does return object - When calling .SelectAsync)
+| Type                                             | Source Object | Return Object | Method             |
+|--------------------------------------------------|---------------|---------------|--------------------|
+| `ParallelAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
+| `ParallelAsyncProcessor<TSource>`                | ✔             | ❌             | .ForEachAsync(...) |
+| `ResultParallelAsyncProcessor<TResult>`          | ❌             | ✔             | .SelectAsync(...)  |
+| `ResultParallelAsyncProcessor<TSource, TResult>` | ✔             | ✔             | .SelectAsync(...)  |
 
 **How it works**  
 Processes your Asynchronous Tasks as fast as it can. All at the same time if it can

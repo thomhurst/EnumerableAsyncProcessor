@@ -79,7 +79,7 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ```
 
 **Caveats**  
-  - Slowest method
+- Slowest method
 
 ### Batch
 
@@ -108,8 +108,8 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ```
 
 **Caveats**  
-  - If even just 1 Task in a batch is slow or hangs, this will prevent the next batch from starting
-  - If you set a batch of 100, and 70 have finished, you'll only have 30 left executing. This could slow things down
+- If even just 1 Task in a batch is slow or hangs, this will prevent the next batch from starting
+- If you set a batch of 100, and 70 have finished, you'll only have 30 left executing. This could slow things down
 
 ### Parallel
 
@@ -138,7 +138,7 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ```
 
 **Caveats**  
-  - Depending on how many operations you have, you could overwhelm your system. Memory and CPU and Network usage could spike, and cause bottlenecks / crashes / exceptions
+- Depending on how many operations you have, you could overwhelm your system. Memory and CPU and Network usage could spike, and cause bottlenecks / crashes / exceptions
 
 ### Examples
 This is for when you need to Enumerate through some objects and use them in your operations. E.g. Sending notifications to certain ids

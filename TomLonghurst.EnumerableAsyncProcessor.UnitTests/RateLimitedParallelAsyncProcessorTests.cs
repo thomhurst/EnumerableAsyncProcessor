@@ -23,7 +23,7 @@ public class RateLimitedParallelAsyncProcessorTests
 
         var started = 0;
 
-        var processor = AsyncProcessorBuilder<Task<Task>>.WithItems(innerTasks)
+        var processor = AsyncProcessorBuilder.WithItems(innerTasks)
             .ForEachAsync(async t =>
             {
                 started++;

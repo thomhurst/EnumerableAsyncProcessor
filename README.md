@@ -18,7 +18,7 @@ If this library helped you, consider buying me a coffee
 Install via Nuget
 `Install-Package TomLonghurst.EnumerableAsyncProcessor`
 
-## Why?
+## Why I built this
 Because I've come across situations where you need to fine tune the rate at which you do things.
 Maybe you want it fast.
 Maybe you want it slow.
@@ -28,7 +28,10 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 ### Rate Limited Parallel Processor
 
 **Types**  
-`RateLimitedParallelAsyncProcessor` / `RateLimitedParallelAsyncProcessor<TSource>` / `ResultRateLimitedParallelAsyncProcessor<TResult>` / `ResultRateLimitedParallelAsyncProcessor<TSource, TResult>`
+  - `RateLimitedParallelAsyncProcessor` (No source object - No return object - When calling .ForEachAsync)
+  - `RateLimitedParallelAsyncProcessor<TSource>` (Source object - No return object - When calling .ForEachAsync)
+  - `ResultRateLimitedParallelAsyncProcessor<TResult>` (No source object - Does return object - When calling .SelectAsync)
+  - `ResultRateLimitedParallelAsyncProcessor<TSource, TResult>` (Source object - Does return object - When calling .SelectAsync)
 
 **How it works**  
 Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start. But if you set a limit of 100, only 100 should ever run at any one time
@@ -49,7 +52,10 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ### One At A Time
 
 **Types**  
-`OneAtATimeAsyncProcessor` / `OneAtATimeAsyncProcessor<TSource>` / `ResultOneAtATimeAsyncProcessor<TResult>` / `ResultOneAtATimeAsyncProcessor<TSource, TResult>`
+  - `OneAtATimeAsyncProcessor` (No source object - No return object - When calling .ForEachAsync)
+  - `OneAtATimeAsyncProcessor<TSource>` (Source object - No return object - When calling .ForEachAsync)
+  - `ResultOneAtATimeAsyncProcessor<TResult>` (No source object - Does return object - When calling .SelectAsync)
+  - `ResultOneAtATimeAsyncProcessor<TSource, TResult>` (Source object - Does return object - When calling .SelectAsync)
 
 **How it works**  
 Processes your Asynchronous Tasks One at a Time. Only one will ever progress at a time. As one finishes, another will start
@@ -68,12 +74,15 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ```
 
 **Caveats**  
-- Slowest method
+  - Slowest method
 
 ### Batch
 
 **Types**  
-`BatchAsyncProcessor` / `BatchAsyncProcessor<TSource>` / `ResultBatchAsyncProcessor<TResult>` / `ResultBatchAsyncProcessor<TSource, TResult>`
+  - `BatchAsyncProcessor` (No source object - No return object - When calling .ForEachAsync)
+  - `BatchAsyncProcessor<TSource>` (Source object - No return object - When calling .ForEachAsync)
+  - `ResultBatchAsyncProcessor<TResult>` (No source object - Does return object - When calling .SelectAsync)
+  - `ResultBatchAsyncProcessor<TSource, TResult>` (Source object - Does return object - When calling .SelectAsync)
 
 **How it works**  
 Processes your Asynchronous Tasks in Batches. The next batch will not start until every Task in previous batch has finished
@@ -92,13 +101,16 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ```
 
 **Caveats**  
-- If even just 1 Task in a batch is slow or hangs, this will prevent the next batch from starting
-- If you set a batch of 100, and 70 have finished, you'll only have 30 left executing. This could slow things down
+  - If even just 1 Task in a batch is slow or hangs, this will prevent the next batch from starting
+  - If you set a batch of 100, and 70 have finished, you'll only have 30 left executing. This could slow things down
 
 ### Parallel
 
 **Types**  
-`ParallelAsyncProcessor` / `ParallelAsyncProcessor<TSource>` / `ResultParallelAsyncProcessor<TResult>` / `ResultParallelAsyncProcessor<TSource, TResult>`
+  - `ParallelAsyncProcessor` (No source object - No return object - When calling .ForEachAsync)
+  - `ParallelAsyncProcessor<TSource>` (Source object - No return object - When calling .ForEachAsync)
+  - `ResultParallelAsyncProcessor<TResult>` (No source object - Does return object - When calling .SelectAsync)
+  - `ResultParallelAsyncProcessor<TSource, TResult>` (Source object - Does return object - When calling .SelectAsync)
 
 **How it works**  
 Processes your Asynchronous Tasks as fast as it can. All at the same time if it can
@@ -117,7 +129,7 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 ```
 
 **Caveats**  
-- Depending on how many operations you have, you could overwhelm your system. Memory and CPU and Network usage could spike, and cause bottlenecks / crashes / exceptions
+  - Depending on how many operations you have, you could overwhelm your system. Memory and CPU and Network usage could spike, and cause bottlenecks / crashes / exceptions
 
 ### Examples
 This is for when you need to Enumerate through some objects and use them in your operations. E.g. Sending notifications to certain ids

@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TomLonghurst.EnumerableAsyn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TomLonghurst.EnumerableAsyncProcessor.UnitTests", "TomLonghurst.EnumerableAsyncProcessor.UnitTests\TomLonghurst.EnumerableAsyncProcessor.UnitTests.csproj", "{748DEC7C-44A8-440B-B306-1143C360BE7C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TomLonghurst.EnumerableAsyncProcessor.Example", "TomLonghurst.EnumerableAsyncProcessor.Example\TomLonghurst.EnumerableAsyncProcessor.Example.csproj", "{B2C482F4-8899-43C7-924C-865CBA0EFDD3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{748DEC7C-44A8-440B-B306-1143C360BE7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{748DEC7C-44A8-440B-B306-1143C360BE7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{748DEC7C-44A8-440B-B306-1143C360BE7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C482F4-8899-43C7-924C-865CBA0EFDD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C482F4-8899-43C7-924C-865CBA0EFDD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C482F4-8899-43C7-924C-865CBA0EFDD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C482F4-8899-43C7-924C-865CBA0EFDD3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

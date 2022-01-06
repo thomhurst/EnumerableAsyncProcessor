@@ -33,14 +33,22 @@ public abstract class ResultAbstractAsyncProcessorBase<TResult> : IAsyncProcesso
         return _enumerableTasks;
     }
 
-    public Task<TResult[]> GetResults()
+    public Task<TResult[]> GetResultsAsync()
     {
         return _results;
     }
 
+    public async IAsyncEnumerable<TResult> GetResultsAsyncEnumerable()
+    {
+        foreach (var result in GetEnumerableTasks())
+        {
+            yield return await result;
+        }
+    }
+
     public TaskAwaiter<TResult[]> GetAwaiter()
     {
-        return GetResults().GetAwaiter();
+        return GetResultsAsync().GetAwaiter();
     }
 
     public void CancelAll()

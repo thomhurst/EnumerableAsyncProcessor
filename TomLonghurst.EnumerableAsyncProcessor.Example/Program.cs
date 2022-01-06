@@ -10,7 +10,7 @@ async Task ItemAsyncProcessor()
     // This is for when you need to Enumerate through some objects and use them in your operations
     
     var itemProcessor = ids.ToAsyncProcessorBuilder()
-        .SelectAsync(NotifyAsync)
+        .SelectAsync(NotifyAsync, CancellationToken.None)
         .ProcessInParallel(100);
 
     // Or
@@ -43,7 +43,7 @@ async Task CountAsyncProcessor()
 
     // This is for when you need to don't need any objects - But just want to do something a certain amount of times. E.g. Pinging a site to warm up multiple instances
     var itemProcessor = AsyncProcessorBuilder.WithExecutionCount(100)
-        .SelectAsync(PingAsync)
+        .SelectAsync(PingAsync, CancellationToken.None)
         .ProcessInParallel(10);
 
 // GetEnumerableTasks() returns IEnumerable<Task<TResult>> - These may have completed, or may still be waiting to finish.

@@ -1,50 +1,8 @@
+using TomLonghurst.EnumerableAsyncProcessor.Extensions;
 using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
-using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.Builders;
-
-public class ActionAsyncProcessorBuilder<TResult>
-{
-    private readonly int _count;
-    private readonly Func<Task<TResult>> _taskSelector;
-    private readonly CancellationTokenSource _cancellationTokenSource;
-
-    internal ActionAsyncProcessorBuilder(int count, Func<Task<TResult>> taskSelector, CancellationToken cancellationToken)
-    {
-        _count = count;
-        _taskSelector = taskSelector;
-        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-    }
-
-    public IAsyncProcessor<TResult> ProcessInBatches(int batchSize)
-    {
-        var batchAsyncProcessor = new ResultBatchAsyncProcessor<TResult>(batchSize, _count, _taskSelector, _cancellationTokenSource);
-        _ = batchAsyncProcessor.Process();
-        return batchAsyncProcessor;
-    }
-    
-    public IAsyncProcessor<TResult> ProcessInParallel(int levelOfParallelism)
-    {
-        var rateLimitedParallelAsyncProcessor = new ResultRateLimitedParallelAsyncProcessor<TResult>(_count, _taskSelector, levelOfParallelism, _cancellationTokenSource);
-        _ = rateLimitedParallelAsyncProcessor.Process();
-        return rateLimitedParallelAsyncProcessor;
-    }
-    
-    public IAsyncProcessor<TResult> ProcessInParallel()
-    {
-        var parallelAsyncProcessor = new ResultParallelAsyncProcessor<TResult>(_count, _taskSelector, _cancellationTokenSource);
-        _ = parallelAsyncProcessor.Process();
-        return parallelAsyncProcessor;
-    }
-    
-    public IAsyncProcessor<TResult> ProcessOneAtATime()
-    {
-        var oneAtATimeAsyncProcessor = new ResultOneAtATimeAsyncProcessor<TResult>(_count, _taskSelector, _cancellationTokenSource);
-        _ = oneAtATimeAsyncProcessor.Process();
-        return oneAtATimeAsyncProcessor;
-    }
-}
 
 public class ActionAsyncProcessorBuilder
 {
@@ -61,29 +19,21 @@ public class ActionAsyncProcessorBuilder
 
     public IAsyncProcessor ProcessInBatches(int batchSize)
     {
-        var batchAsyncProcessor = new BatchAsyncProcessor(batchSize, _count, _taskSelector, _cancellationTokenSource);
-        _ = batchAsyncProcessor.Process();
-        return batchAsyncProcessor;
+        return new BatchAsyncProcessor(batchSize, _count, _taskSelector, _cancellationTokenSource).StartProcessing();
     }
     
     public IAsyncProcessor ProcessInParallel(int levelOfParallelism)
     {
-        var rateLimitedParallelAsyncProcessor = new RateLimitedParallelAsyncProcessor(_count, _taskSelector, levelOfParallelism, _cancellationTokenSource);
-        _ = rateLimitedParallelAsyncProcessor.Process();
-        return rateLimitedParallelAsyncProcessor;
+        return new RateLimitedParallelAsyncProcessor(_count, _taskSelector, levelOfParallelism, _cancellationTokenSource).StartProcessing();
     }
     
     public IAsyncProcessor ProcessInParallel()
     {
-        var parallelAsyncProcessor = new ParallelAsyncProcessor(_count, _taskSelector, _cancellationTokenSource);
-        _ = parallelAsyncProcessor.Process();
-        return parallelAsyncProcessor;
+        return new ParallelAsyncProcessor(_count, _taskSelector, _cancellationTokenSource).StartProcessing();
     }
     
     public IAsyncProcessor ProcessOneAtATime()
     {
-        var oneAtATimeAsyncProcessor = new OneAtATimeAsyncProcessor(_count, _taskSelector, _cancellationTokenSource);
-        _ = oneAtATimeAsyncProcessor.Process();
-        return oneAtATimeAsyncProcessor;
+        return new OneAtATimeAsyncProcessor(_count, _taskSelector, _cancellationTokenSource).StartProcessing();
     }
 }

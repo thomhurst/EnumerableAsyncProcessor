@@ -22,13 +22,17 @@ public class ResultBatchAsyncProcessor<TSource, TResult> : ResultAbstractAsyncPr
         }
     }
 
-    private Task ProcessBatch(ItemisedTaskCompletionSourceContainer<TSource, TResult>[] currentBatch)
+    private Task ProcessBatch(Tuple<TSource, TaskCompletionSource<TResult>>[] currentBatch)
     {
         foreach (var currentItem in currentBatch)
         {
             _ = ProcessItem(currentItem);
         }
 
-        return Task.WhenAll(currentBatch.Select(x => x.TaskCompletionSource.Task));
+        return Task.WhenAll(currentBatch.Select(x =>
+        {
+            var (_, taskCompletionSource) = x;
+            return taskCompletionSource.Task;
+        }));
     }
 }

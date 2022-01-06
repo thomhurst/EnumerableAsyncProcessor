@@ -13,13 +13,18 @@ public abstract class AbstractAsyncProcessor : AbstractAsyncProcessorBase
     {
         try
         {
-            CancellationToken.ThrowIfCancellationRequested();
+            if (CancellationToken.IsCancellationRequested)
+            {
+                taskCompletionSource.TrySetCanceled(CancellationToken);
+                return;
+            }
+            
             await _taskSelector();
-            taskCompletionSource.SetResult();
+            taskCompletionSource.TrySetResult();
         }
         catch (Exception e)
         {
-            taskCompletionSource.SetException(e);
+            taskCompletionSource.TrySetException(e);
         }
     }
 }

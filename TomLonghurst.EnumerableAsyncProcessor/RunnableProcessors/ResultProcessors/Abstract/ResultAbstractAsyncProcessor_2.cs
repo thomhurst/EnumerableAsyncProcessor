@@ -17,13 +17,18 @@ public abstract class ResultAbstractAsyncProcessor<TSource, TResult> : ResultAbs
     {
         try
         {
-            CancellationToken.ThrowIfCancellationRequested();
+            if (CancellationToken.IsCancellationRequested)
+            {
+                itemisedTaskCompletionSourceContainer.TaskCompletionSource.TrySetCanceled(CancellationToken);
+                return;
+            }
+            
             var result = await _taskSelector(itemisedTaskCompletionSourceContainer.Item);
-            itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult(result);
+            itemisedTaskCompletionSourceContainer.TaskCompletionSource.TrySetResult(result);
         }
         catch (Exception e)
         {
-            itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetException(e);
+            itemisedTaskCompletionSourceContainer.TaskCompletionSource.TrySetException(e);
         }
     }
 }

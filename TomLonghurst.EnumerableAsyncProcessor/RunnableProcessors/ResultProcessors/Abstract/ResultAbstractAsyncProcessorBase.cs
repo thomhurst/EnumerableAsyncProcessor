@@ -43,11 +43,21 @@ public abstract class ResultAbstractAsyncProcessorBase<TResult> : IAsyncProcesso
         return GetResults().GetAwaiter();
     }
 
+    public void CancelAll()
+    {
+        if (!_cancellationTokenSource.IsCancellationRequested)
+        {
+            _cancellationTokenSource.Cancel();
+        }
+
+        EnumerableTaskCompletionSources.ForEach(t => t.TrySetCanceled(CancellationToken));
+        
+        _cancellationTokenSource.Dispose();
+    }
+
     public void Dispose()
     {
-        _cancellationTokenSource.Cancel();
-        EnumerableTaskCompletionSources.ForEach(t => t.TrySetCanceled(CancellationToken));
-        _cancellationTokenSource.Dispose();
+        CancelAll();
         GC.SuppressFinalize(this);
     }
 }

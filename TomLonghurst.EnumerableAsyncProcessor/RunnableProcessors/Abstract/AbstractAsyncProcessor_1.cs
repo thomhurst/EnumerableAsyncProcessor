@@ -19,13 +19,18 @@ public abstract class AbstractAsyncProcessor<TSource> : AbstractAsyncProcessorBa
     {
         try
         {
-            CancellationToken.ThrowIfCancellationRequested();
+            if (CancellationToken.IsCancellationRequested)
+            {
+                itemisedTaskCompletionSourceContainer.TaskCompletionSource.TrySetCanceled(CancellationToken);
+                return;
+            }
+            
             await _taskSelector(itemisedTaskCompletionSourceContainer.Item);
-            itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetResult();
+            itemisedTaskCompletionSourceContainer.TaskCompletionSource.TrySetResult();
         }
         catch (Exception e)
         {
-            itemisedTaskCompletionSourceContainer.TaskCompletionSource.SetException(e);
+            itemisedTaskCompletionSourceContainer.TaskCompletionSource.TrySetException(e);
         }
     }
 }

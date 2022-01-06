@@ -19,4 +19,11 @@ public interface IAsyncProcessor<TResult>
     Task<TResult[]> GetResults();
     
     TaskAwaiter<TResult[]> GetAwaiter();
+    
+    /**
+  * <summary>
+  * Try to cancel all un-finished tasks
+  * </summary>
+  */
+    void CancelAll();
 }

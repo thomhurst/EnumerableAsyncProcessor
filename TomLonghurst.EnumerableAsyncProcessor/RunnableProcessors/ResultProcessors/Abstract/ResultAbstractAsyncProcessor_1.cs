@@ -13,13 +13,18 @@ public abstract class ResultAbstractAsyncProcessor<TResult> : ResultAbstractAsyn
     {
         try
         {
-            CancellationToken.ThrowIfCancellationRequested();
+            if (CancellationToken.IsCancellationRequested)
+            {
+                taskCompletionSource.TrySetCanceled(CancellationToken);
+                return;
+            }
+            
             var result = await _taskSelector();
-            taskCompletionSource.SetResult(result);
+            taskCompletionSource.TrySetResult(result);
         }
         catch (Exception e)
         {
-            taskCompletionSource.SetException(e);
+            taskCompletionSource.TrySetException(e);
         }
     }
 }

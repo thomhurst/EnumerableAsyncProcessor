@@ -175,14 +175,14 @@ This is for when you need to Enumerate through some objects and use them in your
 // GetEnumerableTasks() returns IEnumerable<Task<TOutput>> - These may have completed, or may still be waiting to finish.
     var tasks = itemProcessor.GetEnumerableTasks();
 
-// Or call GeTOutputsAsyncEnumerable() to get an IAsyncEnumerable<TOutput> so you can process them in real-time as they finish.
-    await foreach (var httpResponseMessage in itemProcessor.GeTOutputsAsyncEnumerable())
+// Or call GetResultsAsyncEnumerable() to get an IAsyncEnumerable<TOutput> so you can process them in real-time as they finish.
+    await foreach (var httpResponseMessage in itemProcessor.GetResultsAsyncEnumerable())
     {
         // Do something
     }
 
-// Or call GeTOutputsAsync() to get a Task<TOutput[]> that contains all of the finished results 
-    var results = await itemProcessor.GeTOutputsAsync();
+// Or call GetResultsAsync() to get a Task<TOutput[]> that contains all of the finished results 
+    var results = await itemProcessor.GetResultsAsync();
 
 // My dummy method
     Task<HttpResponseMessage> NotifyAsync(int id)
@@ -202,14 +202,14 @@ This is for when you need to don't need any objects - But just want to do someth
 // GetEnumerableTasks() returns IEnumerable<Task<TOutput>> - These may have completed, or may still be waiting to finish.
     var tasks = itemProcessor.GetEnumerableTasks();
 
-// Or call GeTOutputsAsyncEnumerable() to get an IAsyncEnumerable<TOutput> so you can process them in real-time as they finish.
-    await foreach (var httpResponseMessage in itemProcessor.GeTOutputsAsyncEnumerable())
+// Or call GetResultsAsyncEnumerable() to get an IAsyncEnumerable<TOutput> so you can process them in real-time as they finish.
+    await foreach (var httpResponseMessage in itemProcessor.GetResultsAsyncEnumerable())
     {
         // Do something
     }
 
-// Or call GeTOutputsAsync() to get a Task<TOutput[]> that contains all of the finished results 
-    var results = await itemProcessor.GeTOutputsAsync();
+// Or call GetResultsAsync() to get a Task<TOutput[]> that contains all of the finished results 
+    var results = await itemProcessor.GetResultsAsync();
 
 // My dummy method
     Task<HttpResponseMessage> PingAsync()

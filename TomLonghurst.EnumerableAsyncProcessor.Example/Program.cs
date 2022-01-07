@@ -33,7 +33,7 @@ async Task ItemAsyncProcessor()
 // My dummy method
     Task<HttpResponseMessage> NotifyAsync(int id)
     {
-        return httpClient.GetAsync("https://localhost:8080/notify/{id}");
+        return httpClient.GetAsync($"https://localhost:8080/notify/{id}");
     }
 }
 

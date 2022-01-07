@@ -7,7 +7,7 @@ public class RateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<
 {
     private readonly int _levelsOfParallelism;
     
-    public RateLimitedParallelAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    internal RateLimitedParallelAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }

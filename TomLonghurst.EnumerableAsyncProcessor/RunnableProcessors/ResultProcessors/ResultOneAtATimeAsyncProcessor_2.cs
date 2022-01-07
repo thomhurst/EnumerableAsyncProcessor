@@ -4,7 +4,7 @@ namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcess
 
 public class ResultOneAtATimeAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncProcessor<TInput, TOutput>
 {
-    public ResultOneAtATimeAsyncProcessor(IReadOnlyCollection<TInput> items, Func<TInput, Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    internal ResultOneAtATimeAsyncProcessor(IReadOnlyCollection<TInput> items, Func<TInput, Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
     }
 

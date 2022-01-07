@@ -7,7 +7,7 @@ public class ResultRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstractAs
 {
     private readonly int _levelsOfParallelism;
 
-    public ResultRateLimitedParallelAsyncProcessor(int count, Func<Task<TOutput>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
+    internal ResultRateLimitedParallelAsyncProcessor(int count, Func<Task<TOutput>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }

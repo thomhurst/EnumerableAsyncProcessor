@@ -5,7 +5,7 @@ namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
 public class OneAtATimeAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 {
-    public OneAtATimeAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    internal OneAtATimeAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
     }
 

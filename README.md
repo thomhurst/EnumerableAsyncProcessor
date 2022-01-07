@@ -42,13 +42,15 @@ This is a hybrid between Parallel Processor and Batch Processor (see below) - Tr
 
 **Usage**  
 ```csharp
+var ids = Enumerable.Range(0, 5000).ToList();
+
 // SelectAsync for if you want to return something
-var results = await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
+var results = await ids.ToAsyncProcessorBuilder()
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInParallel(levelOfParallelism: 100);
 
 // ForEachAsync for when you have nothing to return
-await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
+await ids.ToAsyncProcessorBuilder()
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInParallel(levelOfParallelism: 100);
 ```
@@ -69,13 +71,15 @@ Processes your Asynchronous Tasks One at a Time. Only one will ever progress at 
 
 **Usage**  
 ```csharp
+var ids = Enumerable.Range(0, 5000).ToList();
+
 // SelectAsync for if you want to return something
-var results = await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
+var results = await ids.ToAsyncProcessorBuilder()
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessOneAtATime();
 
 // ForEachAsync for when you have nothing to return
-await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
+await ids.ToAsyncProcessorBuilder()
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessOneAtATime();
 ```
@@ -98,13 +102,15 @@ Processes your Asynchronous Tasks in Batches. The next batch will not start unti
 
 **Usage**  
 ```csharp
+var ids = Enumerable.Range(0, 5000).ToList();
+
 // SelectAsync for if you want to return something
-var results = await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
+var results = await ids.ToAsyncProcessorBuilder()
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInBatches(batchSize: 100);
 
 // ForEachAsync for when you have nothing to return
-await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
+await ids.ToAsyncProcessorBuilder()
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInBatches(batchSize: 100);
 ```
@@ -128,13 +134,15 @@ Processes your Asynchronous Tasks as fast as it can. All at the same time if it 
 
 **Usage**  
 ```csharp
+var ids = Enumerable.Range(0, 5000).ToList();
+
 // SelectAsync for if you want to return something
-var results = await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
+var results = await ids.ToAsyncProcessorBuilder()
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInParallel();
 
 // ForEachAsync for when you have nothing to return
-await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
+await ids.ToAsyncProcessorBuilder()
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInParallel();
 ```

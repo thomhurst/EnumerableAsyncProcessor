@@ -2,20 +2,20 @@
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
-public abstract class ResultAbstractAsyncProcessor<TSource, TResult> : ResultAbstractAsyncProcessorBase<TResult>
+public abstract class ResultAbstractAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncProcessorBase<TOutput>
 {
-    protected readonly IEnumerable<Tuple<TSource, TaskCompletionSource<TResult>>> ItemisedTaskCompletionSourceContainers;
+    protected readonly IEnumerable<Tuple<TInput, TaskCompletionSource<TOutput>>> ItemisedTaskCompletionSourceContainers;
 
-    private readonly Func<TSource, Task<TResult>> _taskSelector;
+    private readonly Func<TInput, Task<TOutput>> _taskSelector;
 
-    protected ResultAbstractAsyncProcessor(IReadOnlyCollection<TSource> items, Func<TSource, Task<TResult>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items.Count, cancellationTokenSource)
+    protected ResultAbstractAsyncProcessor(IReadOnlyCollection<TInput> items, Func<TInput, Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items.Count, cancellationTokenSource)
     {
         ItemisedTaskCompletionSourceContainers = items.Select((item, index) =>
-            new Tuple<TSource, TaskCompletionSource<TResult>>(item, EnumerableTaskCompletionSources[index]));
+            new Tuple<TInput, TaskCompletionSource<TOutput>>(item, EnumerableTaskCompletionSources[index]));
         _taskSelector = taskSelector;
     }
     
-    protected async Task ProcessItem(Tuple<TSource, TaskCompletionSource<TResult>> itemisedTaskCompletionSourceContainer)
+    protected async Task ProcessItem(Tuple<TInput, TaskCompletionSource<TOutput>> itemisedTaskCompletionSourceContainer)
     {
         var (item, taskCompletionSource) = itemisedTaskCompletionSourceContainer;
         try

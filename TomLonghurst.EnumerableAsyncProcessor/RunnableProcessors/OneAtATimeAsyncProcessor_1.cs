@@ -3,9 +3,9 @@ using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class OneAtATimeAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
+public class OneAtATimeAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 {
-    public OneAtATimeAsyncProcessor(ImmutableList<TSource> items, Func<TSource, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    public OneAtATimeAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
     }
 

@@ -9,14 +9,14 @@ public class ExecutionCountAsyncProcessorBuilder
         _count = count;
     }
 
-    public ActionAsyncProcessorBuilder<TResult> SelectAsync<TResult>(Func<Task<TResult>> taskSelector)
+    public ActionAsyncProcessorBuilder<TOutput> SelectAsync<TOutput>(Func<Task<TOutput>> taskSelector)
     {
         return SelectAsync(taskSelector, CancellationToken.None);
     }
 
-    public ActionAsyncProcessorBuilder<TResult> SelectAsync<TResult>(Func<Task<TResult>> taskSelector, CancellationToken cancellationToken)
+    public ActionAsyncProcessorBuilder<TOutput> SelectAsync<TOutput>(Func<Task<TOutput>> taskSelector, CancellationToken cancellationToken)
     {
-        return new ActionAsyncProcessorBuilder<TResult>(_count, taskSelector, cancellationToken);
+        return new ActionAsyncProcessorBuilder<TOutput>(_count, taskSelector, cancellationToken);
     }
 
     public ActionAsyncProcessorBuilder ForEachAsync(Func<Task> taskSelector)

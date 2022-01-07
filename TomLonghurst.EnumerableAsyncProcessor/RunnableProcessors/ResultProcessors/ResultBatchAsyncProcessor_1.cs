@@ -2,11 +2,11 @@
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
-public class ResultBatchAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<TResult>
+public class ResultBatchAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<TOutput>
 {
     private readonly int _batchSize;
 
-    internal ResultBatchAsyncProcessor(int batchSize, int count, Func<Task<TResult>> taskSelector,
+    internal ResultBatchAsyncProcessor(int batchSize, int count, Func<Task<TOutput>> taskSelector,
         CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
         _batchSize = batchSize;
@@ -22,7 +22,7 @@ public class ResultBatchAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<T
         }
     }
 
-    private Task ProcessBatch(TaskCompletionSource<TResult>[] currentTaskCompletionSourceBatch)
+    private Task ProcessBatch(TaskCompletionSource<TOutput>[] currentTaskCompletionSourceBatch)
     {
         foreach (var taskCompletionSource in currentTaskCompletionSourceBatch)
         {

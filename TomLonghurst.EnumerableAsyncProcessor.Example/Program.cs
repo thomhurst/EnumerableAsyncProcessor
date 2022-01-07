@@ -18,16 +18,16 @@ async Task ItemAsyncProcessor()
     //     .SelectAsync(NotifyAsync)
     //     .ProcessInParallel(100);
 
-// GetEnumerableTasks() returns IEnumerable<Task<TResult>> - These may have completed, or may still be waiting to finish.
+// GetEnumerableTasks() returns IEnumerable<Task<TOutput>> - These may have completed, or may still be waiting to finish.
     var tasks = itemProcessor.GetEnumerableTasks();
 
-// Or call GetResultsAsyncEnumerable() to get an IAsyncEnumerable<TResult> so you can process them in real-time as they finish.
+// Or call GetResultsAsyncEnumerable() to get an IAsyncEnumerable<TOutput> so you can process them in real-time as they finish.
     await foreach (var httpResponseMessage in itemProcessor.GetResultsAsyncEnumerable())
     {
         // Do something
     }
 
-// Or call GetResultsAsync() to get a Task<TResult[]> that contains all of the finished results 
+// Or call GetResultsAsync() to get a Task<TOutput[]> that contains all of the finished results 
     var results = await itemProcessor.GetResultsAsync();
 
 // My dummy method
@@ -46,16 +46,16 @@ async Task CountAsyncProcessor()
         .SelectAsync(PingAsync, CancellationToken.None)
         .ProcessInParallel(10);
 
-// GetEnumerableTasks() returns IEnumerable<Task<TResult>> - These may have completed, or may still be waiting to finish.
+// GetEnumerableTasks() returns IEnumerable<Task<TOutput>> - These may have completed, or may still be waiting to finish.
     var tasks = itemProcessor.GetEnumerableTasks();
 
-// Or call GetResultsAsyncEnumerable() to get an IAsyncEnumerable<TResult> so you can process them in real-time as they finish.
+// Or call GetResultsAsyncEnumerable() to get an IAsyncEnumerable<TOutput> so you can process them in real-time as they finish.
     await foreach (var httpResponseMessage in itemProcessor.GetResultsAsyncEnumerable())
     {
         // Do something
     }
 
-// Or call GetResultsAsync() to get a Task<TResult[]> that contains all of the finished results 
+// Or call GetResultsAsync() to get a Task<TOutput[]> that contains all of the finished results 
     var results = await itemProcessor.GetResultsAsync();
 
 // My dummy method

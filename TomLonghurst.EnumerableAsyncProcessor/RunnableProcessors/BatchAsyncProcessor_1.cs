@@ -3,11 +3,11 @@ using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class BatchAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
+public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 {
     private readonly int _batchSize;
 
-    internal BatchAsyncProcessor(int batchSize, ImmutableList<TSource> items, Func<TSource, Task> taskSelector,
+    internal BatchAsyncProcessor(int batchSize, ImmutableList<TInput> items, Func<TInput, Task> taskSelector,
         CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _batchSize = batchSize;
@@ -23,7 +23,7 @@ public class BatchAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
         }
     }
 
-    private Task ProcessBatch(Tuple<TSource, TaskCompletionSource>[] currentBatch)
+    private Task ProcessBatch(Tuple<TInput, TaskCompletionSource>[] currentBatch)
     {
         foreach (var currentItem in currentBatch)
         {

@@ -1,15 +1,15 @@
 ﻿namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
-public abstract class ResultAbstractAsyncProcessor<TResult> : ResultAbstractAsyncProcessorBase<TResult>
+public abstract class ResultAbstractAsyncProcessor<TOutput> : ResultAbstractAsyncProcessorBase<TOutput>
 {
-    private readonly Func<Task<TResult>> _taskSelector;
+    private readonly Func<Task<TOutput>> _taskSelector;
 
-    protected ResultAbstractAsyncProcessor(int count, Func<Task<TResult>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, cancellationTokenSource)
+    protected ResultAbstractAsyncProcessor(int count, Func<Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, cancellationTokenSource)
     {
         _taskSelector = taskSelector;
     }
     
-    protected async Task ProcessItem(TaskCompletionSource<TResult> taskCompletionSource)
+    protected async Task ProcessItem(TaskCompletionSource<TOutput> taskCompletionSource)
     {
         try
         {

@@ -2,9 +2,9 @@ using System.Collections.Immutable;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
-public class ResultParallelAsyncProcessor<TSource, TResult> : ResultRateLimitedParallelAsyncProcessor<TSource, TResult>
+public class ResultParallelAsyncProcessor<TInput, TOutput> : ResultRateLimitedParallelAsyncProcessor<TInput, TOutput>
 {
-    public ResultParallelAsyncProcessor(ImmutableList<TSource> items, Func<TSource, Task<TResult>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, -1, cancellationTokenSource)
+    public ResultParallelAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, -1, cancellationTokenSource)
     {
     }
 }

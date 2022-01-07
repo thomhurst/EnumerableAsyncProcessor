@@ -2,11 +2,11 @@ using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
-public class ResultRateLimitedParallelAsyncProcessor<TSource, TResult> : ResultAbstractAsyncProcessor<TSource, TResult>
+public class ResultRateLimitedParallelAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncProcessor<TInput, TOutput>
 {
     private readonly int _levelsOfParallelism;
     
-    public ResultRateLimitedParallelAsyncProcessor(IReadOnlyCollection<TSource> items, Func<TSource, Task<TResult>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    public ResultRateLimitedParallelAsyncProcessor(IReadOnlyCollection<TInput> items, Func<TInput, Task<TOutput>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }

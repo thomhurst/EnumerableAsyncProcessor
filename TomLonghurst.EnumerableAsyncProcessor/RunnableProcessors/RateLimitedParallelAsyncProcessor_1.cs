@@ -3,11 +3,11 @@ using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors;
 
-public class RateLimitedParallelAsyncProcessor<TSource> : AbstractAsyncProcessor<TSource>
+public class RateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 {
     private readonly int _levelsOfParallelism;
     
-    public RateLimitedParallelAsyncProcessor(ImmutableList<TSource> items, Func<TSource, Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    public RateLimitedParallelAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }

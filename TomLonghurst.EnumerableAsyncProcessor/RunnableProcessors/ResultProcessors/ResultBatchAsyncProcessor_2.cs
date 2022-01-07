@@ -2,11 +2,11 @@ using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
-public class ResultBatchAsyncProcessor<TSource, TResult> : ResultAbstractAsyncProcessor<TSource, TResult>
+public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncProcessor<TInput, TOutput>
 {
     private readonly int _batchSize;
 
-    internal ResultBatchAsyncProcessor(int batchSize, IReadOnlyCollection<TSource> items, Func<TSource, Task<TResult>> taskSelector,
+    internal ResultBatchAsyncProcessor(int batchSize, IReadOnlyCollection<TInput> items, Func<TInput, Task<TOutput>> taskSelector,
         CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _batchSize = batchSize;
@@ -22,7 +22,7 @@ public class ResultBatchAsyncProcessor<TSource, TResult> : ResultAbstractAsyncPr
         }
     }
 
-    private Task ProcessBatch(Tuple<TSource, TaskCompletionSource<TResult>>[] currentBatch)
+    private Task ProcessBatch(Tuple<TInput, TaskCompletionSource<TOutput>>[] currentBatch)
     {
         foreach (var currentItem in currentBatch)
         {

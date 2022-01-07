@@ -2,9 +2,9 @@ using TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
-public class ResultOneAtATimeAsyncProcessor<TResult> : ResultAbstractAsyncProcessor<TResult>
+public class ResultOneAtATimeAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<TOutput>
 {
-    public ResultOneAtATimeAsyncProcessor(int count, Func<Task<TResult>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
+    public ResultOneAtATimeAsyncProcessor(int count, Func<Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
     }
 

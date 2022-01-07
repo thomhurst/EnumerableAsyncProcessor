@@ -1,31 +1,31 @@
 ﻿namespace TomLonghurst.EnumerableAsyncProcessor.Builders;
 
-public class ItemAsyncProcessorBuilder<TSource>
+public class ItemAsyncProcessorBuilder<TInput>
 {
-    private readonly IEnumerable<TSource> _items;
+    private readonly IEnumerable<TInput> _items;
 
-    internal ItemAsyncProcessorBuilder(IEnumerable<TSource> items)
+    internal ItemAsyncProcessorBuilder(IEnumerable<TInput> items)
     {
         _items = items;
     }
 
-    public ItemActionAsyncProcessorBuilder<TSource, TResult> SelectAsync<TResult>(Func<TSource, Task<TResult>> taskSelector)
+    public ItemActionAsyncProcessorBuilder<TInput, TOutput> SelectAsync<TOutput>(Func<TInput, Task<TOutput>> taskSelector)
     {
         return SelectAsync(taskSelector, CancellationToken.None);
     }
 
-    public ItemActionAsyncProcessorBuilder<TSource, TResult> SelectAsync<TResult>(Func<TSource, Task<TResult>> taskSelector, CancellationToken cancellationToken)
+    public ItemActionAsyncProcessorBuilder<TInput, TOutput> SelectAsync<TOutput>(Func<TInput, Task<TOutput>> taskSelector, CancellationToken cancellationToken)
     {
-        return new ItemActionAsyncProcessorBuilder<TSource, TResult>(_items, taskSelector, cancellationToken);
+        return new ItemActionAsyncProcessorBuilder<TInput, TOutput>(_items, taskSelector, cancellationToken);
     }
 
-    public ItemActionAsyncProcessorBuilder<TSource> ForEachAsync(Func<TSource, Task> taskSelector)
+    public ItemActionAsyncProcessorBuilder<TInput> ForEachAsync(Func<TInput, Task> taskSelector)
     {
         return ForEachAsync(taskSelector, CancellationToken.None);
     }
 
-    public ItemActionAsyncProcessorBuilder<TSource> ForEachAsync(Func<TSource, Task> taskSelector, CancellationToken cancellationToken)
+    public ItemActionAsyncProcessorBuilder<TInput> ForEachAsync(Func<TInput, Task> taskSelector, CancellationToken cancellationToken)
     {
-        return new ItemActionAsyncProcessorBuilder<TSource>(_items, taskSelector, cancellationToken);
+        return new ItemActionAsyncProcessorBuilder<TInput>(_items, taskSelector, cancellationToken);
     }
 }

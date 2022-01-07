@@ -2,20 +2,20 @@
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
-public abstract class AbstractAsyncProcessor<TSource> : AbstractAsyncProcessorBase
+public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBase
 {
-    protected readonly IEnumerable<Tuple<TSource, TaskCompletionSource>> ItemisedTaskCompletionSourceContainers;
+    protected readonly IEnumerable<Tuple<TInput, TaskCompletionSource>> ItemisedTaskCompletionSourceContainers;
     
-    private readonly Func<TSource, Task> _taskSelector;
+    private readonly Func<TInput, Task> _taskSelector;
 
-    protected AbstractAsyncProcessor(ImmutableList<TSource> items, Func<TSource, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items.Count, cancellationTokenSource)
+    protected AbstractAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items.Count, cancellationTokenSource)
     {
         ItemisedTaskCompletionSourceContainers = items.Select((item, index) =>
-            new Tuple<TSource, TaskCompletionSource>(item, EnumerableTaskCompletionSources[index]));
+            new Tuple<TInput, TaskCompletionSource>(item, EnumerableTaskCompletionSources[index]));
         _taskSelector = taskSelector;
     }
     
-    protected async Task ProcessItem(Tuple<TSource, TaskCompletionSource> itemisedTaskCompletionSourceContainer)
+    protected async Task ProcessItem(Tuple<TInput, TaskCompletionSource> itemisedTaskCompletionSourceContainer)
     {
         var (item, taskCompletionSource) = itemisedTaskCompletionSourceContainer;
         try

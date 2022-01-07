@@ -31,9 +31,9 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 | Type                                                        | Source Object | Return Object | Method             |
 |-------------------------------------------------------------|---------------|---------------|--------------------|
 | `RateLimitedParallelAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
-| `RateLimitedParallelAsyncProcessor<TSource>`                | ✔             | ❌             | .ForEachAsync(...) |
-| `ResultRateLimitedParallelAsyncProcessor<TResult>`          | ❌             | ✔             | .SelectAsync(...)  |
-| `ResultRateLimitedParallelAsyncProcessor<TSource, TResult>` | ✔             | ✔             | .SelectAsync(...)  |
+| `RateLimitedParallelAsyncProcessor<TInput>`                | ✔             | ❌             | .ForEachAsync(...) |
+| `ResultRateLimitedParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | .SelectAsync(...)  |
+| `ResultRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | .SelectAsync(...)  |
 
 **How it works**  
 Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start. But if you set a limit of 100, only 100 should ever run at any one time
@@ -60,9 +60,9 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 | Type                                               | Source Object | Return Object | Method             |
 |----------------------------------------------------|---------------|---------------|--------------------|
 | `OneAtATimeAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
-| `OneAtATimeAsyncProcessor<TSource>`                | ✔             | ❌             | .ForEachAsync(...) |
-| `ResultOneAtATimeAsyncProcessor<TResult>`          | ❌             | ✔             | .SelectAsync(...)  |
-| `ResultOneAtATimeAsyncProcessor<TSource, TResult>` | ✔             | ✔             | .SelectAsync(...)  |
+| `OneAtATimeAsyncProcessor<TInput>`                | ✔             | ❌             | .ForEachAsync(...) |
+| `ResultOneAtATimeAsyncProcessor<TOutput>`          | ❌             | ✔             | .SelectAsync(...)  |
+| `ResultOneAtATimeAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | .SelectAsync(...)  |
 
 **How it works**  
 Processes your Asynchronous Tasks One at a Time. Only one will ever progress at a time. As one finishes, another will start
@@ -89,9 +89,9 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 | Type                                          | Source Object | Return Object | Method             |
 |-----------------------------------------------|---------------|---------------|--------------------|
 | `BatchAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
-| `BatchAsyncProcessor<TSource>`                | ✔             | ❌             | .ForEachAsync(...) |
-| `ResultBatchAsyncProcessor<TResult>`          | ❌             | ✔             | .SelectAsync(...)  |
-| `ResultBatchAsyncProcessor<TSource, TResult>` | ✔             | ✔             | .SelectAsync(...)  |
+| `BatchAsyncProcessor<TInput>`                | ✔             | ❌             | .ForEachAsync(...) |
+| `ResultBatchAsyncProcessor<TOutput>`          | ❌             | ✔             | .SelectAsync(...)  |
+| `ResultBatchAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | .SelectAsync(...)  |
 
 **How it works**  
 Processes your Asynchronous Tasks in Batches. The next batch will not start until every Task in previous batch has finished
@@ -119,9 +119,9 @@ await Enumerable.Range(0, 5000).ToAsyncProcessorBuilder()
 | Type                                             | Source Object | Return Object | Method             |
 |--------------------------------------------------|---------------|---------------|--------------------|
 | `ParallelAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
-| `ParallelAsyncProcessor<TSource>`                | ✔             | ❌             | .ForEachAsync(...) |
-| `ResultParallelAsyncProcessor<TResult>`          | ❌             | ✔             | .SelectAsync(...)  |
-| `ResultParallelAsyncProcessor<TSource, TResult>` | ✔             | ✔             | .SelectAsync(...)  |
+| `ParallelAsyncProcessor<TInput>`                | ✔             | ❌             | .ForEachAsync(...) |
+| `ResultParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | .SelectAsync(...)  |
+| `ResultParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | .SelectAsync(...)  |
 
 **How it works**  
 Processes your Asynchronous Tasks as fast as it can. All at the same time if it can
@@ -160,17 +160,17 @@ This is for when you need to Enumerate through some objects and use them in your
     //     .SelectAsync(NotifyAsync, CancellationToken.None)
     //     .ProcessInParallel(100);
 
-// GetEnumerableTasks() returns IEnumerable<Task<TResult>> - These may have completed, or may still be waiting to finish.
+// GetEnumerableTasks() returns IEnumerable<Task<TOutput>> - These may have completed, or may still be waiting to finish.
     var tasks = itemProcessor.GetEnumerableTasks();
 
-// Or call GetResultsAsyncEnumerable() to get an IAsyncEnumerable<TResult> so you can process them in real-time as they finish.
-    await foreach (var httpResponseMessage in itemProcessor.GetResultsAsyncEnumerable())
+// Or call GeTOutputsAsyncEnumerable() to get an IAsyncEnumerable<TOutput> so you can process them in real-time as they finish.
+    await foreach (var httpResponseMessage in itemProcessor.GeTOutputsAsyncEnumerable())
     {
         // Do something
     }
 
-// Or call GetResultsAsync() to get a Task<TResult[]> that contains all of the finished results 
-    var results = await itemProcessor.GetResultsAsync();
+// Or call GeTOutputsAsync() to get a Task<TOutput[]> that contains all of the finished results 
+    var results = await itemProcessor.GeTOutputsAsync();
 
 // My dummy method
     Task<HttpResponseMessage> NotifyAsync(int id)
@@ -187,17 +187,17 @@ This is for when you need to don't need any objects - But just want to do someth
         .SelectAsync(PingAsync, CancellationToken.None)
         .ProcessInParallel(10);
 
-// GetEnumerableTasks() returns IEnumerable<Task<TResult>> - These may have completed, or may still be waiting to finish.
+// GetEnumerableTasks() returns IEnumerable<Task<TOutput>> - These may have completed, or may still be waiting to finish.
     var tasks = itemProcessor.GetEnumerableTasks();
 
-// Or call GetResultsAsyncEnumerable() to get an IAsyncEnumerable<TResult> so you can process them in real-time as they finish.
-    await foreach (var httpResponseMessage in itemProcessor.GetResultsAsyncEnumerable())
+// Or call GeTOutputsAsyncEnumerable() to get an IAsyncEnumerable<TOutput> so you can process them in real-time as they finish.
+    await foreach (var httpResponseMessage in itemProcessor.GeTOutputsAsyncEnumerable())
     {
         // Do something
     }
 
-// Or call GetResultsAsync() to get a Task<TResult[]> that contains all of the finished results 
-    var results = await itemProcessor.GetResultsAsync();
+// Or call GeTOutputsAsync() to get a Task<TOutput[]> that contains all of the finished results 
+    var results = await itemProcessor.GeTOutputsAsync();
 
 // My dummy method
     Task<HttpResponseMessage> PingAsync()

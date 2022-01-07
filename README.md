@@ -28,12 +28,12 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 ### Rate Limited Parallel Processor
 
 **Types**  
-| Type                                                        | Source Object | Return Object | Method             |
-|-------------------------------------------------------------|---------------|---------------|--------------------|
-| `RateLimitedParallelAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
-| `RateLimitedParallelAsyncProcessor<TInput>`                | ✔             | ❌             | .ForEachAsync(...) |
-| `ResultRateLimitedParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | .SelectAsync(...)  |
-| `ResultRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | .SelectAsync(...)  |
+| Type                                                        | Source Object | Return Object | Method 1            | Method 2           |
+|--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
+| `RateLimitedParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
+| `RateLimitedParallelAsyncProcessor<TInput>`                | ✔             | ❌             | `.WithItems(IEnumerable<TInput>)` | `.ForEachAsync(delegate)` |
+| `ResultRateLimitedParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | `.WithExecutionCount(int)` | `.SelectAsync(delegate)`  |
+| `ResultRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
 Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start. But if you set a limit of 100, only 100 should ever run at any one time
@@ -59,12 +59,12 @@ await ids.ToAsyncProcessorBuilder()
 
 **Types**  
 
-| Type                                               | Source Object | Return Object | Method             |
-|----------------------------------------------------|---------------|---------------|--------------------|
-| `OneAtATimeAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
-| `OneAtATimeAsyncProcessor<TInput>`                | ✔             | ❌             | .ForEachAsync(...) |
-| `ResultOneAtATimeAsyncProcessor<TOutput>`          | ❌             | ✔             | .SelectAsync(...)  |
-| `ResultOneAtATimeAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | .SelectAsync(...)  |
+| Type                                               | Source Object | Return Object | Method 1            | Method 2           |
+|--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
+| `OneAtATimeAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
+| `OneAtATimeAsyncProcessor<TInput>`                | ✔             | ❌             | `.WithItems(IEnumerable<TInput>)` | `.ForEachAsync(delegate)` |
+| `ResultOneAtATimeAsyncProcessor<TOutput>`          | ❌             | ✔             | `.WithExecutionCount(int)` | `.SelectAsync(delegate)`  |
+| `ResultOneAtATimeAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
 Processes your Asynchronous Tasks One at a Time. Only one will ever progress at a time. As one finishes, another will start
@@ -90,12 +90,12 @@ await ids.ToAsyncProcessorBuilder()
 ### Batch
 
 **Types**  
-| Type                                          | Source Object | Return Object | Method             |
-|-----------------------------------------------|---------------|---------------|--------------------|
-| `BatchAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
-| `BatchAsyncProcessor<TInput>`                | ✔             | ❌             | .ForEachAsync(...) |
-| `ResultBatchAsyncProcessor<TOutput>`          | ❌             | ✔             | .SelectAsync(...)  |
-| `ResultBatchAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | .SelectAsync(...)  |
+| Type                                          | Source Object | Return Object | Method 1           | Method 2           |
+|--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
+| `BatchAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
+| `BatchAsyncProcessor<TInput>`                | ✔             | ❌             | `.WithItems(IEnumerable<TInput>)` | `.ForEachAsync(delegate)` |
+| `ResultBatchAsyncProcessor<TOutput>`          | ❌             | ✔             | `.WithExecutionCount(int)` | `.SelectAsync(delegate)`  |
+| `ResultBatchAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
 Processes your Asynchronous Tasks in Batches. The next batch will not start until every Task in previous batch has finished
@@ -122,12 +122,12 @@ await ids.ToAsyncProcessorBuilder()
 ### Parallel
 
 **Types**  
-| Type                                             | Source Object | Return Object | Method             |
-|--------------------------------------------------|---------------|---------------|--------------------|
-| `ParallelAsyncProcessor`                         | ❌             | ❌             | .ForEachAsync(...) |
-| `ParallelAsyncProcessor<TInput>`                | ✔             | ❌             | .ForEachAsync(...) |
-| `ResultParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | .SelectAsync(...)  |
-| `ResultParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | .SelectAsync(...)  |
+| Type                                             | Source Object | Return Object | Method 1           | Method 2           |
+|--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
+| `ParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
+| `ParallelAsyncProcessor<TInput>`                | ✔             | ❌             | `.WithItems(IEnumerable<TInput>)` | `.ForEachAsync(delegate)` |
+| `ResultParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | `.WithExecutionCount(int)` | `.SelectAsync(delegate)`  |
+| `ResultParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
 Processes your Asynchronous Tasks as fast as it can. All at the same time if it can

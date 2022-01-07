@@ -8,4 +8,16 @@ public static class EnumerableExtensions
     {
         return new ItemAsyncProcessorBuilder<T>(items);
     }
+
+    internal static async IAsyncEnumerable<T> ToIAsyncEnumerable<T>(this IEnumerable<Task<T>> tasks)
+    {
+        var managedTasksList = tasks.ToList();
+
+        while (managedTasksList.Any())
+        {
+            var finishedTask = await Task.WhenAny(managedTasksList);
+            managedTasksList.Remove(finishedTask);
+            yield return await finishedTask;
+        }
+    }
 }

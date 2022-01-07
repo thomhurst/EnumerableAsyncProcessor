@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using TomLonghurst.EnumerableAsyncProcessor.Extensions;
 using TomLonghurst.EnumerableAsyncProcessor.Interfaces;
 
 namespace TomLonghurst.EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
@@ -38,12 +39,9 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
         return _results;
     }
 
-    public async IAsyncEnumerable<TOutput> GetResultsAsyncEnumerable()
+    public IAsyncEnumerable<TOutput> GetResultsAsyncEnumerable()
     {
-        foreach (var result in GetEnumerableTasks())
-        {
-            yield return await result;
-        }
+        return GetEnumerableTasks().ToIAsyncEnumerable();
     }
 
     public TaskAwaiter<TOutput[]> GetAwaiter()

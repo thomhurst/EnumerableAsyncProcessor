@@ -150,7 +150,11 @@ await ids.ToAsyncProcessorBuilder()
 **Caveats**  
 -   Depending on how many operations you have, you could overwhelm your system. Memory and CPU and Network usage could spike, and cause bottlenecks / crashes / exceptions
 
-### Examples
+### Processor Methods
+
+As above, you can see that you can just `await` on the processor to get the results.
+Below shows examples of using the processor object and the various methods available.
+
 This is for when you need to Enumerate through some objects and use them in your operations. E.g. Sending notifications to certain ids
 ```csharp
     var httpClient = new HttpClient();

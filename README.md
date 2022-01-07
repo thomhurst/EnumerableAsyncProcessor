@@ -38,6 +38,8 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 **How it works**  
 Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start. But if you set a limit of 100, only 100 should ever run at any one time
 
+This is a hybrid between Parallel Processor and Batch Processor (see below) - Trying to address the caveats of both. Increasing the speed of batching, but not overwhelming the system by using full parallelisation.
+
 **Usage**  
 ```csharp
 // SelectAsync for if you want to return something

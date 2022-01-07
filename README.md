@@ -183,7 +183,7 @@ This is for when you need to Enumerate through some objects and use them in your
 // My dummy method
     Task<HttpResponseMessage> NotifyAsync(int id)
     {
-        return httpClient.GetAsync("https://localhost:8080/notify/{id}");
+        return httpClient.GetAsync($"https://localhost:8080/notify/{id}");
     }
 ```
 

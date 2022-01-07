@@ -15,9 +15,9 @@ public class ResultRateLimitedParallelAsyncProcessor<TInput, TOutput> : ResultAb
     {
         return Parallel.ForEachAsync(ItemisedTaskCompletionSourceContainers,
             new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken},
-            async (itemisedTaskCompletionSourceContainer, _) =>
+            async (itemTaskCompletionSourceTuple, _) =>
             {
-                await ProcessItem(itemisedTaskCompletionSourceContainer);
+                await ProcessItem(itemTaskCompletionSourceTuple);
             });
     }
 }

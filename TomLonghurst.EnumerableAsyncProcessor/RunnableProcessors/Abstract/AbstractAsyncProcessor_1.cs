@@ -15,9 +15,9 @@ public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBas
         _taskSelector = taskSelector;
     }
     
-    protected async Task ProcessItem(Tuple<TInput, TaskCompletionSource> itemisedTaskCompletionSourceContainer)
+    protected async Task ProcessItem(Tuple<TInput, TaskCompletionSource> itemTaskCompletionSourceTuple)
     {
-        var (item, taskCompletionSource) = itemisedTaskCompletionSourceContainer;
+        var (item, taskCompletionSource) = itemTaskCompletionSourceTuple;
         try
         {
             if (CancellationToken.IsCancellationRequested)

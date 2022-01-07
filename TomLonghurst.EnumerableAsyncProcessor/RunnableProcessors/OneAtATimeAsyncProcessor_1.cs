@@ -11,9 +11,9 @@ public class OneAtATimeAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 
     internal override async Task Process()
     {
-        foreach (var itemisedTaskCompletionSourceContainer in ItemisedTaskCompletionSourceContainers)
+        foreach (var itemTaskCompletionSourceTuple in ItemisedTaskCompletionSourceContainers)
         {
-            await ProcessItem(itemisedTaskCompletionSourceContainer);
+            await ProcessItem(itemTaskCompletionSourceTuple);
         }
     }
 }

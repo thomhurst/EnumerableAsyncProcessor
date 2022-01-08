@@ -28,6 +28,11 @@ public class ItemActionAsyncProcessorBuilder<TInput>
         return new RateLimitedParallelAsyncProcessor<TInput>(_items, _taskSelector, levelOfParallelism, _cancellationTokenSource).StartProcessing();
     }
     
+    public IAsyncProcessor ProcessInParallel(int levelOfParallelism, TimeSpan timeSpan)
+    {
+        return new TimedRateLimitedParallelAsyncProcessor<TInput>(_items, _taskSelector, levelOfParallelism, timeSpan, _cancellationTokenSource).StartProcessing();
+    }
+    
     public IAsyncProcessor ProcessInParallel()
     {
         return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource).StartProcessing();

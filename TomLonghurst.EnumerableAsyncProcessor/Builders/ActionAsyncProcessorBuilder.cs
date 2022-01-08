@@ -27,6 +27,11 @@ public class ActionAsyncProcessorBuilder
         return new RateLimitedParallelAsyncProcessor(_count, _taskSelector, levelOfParallelism, _cancellationTokenSource).StartProcessing();
     }
     
+    public IAsyncProcessor ProcessInParallel(int levelOfParallelism, TimeSpan timeSpan)
+    {
+        return new TimedRateLimitedParallelAsyncProcessor(_count, _taskSelector, levelOfParallelism, timeSpan, _cancellationTokenSource).StartProcessing();
+    }
+    
     public IAsyncProcessor ProcessInParallel()
     {
         return new ParallelAsyncProcessor(_count, _taskSelector, _cancellationTokenSource).StartProcessing();

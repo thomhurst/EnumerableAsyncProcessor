@@ -89,6 +89,9 @@ await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToA
         .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
 ```
 
+**Caveats**  
+-   If your operations take longer than your provided TimeSpan, you probably won't get your desired throughput. This processor ensures you don't go over your rate limit, but will not increase parallel execution if you're below it.
+
 ### One At A Time
 
 **Types**  

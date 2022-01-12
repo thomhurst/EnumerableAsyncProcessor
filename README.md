@@ -36,7 +36,9 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 | `ResultRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
-Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start. But if you set a limit of 100, only 100 should ever run at any one time
+Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start. 
+
+E.g. If you set a limit of 100, only 100 should ever run at any one time
 
 This is a hybrid between Parallel Processor and Batch Processor (see below) - Trying to address the caveats of both. Increasing the speed of batching, but not overwhelming the system by using full parallelisation.
 
@@ -54,6 +56,41 @@ await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToA
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInParallel(levelOfParallelism: 100);
 ```
+
+### Timed Rate Limited Parallel Processor (e.g. Limit RPS)
+
+**Types**  
+| Type                                                        | Source Object | Return Object | Method 1            | Method 2           |
+|--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
+| `TimedRateLimitedParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
+| `TimedRateLimitedParallelAsyncProcessor<TInput>`                | ✔             | ❌             | `.WithItems(IEnumerable<TInput>)` | `.ForEachAsync(delegate)` |
+| `ResultTimedRateLimitedParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | `.WithExecutionCount(int)` | `.SelectAsync(delegate)`  |
+| `ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
+
+**How it works**  
+Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set over the timespan that you set. As one finishes, another will start. 
+
+E.g. If you set a limit of 100, and a timespan of 1 second, only 100 operation should ever run at any one time over the course of a second. If the operation finishes sooner than a second (or your provided timespan), it'll wait and then start the next operation once that timespan has elapsed. 
+
+This is useful in scenarios where, for example, you have an API but it has a request per second limit
+
+**Usage**  
+```csharp
+var ids = Enumerable.Range(0, 5000).ToList();
+
+// SelectAsync for if you want to return something
+var results = await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+        .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
+        .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
+
+// ForEachAsync for when you have nothing to return
+await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+        .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
+        .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
+```
+
+**Caveats**  
+-   If your operations take longer than your provided TimeSpan, you probably won't get your desired throughput. This processor ensures you don't go over your rate limit, but will not increase parallel execution if you're below it.
 
 ### One At A Time
 

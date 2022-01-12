@@ -20,10 +20,10 @@ public abstract class AbstractAsyncProcessorBase : IAsyncProcessor, IDisposable
         _overallTask = Task.WhenAll(_enumerableTasks);
         
         _cancellationTokenSource = cancellationTokenSource;
+        
         CancellationToken = cancellationTokenSource.Token;
-
-        cancellationTokenSource.Token.Register(Dispose);
-        cancellationTokenSource.Token.ThrowIfCancellationRequested();
+        CancellationToken.Register(Dispose);
+        CancellationToken.ThrowIfCancellationRequested();
     }
 
     internal abstract Task Process();

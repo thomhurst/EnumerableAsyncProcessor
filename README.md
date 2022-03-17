@@ -68,7 +68,7 @@ await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToA
 | `ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
-Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set over the timespan that you set. As one finishes, another will start. 
+Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set over the timespan that you set. As one finishes, another will start, unless you've hit the maximum allowed for the current timespan duration. 
 
 E.g. If you set a limit of 100, and a timespan of 1 second, only 100 operation should ever run at any one time over the course of a second. If the operation finishes sooner than a second (or your provided timespan), it'll wait and then start the next operation once that timespan has elapsed. 
 

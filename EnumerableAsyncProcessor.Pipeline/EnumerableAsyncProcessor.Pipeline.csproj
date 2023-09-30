@@ -9,8 +9,8 @@
 
     <ItemGroup>
       <PackageReference Include="FluentAssertions" Version="6.12.0" />
-      <PackageReference Include="ModularPipelines.Git" Version="2.10.6" />
-      <PackageReference Include="ModularPipelines.NuGet" Version="2.10.6" />
+      <PackageReference Include="ModularPipelines.Git" Version="2.11.4" />
+      <PackageReference Include="ModularPipelines.NuGet" Version="2.11.4" />
     </ItemGroup>
 
 </Project>

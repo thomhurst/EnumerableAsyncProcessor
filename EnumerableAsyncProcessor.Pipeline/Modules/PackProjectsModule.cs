@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
@@ -12,6 +16,7 @@ namespace EnumerableAsyncProcessor.Pipeline.Modules;
 
 [DependsOn<PackageFilesRemovalModule>]
 [DependsOn<NugetVersionGeneratorModule>]
+[DependsOn<RunUnitTestsModule>]
 public class PackProjectsModule : Module<List<CommandResult>>
 {
     protected override async Task<List<CommandResult>?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)

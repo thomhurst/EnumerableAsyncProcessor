@@ -1,10 +1,10 @@
 # EnumerableAsyncProcessor
 Process Multiple Asynchronous Tasks in Various Ways - One at a time / Batched / Rate limited / Concurrently
 
-[![nuget](https://img.shields.io/nuget/v/TomLonghurst.EnumerableAsyncProcessor.svg)](https://www.nuget.org/packages/TomLonghurst.EnumerableAsyncProcessor/)
+[![nuget](https://img.shields.io/nuget/v/EnumerableAsyncProcessor.svg)](https://www.nuget.org/packages/EnumerableAsyncProcessor/)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/9c57d16dc4a841629560707c5ab3019d)](https://www.codacy.com/gh/thomhurst/EnumerableAsyncProcessor/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=thomhurst/EnumerableAsyncProcessor&amp;utm_campaign=Badge_Grade)
 [![CodeFactor](https://www.codefactor.io/repository/github/thomhurst/enumerableAsyncProcessor/badge)](https://www.codefactor.io/repository/github/thomhurst/enumerableAsyncProcessor)
-<!-- ![Nuget](https://img.shields.io/nuget/dt/TomLonghurst.EnumerableAsyncProcessor) -->
+<!-- ![Nuget](https://img.shields.io/nuget/dt/EnumerableAsyncProcessor) -->
 
 ## Support
 
@@ -16,7 +16,7 @@ If this library helped you, consider buying me a coffee
 .NET 6 Required
 
 Install via Nuget
-`Install-Package TomLonghurst.EnumerableAsyncProcessor`
+`Install-Package EnumerableAsyncProcessor`
 
 ## Why I built this
 Because I've come across situations where you need to fine tune the rate at which you do things.

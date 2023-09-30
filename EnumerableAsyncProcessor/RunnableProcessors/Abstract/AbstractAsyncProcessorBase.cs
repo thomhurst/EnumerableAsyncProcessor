@@ -11,8 +11,7 @@ public abstract class AbstractAsyncProcessorBase : IAsyncProcessor, IDisposable
     private readonly List<Task> _enumerableTasks;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly Task _overallTask;
-
-
+    
     protected AbstractAsyncProcessorBase(int count, CancellationTokenSource cancellationTokenSource)
     {
         EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(_ => new TaskCompletionSource()).ToList();

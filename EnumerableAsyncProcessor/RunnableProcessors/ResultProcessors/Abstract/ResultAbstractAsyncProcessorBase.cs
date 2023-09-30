@@ -13,7 +13,6 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly Task<TOutput[]> _results;
 
-
     protected ResultAbstractAsyncProcessorBase(int count, CancellationTokenSource cancellationTokenSource)
     {
         EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(_ => new TaskCompletionSource<TOutput>()).ToList();

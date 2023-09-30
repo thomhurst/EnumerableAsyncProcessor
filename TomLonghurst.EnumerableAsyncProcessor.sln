@@ -1,10 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TomLonghurst.EnumerableAsyncProcessor", "TomLonghurst.EnumerableAsyncProcessor\TomLonghurst.EnumerableAsyncProcessor.csproj", "{A848BACA-D683-4E15-95B4-1559D6D5C548}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnumerableAsyncProcessor", "EnumerableAsyncProcessor\EnumerableAsyncProcessor.csproj", "{A848BACA-D683-4E15-95B4-1559D6D5C548}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TomLonghurst.EnumerableAsyncProcessor.UnitTests", "TomLonghurst.EnumerableAsyncProcessor.UnitTests\TomLonghurst.EnumerableAsyncProcessor.UnitTests.csproj", "{748DEC7C-44A8-440B-B306-1143C360BE7C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnumerableAsyncProcessor.UnitTests", "EnumerableAsyncProcessor.UnitTests\EnumerableAsyncProcessor.UnitTests.csproj", "{748DEC7C-44A8-440B-B306-1143C360BE7C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TomLonghurst.EnumerableAsyncProcessor.Example", "TomLonghurst.EnumerableAsyncProcessor.Example\TomLonghurst.EnumerableAsyncProcessor.Example.csproj", "{B2C482F4-8899-43C7-924C-865CBA0EFDD3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnumerableAsyncProcessor.Example", "EnumerableAsyncProcessor.Example\EnumerableAsyncProcessor.Example.csproj", "{B2C482F4-8899-43C7-924C-865CBA0EFDD3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnumerableAsyncProcessor.Pipeline", "EnumerableAsyncProcessor.Pipeline\EnumerableAsyncProcessor.Pipeline.csproj", "{522C01BC-E86F-4C53-BD96-1EBA4129CE53}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +26,9 @@ Global
 		{B2C482F4-8899-43C7-924C-865CBA0EFDD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2C482F4-8899-43C7-924C-865CBA0EFDD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2C482F4-8899-43C7-924C-865CBA0EFDD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{522C01BC-E86F-4C53-BD96-1EBA4129CE53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{522C01BC-E86F-4C53-BD96-1EBA4129CE53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{522C01BC-E86F-4C53-BD96-1EBA4129CE53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{522C01BC-E86F-4C53-BD96-1EBA4129CE53}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

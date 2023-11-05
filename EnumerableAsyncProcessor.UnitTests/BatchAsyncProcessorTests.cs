@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using EnumerableAsyncProcessor.Extensions;
@@ -8,7 +9,7 @@ namespace EnumerableAsyncProcessor.UnitTests;
 
 public class BatchAsyncProcessorTests
 {
-    [Test, Retry(5), Timeout(10000)]
+    [Test, Repeat(5), Timeout(10000)]
     public async Task When_Batch_Still_Processing_Then_Do_Not_Start_Next_Batch()
     {
         var taskCount = 50;
@@ -23,7 +24,7 @@ public class BatchAsyncProcessorTests
             .ToAsyncProcessorBuilder()
             .ForEachAsync(async t =>
             {
-                started++;
+                Interlocked.Increment(ref started);
                 await t;
             })
             .ProcessInBatches(batchCount);
@@ -41,7 +42,7 @@ public class BatchAsyncProcessorTests
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(46));
     }
     
-    [Test, Retry(5), Timeout(10000)]
+    [Test, Repeat(5), Timeout(10000)]
     public async Task When_Batch_Finished_Then_Start_Next_Batch()
     {
         var taskCount = 50;
@@ -56,7 +57,7 @@ public class BatchAsyncProcessorTests
             .ToAsyncProcessorBuilder()
             .ForEachAsync(async t =>
             {
-                started++;
+                Interlocked.Increment(ref started);
                 await t;
             })
             .ProcessInBatches(batchCount);

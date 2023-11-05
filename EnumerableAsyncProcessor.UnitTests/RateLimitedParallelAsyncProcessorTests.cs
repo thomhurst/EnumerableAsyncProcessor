@@ -12,7 +12,7 @@ namespace EnumerableAsyncProcessor.UnitTests;
 [Parallelizable(ParallelScope.All)]
 public class RateLimitedParallelAsyncProcessorTests
 {
-    [Test, Combinatorial, Retry(5), Timeout(10000)]
+    [Test, Combinatorial, Repeat(5), Timeout(10000)]
     public async Task Obey_Parallel_Limit(
         [Values(1, 2, 3, 5, 10, 15, 50, 100)] int parallelLimit, 
         [Values(1, 2, 3, 5, 10, 15, 50, 100)] int taskCount)
@@ -26,7 +26,7 @@ public class RateLimitedParallelAsyncProcessorTests
         var processor = AsyncProcessorBuilder.WithItems(innerTasks)
             .ForEachAsync(async t =>
             {
-                started++;
+                Interlocked.Increment(ref started);
                 t.Start();
                 await await t;
             })
@@ -57,7 +57,7 @@ public class RateLimitedParallelAsyncProcessorTests
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(0));
     }
 
-    [Test, Retry(5), Timeout(10000)]
+    [Test, Repeat(5), Timeout(10000)]
     public async Task When_Still_Tasks_Remaining_Then_Parallel_Limit_Still_Obeyed()
     {
         var taskCount = 50;
@@ -72,7 +72,7 @@ public class RateLimitedParallelAsyncProcessorTests
             .ToAsyncProcessorBuilder()
             .ForEachAsync(async t =>
             {
-                started++;
+                Interlocked.Increment(ref started);
                 await t;
             })
             .ProcessInParallel(parallelLimit);
@@ -89,7 +89,7 @@ public class RateLimitedParallelAsyncProcessorTests
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(10));
     }
     
-    [Test, Retry(5), Timeout(10000)]
+    [Test, Repeat(5), Timeout(10000)]
     public async Task When_Still_Tasks_Remaining_And_Cancel_Then_Cancel_Unstarted_Tasks_And_Finish_Currently_Running()
     {
         var taskCount = 50;
@@ -125,7 +125,7 @@ public class RateLimitedParallelAsyncProcessorTests
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.Canceled), Is.EqualTo(10));
     }
     
-    [Test, Retry(5), Timeout(10000)]
+    [Test, Repeat(5), Timeout(10000)]
     public async Task When_Less_Tasks_Remaining_Than_Parallel_Limit_Then_Tasks_Remaining_Is_As_Expected()
     {
         var taskCount = 50;
@@ -140,7 +140,7 @@ public class RateLimitedParallelAsyncProcessorTests
             .ToAsyncProcessorBuilder()
             .ForEachAsync(async t =>
             {
-                started++;
+                Interlocked.Increment(ref started);
                 await t;
             })
             .ProcessInParallel(parallelLimit);

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using EnumerableAsyncProcessor.Extensions;
@@ -8,7 +9,7 @@ namespace EnumerableAsyncProcessor.UnitTests;
 
 public class OneAtATimeAsyncProcessorTests
 {
-    [Test, Retry(5), Timeout(10000)]
+    [Test, Repeat(5), Timeout(10000)]
     public async Task When_Batch_Still_Processing_Then_Do_Not_Start_Next_Batch()
     {
         var taskCount = 50;
@@ -22,7 +23,7 @@ public class OneAtATimeAsyncProcessorTests
             .ToAsyncProcessorBuilder()
             .ForEachAsync(async t =>
             {
-                started++;
+                Interlocked.Increment(ref started);
                 await t;
             })
             .ProcessOneAtATime();
@@ -36,7 +37,7 @@ public class OneAtATimeAsyncProcessorTests
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(50));
     }
     
-        [Test, Retry(5), Timeout(10000)]
+        [Test, Repeat(5), Timeout(10000)]
     public async Task When_One_Finished_Then_One_More_Starts()
     {
         var taskCount = 50;
@@ -50,7 +51,7 @@ public class OneAtATimeAsyncProcessorTests
             .ToAsyncProcessorBuilder()
             .ForEachAsync(async t =>
             {
-                started++;
+                Interlocked.Increment(ref started);
                 await t;
             })
             .ProcessOneAtATime();
@@ -68,7 +69,7 @@ public class OneAtATimeAsyncProcessorTests
         Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(49));
     }
     
-    [Retry(5), Timeout(10000)]
+    [Repeat(5), Timeout(10000)]
     [TestCase(2)]
     [TestCase(3)]
     [TestCase(5)]
@@ -86,7 +87,7 @@ public class OneAtATimeAsyncProcessorTests
             .ToAsyncProcessorBuilder()
             .ForEachAsync(async t =>
             {
-                started++;
+                Interlocked.Increment(ref started);
                 await t;
             })
             .ProcessOneAtATime();

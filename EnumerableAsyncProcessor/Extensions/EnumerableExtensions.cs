@@ -15,7 +15,7 @@ public static class EnumerableExtensions
             .SelectAsync(taskSelector, cancellationToken);
     }
     
-    public static ItemActionAsyncProcessorBuilder<T> ForEachAsync<T, TOutput>(this IEnumerable<T> items, Func<T, Task> taskSelector, CancellationToken cancellationToken = default)
+    public static ItemActionAsyncProcessorBuilder<T> ForEachAsync<T>(this IEnumerable<T> items, Func<T, Task> taskSelector, CancellationToken cancellationToken = default)
     {
         return items.ToAsyncProcessorBuilder()
             .ForEachAsync(taskSelector, cancellationToken);

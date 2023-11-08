@@ -26,7 +26,15 @@ public class PackProjectsModule : Module<List<CommandResult>>
         var projectFiles = context.Git().RootDirectory!.GetFiles(f => GetProjectsPredicate(f, context));
         foreach (var projectFile in projectFiles)
         {
-            results.Add(await context.DotNet().Pack(new DotNetPackOptions { TargetPath = projectFile.Path, Configuration = Configuration.Release, Properties = new[] { $"PackageVersion={packageVersion.Value}", $"Version={packageVersion.Value}", } }, cancellationToken));
+            results.Add(await context.DotNet().Pack(new DotNetPackOptions { 
+                TargetPath = projectFile.Path, 
+                Configuration = Configuration.Release, 
+                Properties = new[]
+                {
+                    $"PackageVersion={packageVersion.Value}", $"Version={packageVersion.Value}", 
+                },
+                IncludeSource = true
+            }, cancellationToken));
         }
 
         return results;

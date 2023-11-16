@@ -26,7 +26,7 @@
 
         <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" />
 
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
 
     <PropertyGroup>

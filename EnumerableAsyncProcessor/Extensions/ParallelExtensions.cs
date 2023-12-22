@@ -2,24 +2,24 @@
 
 public static class ParallelExtensions
 {
-    public static Task InParallelAsync<TSource, TResult>(
+    public static async Task InParallelAsync<TSource, TResult>(
         this IEnumerable<TSource> source,
         int levelOfParallelism,
         Func<TSource, Task<TResult>> taskSelector)
     {
-        var parallelLock = new SemaphoreSlim(initialCount:levelOfParallelism, maxCount:levelOfParallelism);
+        using var parallelLock = new SemaphoreSlim(initialCount:levelOfParallelism, maxCount:levelOfParallelism);
 
-        return Task.WhenAll(source.Select(item => ProcessAsync(item, taskSelector, parallelLock)));
+        await Task.WhenAll(source.Select(item => ProcessAsync(item, taskSelector, parallelLock)));
     }
     
-    public static Task InParallelAsync<TSource>(
+    public static async Task InParallelAsync<TSource>(
         this IEnumerable<TSource> source,
         int levelOfParallelism,
         Func<TSource, Task> taskSelector)
     {
-        var parallelLock = new SemaphoreSlim(initialCount:levelOfParallelism, maxCount:levelOfParallelism);
+        using var parallelLock = new SemaphoreSlim(initialCount:levelOfParallelism, maxCount:levelOfParallelism);
 
-        return Task.WhenAll(source.Select(item => ProcessAsync(item, taskSelector, parallelLock)));
+        await Task.WhenAll(source.Select(item => ProcessAsync(item, taskSelector, parallelLock)));
     }
 
     private static async Task<TResult> ProcessAsync<TSource, TResult>(

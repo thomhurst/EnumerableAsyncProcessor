@@ -1,8 +1,15 @@
-﻿namespace EnumerableAsyncProcessor.RunnableProcessors;
+﻿using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
-public class ParallelAsyncProcessor : RateLimitedParallelAsyncProcessor
+namespace EnumerableAsyncProcessor.RunnableProcessors;
+
+public class ParallelAsyncProcessor : AbstractAsyncProcessor
 {
-    internal ParallelAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, -1, cancellationTokenSource)
+    internal ParallelAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
+    }
+
+    internal override Task Process()
+    {
+        return Task.WhenAll(EnumerableTaskCompletionSources.Select(ProcessItem));
     }
 }

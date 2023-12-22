@@ -1,3 +1,4 @@
+using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
@@ -15,14 +16,12 @@ public class ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput> : Res
 
     internal override Task Process()
     {
-        return Parallel.ForEachAsync(ItemisedTaskCompletionSourceContainers,
-            new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken},
-            async (itemTaskCompletionSourceTuple, _) =>
+        return ItemisedTaskCompletionSourceContainers.InParallelAsync(_levelsOfParallelism, 
+            async taskCompletionSource =>
             {
                 await Task.WhenAll(
-                    ProcessItem(itemTaskCompletionSourceTuple),
-                    Task.Delay(_timeSpan, CancellationToken)
-                );
+                    ProcessItem(taskCompletionSource),
+                    Task.Delay(_timeSpan, CancellationToken));
             });
     }
 }

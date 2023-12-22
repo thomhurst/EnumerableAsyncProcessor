@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors;
@@ -16,14 +17,12 @@ public class TimedRateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProce
 
     internal override Task Process()
     {
-        return Parallel.ForEachAsync(ItemisedTaskCompletionSourceContainers,
-            new ParallelOptions { MaxDegreeOfParallelism = _levelsOfParallelism, CancellationToken = CancellationToken},
-            async (itemTaskCompletionSourceTuple, _) =>
+        return ItemisedTaskCompletionSourceContainers.InParallelAsync(_levelsOfParallelism, 
+            async taskCompletionSource =>
             {
                 await Task.WhenAll(
-                    ProcessItem(itemTaskCompletionSourceTuple),
-                    Task.Delay(_timeSpan, CancellationToken)
-                );
+                    ProcessItem(taskCompletionSource),
+                    Task.Delay(_timeSpan, CancellationToken));
             });
     }
 }

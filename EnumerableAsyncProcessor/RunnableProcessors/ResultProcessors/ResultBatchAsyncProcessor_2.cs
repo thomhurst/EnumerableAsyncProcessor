@@ -1,4 +1,7 @@
 using EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
+#if NETSTANDARD2_0
+using MoreLinq;
+#endif
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
@@ -14,8 +17,12 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
 
     internal override async Task Process()
     {
+#if NETSTANDARD2_0
+        var batchedItems = ItemisedTaskCompletionSourceContainers.Batch(_batchSize);
+#else
         var batchedItems = ItemisedTaskCompletionSourceContainers.Chunk(_batchSize).ToArray();
-
+#endif
+        
         foreach (var currentBatch in batchedItems)
         {
             await ProcessBatch(currentBatch);

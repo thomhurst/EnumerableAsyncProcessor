@@ -17,7 +17,6 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
 
     internal override async Task Process()
     {
-
 #if NETSTANDARD2_0
         var batchedItems = ItemisedTaskCompletionSourceContainers.Batch(_batchSize);
 #else

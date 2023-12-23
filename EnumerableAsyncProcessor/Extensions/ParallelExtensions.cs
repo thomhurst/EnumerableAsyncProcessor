@@ -9,7 +9,7 @@ public static class ParallelExtensions
     {
         if (levelOfParallelism <= 0)
         {
-            levelOfParallelism = int.MaxValue;
+            levelOfParallelism = Environment.ProcessorCount;
         }
         
         using var parallelLock = new SemaphoreSlim(initialCount:levelOfParallelism, maxCount:levelOfParallelism);
@@ -24,7 +24,7 @@ public static class ParallelExtensions
     {
         if (levelOfParallelism <= 0)
         {
-            levelOfParallelism = int.MaxValue;
+            levelOfParallelism = Environment.ProcessorCount;
         }
         
         using var parallelLock = new SemaphoreSlim(initialCount:levelOfParallelism, maxCount:levelOfParallelism);

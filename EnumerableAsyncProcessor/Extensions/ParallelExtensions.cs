@@ -7,6 +7,11 @@ public static class ParallelExtensions
         int levelOfParallelism,
         Func<TSource, Task<TResult>> taskSelector)
     {
+        if (levelOfParallelism <= 0)
+        {
+            levelOfParallelism = int.MaxValue;
+        }
+        
         using var parallelLock = new SemaphoreSlim(initialCount:levelOfParallelism, maxCount:levelOfParallelism);
 
         await Task.WhenAll(source.Select(item => ProcessAsync(item, taskSelector, parallelLock)));
@@ -17,6 +22,11 @@ public static class ParallelExtensions
         int levelOfParallelism,
         Func<TSource, Task> taskSelector)
     {
+        if (levelOfParallelism <= 0)
+        {
+            levelOfParallelism = int.MaxValue;
+        }
+        
         using var parallelLock = new SemaphoreSlim(initialCount:levelOfParallelism, maxCount:levelOfParallelism);
 
         await Task.WhenAll(source.Select(item => ProcessAsync(item, taskSelector, parallelLock)));

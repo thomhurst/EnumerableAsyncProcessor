@@ -18,7 +18,7 @@ public class AddLocalNugetSourceModule : Module<CommandResult>
     {
         await Task.Yield();
         return exception is CommandException commandException &&
-                               commandException.CommandResult.StandardOutput.Contains("The name specified has already been added to the list of available package sources");
+                               commandException.StandardOutput.Contains("The name specified has already been added to the list of available package sources");
     }
 
     protected override async Task<CommandResult?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)

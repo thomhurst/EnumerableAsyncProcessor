@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
@@ -27,11 +23,12 @@ public class PackProjectsModule : Module<List<CommandResult>>
         foreach (var projectFile in projectFiles)
         {
             results.Add(await context.DotNet().Pack(new DotNetPackOptions { 
-                TargetPath = projectFile.Path, 
+                ProjectSolution = projectFile.Path, 
                 Configuration = Configuration.Release, 
-                Properties = new[]
+                Properties = new KeyValue[]
                 {
-                    $"PackageVersion={packageVersion.Value}", $"Version={packageVersion.Value}", 
+                    ("PackageVersion", packageVersion.Value)!, 
+                    ("Version", packageVersion.Value)!, 
                 },
                 IncludeSource = true
             }, cancellationToken));

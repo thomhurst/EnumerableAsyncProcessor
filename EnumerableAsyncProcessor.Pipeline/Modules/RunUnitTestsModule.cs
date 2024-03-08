@@ -4,15 +4,16 @@ using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.Git.Extensions;
 using ModularPipelines.Enums;
+using ModularPipelines.Models;
 using ModularPipelines.Modules;
 
 namespace EnumerableAsyncProcessor.Pipeline.Modules;
 
-public class RunUnitTestsModule : Module<List<DotNetTestResult>>
+public class RunUnitTestsModule : Module<List<CommandResult>>
 {
-    protected override async Task<List<DotNetTestResult>?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
+    protected override async Task<List<CommandResult>?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
     {
-        var results = new List<DotNetTestResult>();
+        var results = new List<CommandResult>();
 
         foreach (var unitTestProjectFile in context
                      .Git().RootDirectory!

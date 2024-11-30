@@ -21,7 +21,7 @@ public class TimedRateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProce
             async taskCompletionSource =>
             {
                 await Task.WhenAll(
-                    ProcessItem(taskCompletionSource),
+                    Task.Run(() => ProcessItem(taskCompletionSource)),
                     Task.Delay(_timeSpan, CancellationToken));
             });
     }

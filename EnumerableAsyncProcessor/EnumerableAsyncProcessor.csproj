@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0; netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net8.0;net9.0;netstandard2.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -26,20 +26,18 @@
         </AssemblyAttribute>
 
         <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" />
+
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
         
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         
-    </ItemGroup>
-    
-    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-        <PackageReference Include="System.Collections.Immutable" Version="9.0.0" />
-        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.0" />
-        <PackageReference Include="morelinq" Version="4.3.0" />
-
-        <PackageReference Include="PolySharp" Version="1.15.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="Polyfill" Version="7.5.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        
+        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+        
     </ItemGroup>
 
     <PropertyGroup>

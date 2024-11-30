@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.UnitTests.Extensions;
 
@@ -10,7 +9,7 @@ namespace EnumerableAsyncProcessor.UnitTests;
 public class BatchAsyncProcessorTests
 {
     [Test, Repeat(5), Timeout(10000)]
-    public async Task When_Batch_Still_Processing_Then_Do_Not_Start_Next_Batch()
+    public async Task When_Batch_Still_Processing_Then_Do_Not_Start_Next_Batch(CancellationToken cancellationToken)
     {
         var taskCount = 50;
         var batchCount = 5;
@@ -34,16 +33,16 @@ public class BatchAsyncProcessorTests
         await Task.WhenAll(processor.GetEnumerableTasks().Take(4));
         
         // Delay to make sure no other Tasks start
-        await Task.Delay(100).ConfigureAwait(false);
+        await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         
-        Assert.That(started, Is.EqualTo(5));
+        await Assert.That(started).IsEqualTo(5);
         
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(4));
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(46));
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(4);
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(46);
     }
     
     [Test, Repeat(5), Timeout(10000)]
-    public async Task When_Batch_Finished_Then_Start_Next_Batch()
+    public async Task When_Batch_Finished_Then_Start_Next_Batch(CancellationToken cancellationToken)
     {
         var taskCount = 50;
         var batchCount = 5;
@@ -67,11 +66,11 @@ public class BatchAsyncProcessorTests
         await Task.WhenAll(processor.GetEnumerableTasks().Take(4));
         
         // Delay to allow remaining Tasks to start
-        await Task.Delay(100).ConfigureAwait(false);
+        await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         
-        Assert.That(started, Is.EqualTo(10));
+        await Assert.That(started).IsEqualTo(10);
         
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(5));
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(45));
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(5);
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(45);
     }
 }

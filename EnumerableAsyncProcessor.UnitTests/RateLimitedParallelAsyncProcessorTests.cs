@@ -2,20 +2,19 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using EnumerableAsyncProcessor.Builders;
 using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.UnitTests.Extensions;
 
 namespace EnumerableAsyncProcessor.UnitTests;
 
-[Parallelizable(ParallelScope.All)]
 public class RateLimitedParallelAsyncProcessorTests
 {
-    [Test, Combinatorial, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5), Timeout(10000)]
     public async Task Obey_Parallel_Limit(
-        [Values(1, 2, 3, 5, 10, 15, 50, 100)] int parallelLimit, 
-        [Values(1, 2, 3, 5, 10, 15, 50, 100)] int taskCount)
+        [Matrix(1, 2, 3, 5, 10, 15, 50, 100)] int parallelLimit, 
+        [Matrix(1, 2, 3, 5, 10, 15, 50, 100)] int taskCount,
+        CancellationToken cancellationToken)
     {
         var taskCompletionSource = new TaskCompletionSource<string>();
         var blockingTask = taskCompletionSource.Task;
@@ -34,31 +33,31 @@ public class RateLimitedParallelAsyncProcessorTests
         
         await Task.WhenAll(innerTasks.Take(parallelLimit));
         // Delay to allow remaining Tasks to start
-        await Task.Delay(100).ConfigureAwait(false);
+        await Task.Delay(100, cancellationToken).ConfigureAwait(false);
 
         var expectedStartedTasks = Math.Min(parallelLimit, taskCount);
 
-        Assert.That(started, Is.EqualTo(expectedStartedTasks));
+        await Assert.That(started).IsEqualTo(expectedStartedTasks);
         
-        Assert.That(innerTasks.Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(expectedStartedTasks));
-        Assert.That(innerTasks.Count(x => x.Status == TaskStatus.Created), Is.EqualTo(Math.Max(taskCount - expectedStartedTasks, 0)));
+        await Assert.That(innerTasks.Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(expectedStartedTasks);
+        await Assert.That(innerTasks.Count(x => x.Status == TaskStatus.Created)).IsEqualTo(Math.Max(taskCount - expectedStartedTasks, 0));
         
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(0));
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(taskCount));
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(0);
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(taskCount);
 
         taskCompletionSource.SetResult("Blah");
         
         await processor;
 
-        Assert.That(started, Is.EqualTo(taskCount));
-        Assert.That(innerTasks.Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(taskCount));
+        await Assert.That(started).IsEqualTo(taskCount);
+        await Assert.That(innerTasks.Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(taskCount);
         
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(taskCount));
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(0));
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(taskCount);
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(0);
     }
 
     [Test, Repeat(5), Timeout(10000)]
-    public async Task When_Still_Tasks_Remaining_Then_Parallel_Limit_Still_Obeyed()
+    public async Task When_Still_Tasks_Remaining_Then_Parallel_Limit_Still_Obeyed(CancellationToken cancellationToken)
     {
         var taskCount = 50;
         var parallelLimit = 5;
@@ -83,14 +82,14 @@ public class RateLimitedParallelAsyncProcessorTests
         // Delay to allow remaining Tasks to start
         await Task.Delay(100).ConfigureAwait(false);
         
-        Assert.That(started, Is.EqualTo(45));
+        await Assert.That(started).IsEqualTo(45);
         
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(40));
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(10));
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(40);
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(10);
     }
     
     [Test, Repeat(5), Timeout(10000)]
-    public async Task When_Still_Tasks_Remaining_And_Cancel_Then_Cancel_Unstarted_Tasks_And_Finish_Currently_Running()
+    public async Task When_Still_Tasks_Remaining_And_Cancel_Then_Cancel_Unstarted_Tasks_And_Finish_Currently_Running(CancellationToken cancellationToken)
     {
         var taskCount = 50;
         var parallelLimit = 5;
@@ -112,21 +111,21 @@ public class RateLimitedParallelAsyncProcessorTests
         // Delay to allow remaining Tasks to start
         await Task.Delay(100).ConfigureAwait(false);
         
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(40));
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(10));
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(40);
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(10);
 
         // Delay to allow remaining Tasks to start
         await Task.Delay(100).ConfigureAwait(false);
         
         cancellationTokenSource.Cancel();
-        Assert.ThrowsAsync<TaskCanceledException>(() => processor.WaitAsync());
+        await Assert.ThrowsAsync<TaskCanceledException>(() => processor.WaitAsync());
 
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(40));
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.Canceled), Is.EqualTo(10));
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(40);
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.Canceled)).IsEqualTo(10);
     }
     
     [Test, Repeat(5), Timeout(10000)]
-    public async Task When_Less_Tasks_Remaining_Than_Parallel_Limit_Then_Tasks_Remaining_Is_As_Expected()
+    public async Task When_Less_Tasks_Remaining_Than_Parallel_Limit_Then_Tasks_Remaining_Is_As_Expected(CancellationToken cancellationToken)
     {
         var taskCount = 50;
         var parallelLimit = 5;
@@ -151,9 +150,9 @@ public class RateLimitedParallelAsyncProcessorTests
         // Delay to allow remaining Tasks to start
         await Task.Delay(100).ConfigureAwait(false);
         
-        Assert.That(started, Is.EqualTo(50));
+        await Assert.That(started).IsEqualTo(50);
         
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion), Is.EqualTo(47));
-        Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation), Is.EqualTo(3));
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(47);
+        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(3);
     }
 }

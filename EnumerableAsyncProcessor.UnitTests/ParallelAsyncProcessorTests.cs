@@ -3,12 +3,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using EnumerableAsyncProcessor.Builders;
-using NUnit.Framework;
 
 namespace EnumerableAsyncProcessor.UnitTests;
 
-[FixtureLifeCycle(LifeCycle.InstancePerTestCase)]
-[Parallelizable(ParallelScope.All)]
 public class ParallelAsyncProcessorTests
 {
     [Test]
@@ -23,7 +20,7 @@ public class ParallelAsyncProcessorTests
         
         var completedTasks = processor.GetEnumerableTasks().Count(x => x.IsCompleted);
         
-        Assert.That(completedTasks, Is.EqualTo(500));
+        await Assert.That(completedTasks).IsEqualTo(500);
     }
     
     [Test]
@@ -38,7 +35,7 @@ public class ParallelAsyncProcessorTests
         
         var completedTasks = processor.GetEnumerableTasks().Count(x => x.IsCompleted);
         
-        Assert.That(completedTasks, Is.EqualTo(500));
+        await Assert.That(completedTasks).IsEqualTo(500);
     }
     
     [Test]
@@ -53,7 +50,7 @@ public class ParallelAsyncProcessorTests
         
         var completedTasks = processor.GetEnumerableTasks().Count(x => x.IsCompleted);
         
-        Assert.That(completedTasks, Is.EqualTo(500));
+        await Assert.That(completedTasks).IsEqualTo(500);
     }
     
     [Test]
@@ -70,6 +67,6 @@ public class ParallelAsyncProcessorTests
         
         var completedTasks = processor.GetEnumerableTasks().Count(x => x.IsCompleted);
         
-        Assert.That(completedTasks, Is.EqualTo(500));
+        await Assert.That(completedTasks).IsEqualTo(500);
     }
 }

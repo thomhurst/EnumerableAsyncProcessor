@@ -17,7 +17,7 @@ public class TimedRateLimitedParallelAsyncProcessorTests
     {
         var processor = AsyncProcessorBuilder
             .WithExecutionCount(500)
-            .ForEachAsync( () => Task.Delay(100))
+            .ForEachAsync(() => Task.Delay(100))
             .ProcessInParallel(100, TimeSpan.FromSeconds(secondsToRateLimit));
 
         await Task.Delay(TimeSpan.FromSeconds(secondsToRateLimit));

@@ -17,7 +17,7 @@ public class ResultRateLimitedParallelAsyncProcessor<TInput, TOutput> : ResultAb
         return ItemisedTaskCompletionSourceContainers.InParallelAsync(_levelsOfParallelism, 
             async taskCompletionSource =>
             {
-                await ProcessItem(taskCompletionSource);
+                await Task.Run(() => ProcessItem(taskCompletionSource));
             });
     }
 }

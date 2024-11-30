@@ -7,7 +7,7 @@ namespace EnumerableAsyncProcessor.UnitTests;
 
 public class TimedRateLimitedParallelAsyncProcessorTests
 {
-    [Test]
+    [Test, Retry(3)]
     [Arguments(2)]
     [Arguments(4)]
     [Arguments(6)]

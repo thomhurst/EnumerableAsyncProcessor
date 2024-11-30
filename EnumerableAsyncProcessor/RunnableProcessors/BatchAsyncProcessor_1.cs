@@ -33,7 +33,7 @@ public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
     {
         foreach (var currentItem in currentBatch)
         {
-            _ = ProcessItem(currentItem);
+            _ = Task.Run(() => ProcessItem(currentItem));
         }
 
         return Task.WhenAll(currentBatch.Select(x =>

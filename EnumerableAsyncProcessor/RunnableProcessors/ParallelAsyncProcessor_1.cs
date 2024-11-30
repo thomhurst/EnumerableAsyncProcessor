@@ -11,6 +11,6 @@ public class ParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 
     internal override Task Process()
     {
-        return Task.WhenAll(ItemisedTaskCompletionSourceContainers.Select(ProcessItem));
+        return Task.WhenAll(ItemisedTaskCompletionSourceContainers.Select(x => Task.Run(() => ProcessItem(x))));
     }
 }

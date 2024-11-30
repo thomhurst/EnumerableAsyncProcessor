@@ -10,6 +10,6 @@ public class ParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal override Task Process()
     {
-        return Task.WhenAll(EnumerableTaskCompletionSources.Select(ProcessItem));
+        return Task.WhenAll(EnumerableTaskCompletionSources.Select(x => Task.Run(() => ProcessItem(x))));
     }
 }

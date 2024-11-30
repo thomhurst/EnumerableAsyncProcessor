@@ -20,7 +20,7 @@ public class ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput> : Res
             async taskCompletionSource =>
             {
                 await Task.WhenAll(
-                    ProcessItem(taskCompletionSource),
+                    Task.Run(() => ProcessItem(taskCompletionSource)),
                     Task.Delay(_timeSpan, CancellationToken));
             });
     }

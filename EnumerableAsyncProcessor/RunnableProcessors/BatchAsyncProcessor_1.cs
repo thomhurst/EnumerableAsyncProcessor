@@ -1,8 +1,5 @@
 using System.Collections.Immutable;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
-#if NETSTANDARD2_0
-using MoreLinq;
-#endif
 
 namespace EnumerableAsyncProcessor.RunnableProcessors;
 
@@ -18,11 +15,8 @@ public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 
     internal override async Task Process()
     {
-#if NETSTANDARD2_0
-        var batchedItems = ItemisedTaskCompletionSourceContainers.Batch(_batchSize);
-#else
-        var batchedItems = ItemisedTaskCompletionSourceContainers.Chunk(_batchSize).ToArray();
-#endif
+        var batchedItems = ItemisedTaskCompletionSourceContainers.Chunk(_batchSize);
+        
         foreach (var currentBatch in batchedItems)
         {
             await ProcessBatch(currentBatch);

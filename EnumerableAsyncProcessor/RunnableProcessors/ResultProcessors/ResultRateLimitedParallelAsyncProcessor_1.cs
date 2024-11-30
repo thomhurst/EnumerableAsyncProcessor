@@ -18,7 +18,7 @@ public class ResultRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstractAs
         return EnumerableTaskCompletionSources.InParallelAsync(_levelsOfParallelism, 
             async taskCompletionSource =>
             {
-                await ProcessItem(taskCompletionSource);
+                await Task.Run(() => ProcessItem(taskCompletionSource));
             });
     }
 }

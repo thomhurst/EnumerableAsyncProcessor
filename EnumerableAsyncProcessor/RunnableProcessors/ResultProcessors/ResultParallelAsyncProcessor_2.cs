@@ -11,6 +11,6 @@ public class ResultParallelAsyncProcessor<TInput, TOutput> : ResultAbstractAsync
 
     internal override Task Process()
     {
-        return Task.WhenAll(ItemisedTaskCompletionSourceContainers.Select(ProcessItem));
+        return Task.WhenAll(ItemisedTaskCompletionSourceContainers.Select(x => Task.Run(() => ProcessItem(x))));
     }
 }

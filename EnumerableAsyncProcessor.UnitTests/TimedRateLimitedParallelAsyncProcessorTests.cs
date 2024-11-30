@@ -8,11 +8,11 @@ namespace EnumerableAsyncProcessor.UnitTests;
 public class TimedRateLimitedParallelAsyncProcessorTests
 {
     [Test]
-    [Arguments(1)]
     [Arguments(2)]
-    [Arguments(3)]
     [Arguments(4)]
-    [Arguments(5)]
+    [Arguments(6)]
+    [Arguments(8)]
+    [Arguments(10)]
     public async Task Test(int secondsToRateLimit)
     {
         var processor = AsyncProcessorBuilder

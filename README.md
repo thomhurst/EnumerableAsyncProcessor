@@ -1,4 +1,5 @@
 # EnumerableAsyncProcessor
+
 Process Multiple Asynchronous Tasks in Various Ways - One at a time / Batched / Rate limited / Concurrently
 
 [![nuget](https://img.shields.io/nuget/v/EnumerableAsyncProcessor.svg)](https://www.nuget.org/packages/EnumerableAsyncProcessor/)
@@ -6,19 +7,13 @@ Process Multiple Asynchronous Tasks in Various Ways - One at a time / Batched / 
 [![CodeFactor](https://www.codefactor.io/repository/github/thomhurst/enumerableAsyncProcessor/badge)](https://www.codefactor.io/repository/github/thomhurst/enumerableAsyncProcessor)
 <!-- ![Nuget](https://img.shields.io/nuget/dt/EnumerableAsyncProcessor) -->
 
-## Support
-
-If this library helped you, consider buying me a coffee
-
-<a href="https://www.buymeacoffee.com/tomhurst" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
-
 ## Installation
-.NET 6 Required
 
 Install via Nuget
 `Install-Package EnumerableAsyncProcessor`
 
 ## Why I built this
+
 Because I've come across situations where you need to fine tune the rate at which you do things.
 Maybe you want it fast.
 Maybe you want it slow.
@@ -28,6 +23,7 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 ### Rate Limited Parallel Processor
 
 **Types**  
+
 | Type                                                        | Source Object | Return Object | Method 1            | Method 2           |
 |--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
 | `RateLimitedParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
@@ -36,23 +32,24 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 | `ResultRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
-Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start. 
+Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start.
 
 E.g. If you set a limit of 100, only 100 should ever run at any one time
 
 This is a hybrid between Parallel Processor and Batch Processor (see below) - Trying to address the caveats of both. Increasing the speed of batching, but not overwhelming the system by using full parallelisation.
 
 **Usage**  
+
 ```csharp
 var ids = Enumerable.Range(0, 5000).ToList();
 
 // SelectAsync for if you want to return something
-var results = await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+var results = await ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInParallel(levelOfParallelism: 100);
 
 // ForEachAsync for when you have nothing to return
-await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+await ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInParallel(levelOfParallelism: 100);
 ```
@@ -60,6 +57,7 @@ await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToA
 ### Timed Rate Limited Parallel Processor (e.g. Limit RPS)
 
 **Types**  
+
 | Type                                                        | Source Object | Return Object | Method 1            | Method 2           |
 |--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
 | `TimedRateLimitedParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
@@ -68,29 +66,31 @@ await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToA
 | `ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
-Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set over the timespan that you set. As one finishes, another will start, unless you've hit the maximum allowed for the current timespan duration. 
+Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set over the timespan that you set. As one finishes, another will start, unless you've hit the maximum allowed for the current timespan duration.
 
-E.g. If you set a limit of 100, and a timespan of 1 second, only 100 operation should ever run at any one time over the course of a second. If the operation finishes sooner than a second (or your provided timespan), it'll wait and then start the next operation once that timespan has elapsed. 
+E.g. If you set a limit of 100, and a timespan of 1 second, only 100 operation should ever run at any one time over the course of a second. If the operation finishes sooner than a second (or your provided timespan), it'll wait and then start the next operation once that timespan has elapsed.
 
 This is useful in scenarios where, for example, you have an API but it has a request per second limit
 
 **Usage**  
+
 ```csharp
 var ids = Enumerable.Range(0, 5000).ToList();
 
 // SelectAsync for if you want to return something
-var results = await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+var results = await ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
 
 // ForEachAsync for when you have nothing to return
-await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+await ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
 ```
 
 **Caveats**  
--   If your operations take longer than your provided TimeSpan, you probably won't get your desired throughput. This processor ensures you don't go over your rate limit, but will not increase parallel execution if you're below it.
+
+- If your operations take longer than your provided TimeSpan, you probably won't get your desired throughput. This processor ensures you don't go over your rate limit, but will not increase parallel execution if you're below it.
 
 ### One At A Time
 
@@ -107,26 +107,29 @@ await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToA
 Processes your Asynchronous Tasks One at a Time. Only one will ever progress at a time. As one finishes, another will start
 
 **Usage**  
+
 ```csharp
 var ids = Enumerable.Range(0, 5000).ToList();
 
 // SelectAsync for if you want to return something
-var results = await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+var results = await ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessOneAtATime();
 
 // ForEachAsync for when you have nothing to return
-await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+await ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessOneAtATime();
 ```
 
 **Caveats**  
--   Slowest method
+
+- Slowest method
 
 ### Batch
 
 **Types**  
+
 | Type                                          | Source Object | Return Object | Method 1           | Method 2           |
 |--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
 | `BatchAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
@@ -138,27 +141,30 @@ await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToA
 Processes your Asynchronous Tasks in Batches. The next batch will not start until every Task in previous batch has finished
 
 **Usage**  
+
 ```csharp
 var ids = Enumerable.Range(0, 5000).ToList();
 
 // SelectAsync for if you want to return something
-var results = await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+var results = await ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInBatches(batchSize: 100);
 
 // ForEachAsync for when you have nothing to return
-await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+await ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInBatches(batchSize: 100);
 ```
 
 **Caveats**  
--   If even just 1 Task in a batch is slow or hangs, this will prevent the next batch from starting
--   If you set a batch of 100, and 70 have finished, you'll only have 30 left executing. This could slow things down
+
+- If even just 1 Task in a batch is slow or hangs, this will prevent the next batch from starting
+- If you set a batch of 100, and 70 have finished, you'll only have 30 left executing. This could slow things down
 
 ### Parallel
 
 **Types**  
+
 | Type                                             | Source Object | Return Object | Method 1           | Method 2           |
 |--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
 | `ParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
@@ -170,22 +176,24 @@ await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToA
 Processes your Asynchronous Tasks as fast as it can. All at the same time if it can
 
 **Usage**  
+
 ```csharp
 var ids = Enumerable.Range(0, 5000).ToList();
 
 // SelectAsync for if you want to return something
-var results = await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+var results = await ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInParallel();
 
 // ForEachAsync for when you have nothing to return
-await AsyncProcessorBuilder.WithItems(ids) // Or Extension Method: await ids.ToAsyncProcessorBuilder()
+await ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInParallel();
 ```
 
 **Caveats**  
--   Depending on how many operations you have, you could overwhelm your system. Memory and CPU and Network usage could spike, and cause bottlenecks / crashes / exceptions
+
+- Depending on how many operations you have, you could overwhelm your system. Memory and CPU and Network usage could spike, and cause bottlenecks / crashes / exceptions
 
 ### Processor Methods
 
@@ -193,6 +201,7 @@ As above, you can see that you can just `await` on the processor to get the resu
 Below shows examples of using the processor object and the various methods available.
 
 This is for when you need to Enumerate through some objects and use them in your operations. E.g. Sending notifications to certain ids
+
 ```csharp
     var httpClient = new HttpClient();
 
@@ -229,6 +238,7 @@ This is for when you need to Enumerate through some objects and use them in your
 ```
 
 This is for when you need to don't need any objects - But just want to do something a certain amount of times. E.g. Pinging a site to warm up multiple instances
+
 ```csharp
     var httpClient = new HttpClient();
 

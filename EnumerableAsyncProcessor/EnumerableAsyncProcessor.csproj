@@ -23,22 +23,22 @@
 
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-            <_Parameter1>$(MSBuildProjectName).UnitTests</_Parameter1>
+            <_Parameter1>$(MSBuildProjectName).UnitTests, PublicKey=$(PublicKey)</_Parameter1>
         </AssemblyAttribute>
 
         <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" />
 
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
-        
+
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        
+
         <PackageReference Include="Polyfill" Version="7.5.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        
+
         <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
-        
+
     </ItemGroup>
 
     <PropertyGroup>

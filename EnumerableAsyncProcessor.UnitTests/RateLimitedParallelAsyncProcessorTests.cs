@@ -10,6 +10,7 @@ namespace EnumerableAsyncProcessor.UnitTests;
 
 public class RateLimitedParallelAsyncProcessorTests
 {
+    [MatrixDataSource]
     [Test, Repeat(5), Timeout(10000)]
     public async Task Obey_Parallel_Limit(
         [Matrix(1, 2, 3, 5, 10, 15, 50, 100)] int parallelLimit, 

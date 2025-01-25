@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
@@ -13,7 +12,7 @@ public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBas
     
     protected AbstractAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
-        TaskWrappers = items.Select(item => new ItemTaskWrapper<TInput>(item, taskSelector));;
+        TaskWrappers = items.Select(item => new ItemTaskWrapper<TInput>(item, taskSelector));
     }
     
     protected Task ProcessItem(ItemTaskWrapper<TInput> taskWrapper)

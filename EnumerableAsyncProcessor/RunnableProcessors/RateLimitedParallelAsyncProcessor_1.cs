@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 

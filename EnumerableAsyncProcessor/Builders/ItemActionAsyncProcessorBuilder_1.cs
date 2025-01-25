@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using EnumerableAsyncProcessor.Interfaces;
 using EnumerableAsyncProcessor.RunnableProcessors;
 using EnumerableAsyncProcessor.Extensions;

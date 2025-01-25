@@ -26,7 +26,7 @@ public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
     {
         foreach (var taskWrapper in currentBatch)
         {
-            _ = Task.Run(() => taskWrapper.Process(CancellationToken));
+            _ = Task.Run(async () => await taskWrapper.Process(CancellationToken));
         }
 
         return Task.WhenAll(

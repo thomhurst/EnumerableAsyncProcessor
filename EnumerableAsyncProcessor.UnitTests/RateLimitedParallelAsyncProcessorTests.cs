@@ -29,7 +29,7 @@ public class RateLimitedParallelAsyncProcessorTests
                 Interlocked.Increment(ref started);
                 t.Start();
                 await await t;
-            })
+            }, cancellationToken)
             .ProcessInParallel(parallelLimit);
         
         await Task.WhenAll(innerTasks.Take(parallelLimit));
@@ -74,7 +74,7 @@ public class RateLimitedParallelAsyncProcessorTests
             {
                 Interlocked.Increment(ref started);
                 await t;
-            })
+            }, cancellationToken)
             .ProcessInParallel(parallelLimit);
 
         Enumerable.Range(0, 40).ForEach(i => taskCompletionSources[i].SetResult());
@@ -107,7 +107,7 @@ public class RateLimitedParallelAsyncProcessorTests
             }, cancellationTokenSource.Token)
             .ProcessInParallel(parallelLimit);
 
-        Enumerable.Range(0, 40).ForEach(i => taskCompletionSources[i].SetResult());
+        taskCompletionSources.Take(40).ForEach(tcs => tcs.SetResult());
         await Task.WhenAll(processor.GetEnumerableTasks().Take(40));
         // Delay to allow remaining Tasks to start
         await Task.Delay(100).ConfigureAwait(false);
@@ -118,7 +118,7 @@ public class RateLimitedParallelAsyncProcessorTests
         // Delay to allow remaining Tasks to start
         await Task.Delay(100).ConfigureAwait(false);
         
-        cancellationTokenSource.Cancel();
+        await cancellationTokenSource.CancelAsync();
         await Assert.ThrowsAsync<TaskCanceledException>(() => processor.WaitAsync());
 
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(40);
@@ -142,7 +142,7 @@ public class RateLimitedParallelAsyncProcessorTests
             {
                 Interlocked.Increment(ref started);
                 await t;
-            })
+            }, cancellationToken)
             .ProcessInParallel(parallelLimit);
         
         Enumerable.Range(0, 47).ForEach(i => taskCompletionSources[i].SetResult());

@@ -1,1 +1,1 @@
-﻿[assembly: Timeout(100_000)]
+﻿[assembly: Timeout(10_000)]

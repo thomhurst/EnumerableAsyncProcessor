@@ -1,9 +1,7 @@
 ﻿namespace EnumerableAsyncProcessor;
 
-public record ActionTaskWrapper(Func<Task> TaskFactory)
+public record ActionTaskWrapper(Func<Task> TaskFactory, TaskCompletionSource TaskCompletionSource)
 {
-    public TaskCompletionSource TaskCompletionSource { get; } = new();
-
     public async Task Process(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -24,10 +22,8 @@ public record ActionTaskWrapper(Func<Task> TaskFactory)
     }
 }
 
-public record ItemTaskWrapper<TInput>(TInput Input, Func<TInput, Task> TaskFactory)
+public record ItemTaskWrapper<TInput>(TInput Input, Func<TInput, Task> TaskFactory, TaskCompletionSource TaskCompletionSource)
 {
-    public TaskCompletionSource TaskCompletionSource { get; } = new();
-
     public async Task Process(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -48,10 +44,8 @@ public record ItemTaskWrapper<TInput>(TInput Input, Func<TInput, Task> TaskFacto
     }
 }
 
-public record ItemTaskWrapper<TInput, TOutput>(TInput Input, Func<TInput, Task<TOutput>> TaskFactory)
+public record ItemTaskWrapper<TInput, TOutput>(TInput Input, Func<TInput, Task<TOutput>> TaskFactory, TaskCompletionSource<TOutput> TaskCompletionSource)
 {
-    public TaskCompletionSource<TOutput> TaskCompletionSource { get; } = new();
-    
     public async Task Process(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -62,8 +56,7 @@ public record ItemTaskWrapper<TInput, TOutput>(TInput Input, Func<TInput, Task<T
         
         try
         {
-            var result = await TaskFactory.Invoke(Input);
-            TaskCompletionSource.SetResult(result);
+            TaskCompletionSource.SetResult(await TaskFactory.Invoke(Input));
         }
         catch (Exception e)
         {
@@ -72,10 +65,8 @@ public record ItemTaskWrapper<TInput, TOutput>(TInput Input, Func<TInput, Task<T
     }
 }
 
-public record ActionTaskWrapper<TOutput>(Func<Task<TOutput>> TaskFactory)
+public record ActionTaskWrapper<TOutput>(Func<Task<TOutput>> TaskFactory, TaskCompletionSource<TOutput> TaskCompletionSource)
 {
-    public TaskCompletionSource<TOutput> TaskCompletionSource { get; } = new();
-
     public async Task Process(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -85,9 +76,8 @@ public record ActionTaskWrapper<TOutput>(Func<Task<TOutput>> TaskFactory)
         }
         
         try
-        {
-            var result = await TaskFactory.Invoke();
-            TaskCompletionSource.SetResult(result);
+        { 
+            TaskCompletionSource.SetResult(await TaskFactory.Invoke());
         }
         catch (Exception e)
         {

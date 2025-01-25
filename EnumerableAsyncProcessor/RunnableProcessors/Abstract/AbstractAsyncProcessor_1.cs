@@ -1,9 +1,12 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBase
 {
+    private readonly ConcurrentDictionary<int, TaskCompletionSource> _taskCompletionSources = [];
+    
     protected readonly IEnumerable<ItemTaskWrapper<TInput>> TaskWrappers;
 
     [field: AllowNull, MaybeNull]
@@ -12,6 +15,6 @@ public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBas
     
     protected AbstractAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
-        TaskWrappers = items.Select(item => new ItemTaskWrapper<TInput>(item, taskSelector));
+        TaskWrappers = items.Select((item, index) => new ItemTaskWrapper<TInput>(item, taskSelector, _taskCompletionSources.GetOrAdd(index, new TaskCompletionSource())));
     }
 }

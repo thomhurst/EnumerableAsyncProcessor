@@ -8,7 +8,7 @@ namespace EnumerableAsyncProcessor.UnitTests;
 
 public class BatchAsyncProcessorTests
 {
-    [Test, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5)]
     public async Task When_Batch_Still_Processing_Then_Do_Not_Start_Next_Batch(CancellationToken cancellationToken)
     {
         var taskCount = 50;
@@ -41,7 +41,7 @@ public class BatchAsyncProcessorTests
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(46);
     }
     
-    [Test, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5)]
     public async Task When_Batch_Finished_Then_Start_Next_Batch(CancellationToken cancellationToken)
     {
         var taskCount = 50;

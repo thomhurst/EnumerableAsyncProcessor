@@ -16,7 +16,7 @@ public class ResultTimedRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstr
 
     internal override Task Process()
     {
-        return EnumerableTaskCompletionSources.InParallelAsync(_levelsOfParallelism, 
+        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
             async taskCompletionSource =>
             {
                 await Task.WhenAll(

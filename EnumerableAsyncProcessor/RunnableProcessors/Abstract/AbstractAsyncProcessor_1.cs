@@ -1,37 +1,23 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBase
 {
-    protected readonly IEnumerable<Tuple<TInput, TaskCompletionSource>> ItemisedTaskCompletionSourceContainers;
-    
-    private readonly Func<TInput, Task> _taskSelector;
+    protected readonly IEnumerable<ItemTaskWrapper<TInput>> TaskWrappers;
 
-    protected AbstractAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items.Count, cancellationTokenSource)
+    [field: AllowNull, MaybeNull]
+    protected override IEnumerable<TaskCompletionSource> EnumerableTaskCompletionSources
+        => field ??= TaskWrappers.Select(x => x.TaskCompletionSource);
+    
+    protected AbstractAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
-        ItemisedTaskCompletionSourceContainers = items.Select((item, index) =>
-            new Tuple<TInput, TaskCompletionSource>(item, EnumerableTaskCompletionSources[index]));
-        _taskSelector = taskSelector;
+        TaskWrappers = items.Select(item => new ItemTaskWrapper<TInput>(item, taskSelector));;
     }
     
-    protected async Task ProcessItem(Tuple<TInput, TaskCompletionSource> itemTaskCompletionSourceTuple)
+    protected Task ProcessItem(ItemTaskWrapper<TInput> taskWrapper)
     {
-        var (item, taskCompletionSource) = itemTaskCompletionSourceTuple;
-        try
-        {
-            if (CancellationToken.IsCancellationRequested)
-            {
-                taskCompletionSource.TrySetCanceled(CancellationToken);
-                return;
-            }
-            
-            await _taskSelector(item);
-            taskCompletionSource.TrySetResult();
-        }
-        catch (Exception e)
-        {
-            taskCompletionSource.TrySetException(e);
-        }
+        return taskWrapper.Process(CancellationToken);
     }
 }

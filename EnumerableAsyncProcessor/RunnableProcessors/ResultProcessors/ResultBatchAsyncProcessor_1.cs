@@ -15,7 +15,7 @@ public class ResultBatchAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<T
 
     internal override async Task Process()
     {
-        var batchedTaskCompletionSources = EnumerableTaskCompletionSources.Chunk(_batchSize);
+        var batchedTaskCompletionSources = TaskWrappers.Chunk(_batchSize);
         
         foreach (var currentTaskCompletionSourceBatch in batchedTaskCompletionSources)
         {
@@ -23,13 +23,13 @@ public class ResultBatchAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<T
         }
     }
 
-    private Task ProcessBatch(TaskCompletionSource<TOutput>[] currentTaskCompletionSourceBatch)
+    private Task ProcessBatch(ActionTaskWrapper<TOutput>[] batch)
     {
-        foreach (var taskCompletionSource in currentTaskCompletionSourceBatch)
+        foreach (var taskWrapper in batch)
         {
-            _ = Task.Run(() => ProcessItem(taskCompletionSource));
+            _ = Task.Run(() => ProcessItem(taskWrapper));
         }
 
-        return Task.WhenAll(currentTaskCompletionSourceBatch.Select(x => x.Task));
+        return Task.WhenAll(batch.Select(x => x.TaskCompletionSource.Task));
     }
 }

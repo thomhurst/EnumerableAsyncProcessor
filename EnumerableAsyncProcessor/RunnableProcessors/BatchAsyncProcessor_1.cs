@@ -7,15 +7,15 @@ public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 {
     private readonly int _batchSize;
 
-    internal BatchAsyncProcessor(int batchSize, ImmutableList<TInput> items, Func<TInput, Task> taskSelector,
+    internal BatchAsyncProcessor(int batchSize, IEnumerable<TInput> items, Func<TInput, Task> taskSelector,
         CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _batchSize = batchSize;
     }
-
+    
     internal override async Task Process()
     {
-        var batchedItems = ItemisedTaskCompletionSourceContainers.Chunk(_batchSize);
+        var batchedItems = TaskWrappers.Chunk(_batchSize);
         
         foreach (var currentBatch in batchedItems)
         {
@@ -23,17 +23,15 @@ public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
         }
     }
 
-    private Task ProcessBatch(Tuple<TInput, TaskCompletionSource>[] currentBatch)
+    private Task ProcessBatch(ItemTaskWrapper<TInput>[] currentBatch)
     {
         foreach (var currentItem in currentBatch)
         {
             _ = Task.Run(() => ProcessItem(currentItem));
         }
 
-        return Task.WhenAll(currentBatch.Select(x =>
-        {
-            var (_, taskCompletionSource) = x;
-            return taskCompletionSource.Task;
-        }));
+        return Task.WhenAll(
+            currentBatch.Select(x => x.TaskCompletionSource.Task)
+        );
     }
 }

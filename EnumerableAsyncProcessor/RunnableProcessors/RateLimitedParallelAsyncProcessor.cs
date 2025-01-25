@@ -14,10 +14,10 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal override Task Process()
     {
-        return EnumerableTaskCompletionSources.InParallelAsync(_levelsOfParallelism, 
-            async taskCompletionSource =>
+        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
+            async taskWrapper =>
             {
-                await Task.Run(() => ProcessItem(taskCompletionSource));
+                await Task.Run(() => ProcessItem(taskWrapper));
             });
     }
 }

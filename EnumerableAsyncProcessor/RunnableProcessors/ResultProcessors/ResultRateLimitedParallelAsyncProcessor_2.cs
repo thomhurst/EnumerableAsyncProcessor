@@ -7,14 +7,14 @@ public class ResultRateLimitedParallelAsyncProcessor<TInput, TOutput> : ResultAb
 {
     private readonly int _levelsOfParallelism;
     
-    internal ResultRateLimitedParallelAsyncProcessor(IReadOnlyCollection<TInput> items, Func<TInput, Task<TOutput>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    internal ResultRateLimitedParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task<TOutput>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
     }
 
     internal override Task Process()
     {
-        return ItemisedTaskCompletionSourceContainers.InParallelAsync(_levelsOfParallelism, 
+        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
             async taskCompletionSource =>
             {
                 await Task.Run(() => ProcessItem(taskCompletionSource));

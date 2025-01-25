@@ -6,7 +6,7 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
 {
     private readonly int _batchSize;
 
-    internal ResultBatchAsyncProcessor(int batchSize, IReadOnlyCollection<TInput> items, Func<TInput, Task<TOutput>> taskSelector,
+    internal ResultBatchAsyncProcessor(int batchSize, IEnumerable<TInput> items, Func<TInput, Task<TOutput>> taskSelector,
         CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _batchSize = batchSize;
@@ -14,7 +14,7 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
 
     internal override async Task Process()
     {
-        var batchedItems = ItemisedTaskCompletionSourceContainers.Chunk(_batchSize);
+        var batchedItems = TaskWrappers.Chunk(_batchSize);
         
         foreach (var currentBatch in batchedItems)
         {
@@ -22,17 +22,13 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
         }
     }
 
-    private Task ProcessBatch(Tuple<TInput, TaskCompletionSource<TOutput>>[] currentBatch)
+    private Task ProcessBatch(ItemTaskWrapper<TInput, TOutput>[] currentBatch)
     {
         foreach (var currentItem in currentBatch)
         {
             _ = Task.Run(() => ProcessItem(currentItem));
         }
 
-        return Task.WhenAll(currentBatch.Select(x =>
-        {
-            var (_, taskCompletionSource) = x;
-            return taskCompletionSource.Task;
-        }));
+        return Task.WhenAll(currentBatch.Select(x => x.TaskCompletionSource.Task));
     }
 }

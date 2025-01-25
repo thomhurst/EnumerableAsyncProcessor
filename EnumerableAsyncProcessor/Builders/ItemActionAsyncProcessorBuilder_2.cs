@@ -7,13 +7,13 @@ namespace EnumerableAsyncProcessor.Builders;
 
 public class ItemActionAsyncProcessorBuilder<TInput, TOutput>
 {
-    private readonly ImmutableList<TInput> _items;
+    private readonly IEnumerable<TInput> _items;
     private readonly Func<TInput, Task<TOutput>> _taskSelector;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
     internal ItemActionAsyncProcessorBuilder(IEnumerable<TInput> items, Func<TInput,Task<TOutput>> taskSelector, CancellationToken cancellationToken)
     {
-        _items = items.ToImmutableList();
+        _items = items;
         _taskSelector = taskSelector;
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     }

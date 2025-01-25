@@ -23,13 +23,20 @@ public static class EnumerableExtensions
 
     internal static async IAsyncEnumerable<T> ToIAsyncEnumerable<T>(this IEnumerable<Task<T>> tasks)
     {
+#if NET9_0_OR_GREATER
+        await foreach (var task in Task.WhenEach(tasks))
+        {
+            yield return task.Result;
+        }
+#else
         var managedTasksList = tasks.ToList();
 
-        while (managedTasksList.Any())
+        while (managedTasksList.Count != 0)
         {
             var finishedTask = await Task.WhenAny(managedTasksList);
             managedTasksList.Remove(finishedTask);
             yield return await finishedTask;
         }
+#endif
     }
 }

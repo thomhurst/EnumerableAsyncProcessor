@@ -11,7 +11,7 @@ namespace EnumerableAsyncProcessor.UnitTests;
 public class RateLimitedParallelAsyncProcessorTests
 {
     [MatrixDataSource]
-    [Test, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5)]
     public async Task Obey_Parallel_Limit(
         [Matrix(1, 2, 3, 5, 10, 15, 50, 100)] int parallelLimit, 
         [Matrix(1, 2, 3, 5, 10, 15, 50, 100)] int taskCount,
@@ -29,7 +29,7 @@ public class RateLimitedParallelAsyncProcessorTests
                 Interlocked.Increment(ref started);
                 t.Start();
                 await await t;
-            })
+            }, cancellationToken)
             .ProcessInParallel(parallelLimit);
         
         await Task.WhenAll(innerTasks.Take(parallelLimit));
@@ -57,7 +57,7 @@ public class RateLimitedParallelAsyncProcessorTests
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(0);
     }
 
-    [Test, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5)]
     public async Task When_Still_Tasks_Remaining_Then_Parallel_Limit_Still_Obeyed(CancellationToken cancellationToken)
     {
         var taskCount = 50;
@@ -74,7 +74,7 @@ public class RateLimitedParallelAsyncProcessorTests
             {
                 Interlocked.Increment(ref started);
                 await t;
-            })
+            }, cancellationToken)
             .ProcessInParallel(parallelLimit);
 
         Enumerable.Range(0, 40).ForEach(i => taskCompletionSources[i].SetResult());
@@ -89,7 +89,7 @@ public class RateLimitedParallelAsyncProcessorTests
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(10);
     }
     
-    [Test, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5)]
     public async Task When_Still_Tasks_Remaining_And_Cancel_Then_Cancel_Unstarted_Tasks_And_Finish_Currently_Running(CancellationToken cancellationToken)
     {
         var taskCount = 50;
@@ -107,7 +107,7 @@ public class RateLimitedParallelAsyncProcessorTests
             }, cancellationTokenSource.Token)
             .ProcessInParallel(parallelLimit);
 
-        Enumerable.Range(0, 40).ForEach(i => taskCompletionSources[i].SetResult());
+        taskCompletionSources.Take(40).ForEach(tcs => tcs.SetResult());
         await Task.WhenAll(processor.GetEnumerableTasks().Take(40));
         // Delay to allow remaining Tasks to start
         await Task.Delay(100).ConfigureAwait(false);
@@ -118,14 +118,14 @@ public class RateLimitedParallelAsyncProcessorTests
         // Delay to allow remaining Tasks to start
         await Task.Delay(100).ConfigureAwait(false);
         
-        cancellationTokenSource.Cancel();
+        await cancellationTokenSource.CancelAsync();
         await Assert.ThrowsAsync<TaskCanceledException>(() => processor.WaitAsync());
 
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(40);
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.Canceled)).IsEqualTo(10);
     }
     
-    [Test, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5)]
     public async Task When_Less_Tasks_Remaining_Than_Parallel_Limit_Then_Tasks_Remaining_Is_As_Expected(CancellationToken cancellationToken)
     {
         var taskCount = 50;
@@ -142,7 +142,7 @@ public class RateLimitedParallelAsyncProcessorTests
             {
                 Interlocked.Increment(ref started);
                 await t;
-            })
+            }, cancellationToken)
             .ProcessInParallel(parallelLimit);
         
         Enumerable.Range(0, 47).ForEach(i => taskCompletionSources[i].SetResult());

@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using EnumerableAsyncProcessor.Interfaces;
 using EnumerableAsyncProcessor.Extensions;
 
@@ -6,19 +7,20 @@ namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
 public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcessor<TOutput>, IDisposable
 {
-    protected readonly List<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources;
+    protected abstract IEnumerable<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources { get; }
     protected readonly CancellationToken CancellationToken;
 
-    private readonly List<Task<TOutput>> _enumerableTasks;
+    [field: MaybeNull, AllowNull]
+    private IEnumerable<Task<TOutput>> EnumerableTasks => field ??= EnumerableTaskCompletionSources.Select(x => x.Task);
+    
     private readonly CancellationTokenSource _cancellationTokenSource;
-    private readonly Task<TOutput[]> _results;
+    
+    [field: AllowNull, MaybeNull]
+    private Task<TOutput[]> Results  => field ??= Task.WhenAll(EnumerableTasks);
 
-    protected ResultAbstractAsyncProcessorBase(int count, CancellationTokenSource cancellationTokenSource)
+
+    protected ResultAbstractAsyncProcessorBase(CancellationTokenSource cancellationTokenSource)
     {
-        EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(_ => new TaskCompletionSource<TOutput>()).ToList();
-        _enumerableTasks = EnumerableTaskCompletionSources.Select(x => x.Task).ToList();
-        _results = Task.WhenAll(_enumerableTasks);
-        
         _cancellationTokenSource = cancellationTokenSource;
         
         CancellationToken = cancellationTokenSource.Token;
@@ -30,12 +32,12 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
     
     public IEnumerable<Task<TOutput>> GetEnumerableTasks()
     {
-        return _enumerableTasks;
+        return EnumerableTasks;
     }
 
     public Task<TOutput[]> GetResultsAsync()
     {
-        return _results;
+        return Results;
     }
 
     public IAsyncEnumerable<TOutput> GetResultsAsyncEnumerable()
@@ -55,7 +57,10 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
             _cancellationTokenSource.Cancel();
         }
 
-        EnumerableTaskCompletionSources.ForEach(t => t.TrySetCanceled(CancellationToken));
+        foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
+        {
+            taskCompletionSource.TrySetCanceled(CancellationToken);
+        }
         
         _cancellationTokenSource.Dispose();
     }

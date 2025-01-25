@@ -2,17 +2,16 @@
 using System.Threading;
 using System.Threading.Tasks;
 using EnumerableAsyncProcessor.Extensions;
-using EnumerableAsyncProcessor.UnitTests.Extensions;
 
 namespace EnumerableAsyncProcessor.UnitTests;
 
 public class BatchAsyncProcessorTests
 {
-    [Test, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5)]
     public async Task When_Batch_Still_Processing_Then_Do_Not_Start_Next_Batch(CancellationToken cancellationToken)
     {
-        var taskCount = 50;
-        var batchCount = 5;
+        const int taskCount = 50;
+        const int batchCount = 5;
 
         var taskCompletionSources = Enumerable.Range(0, taskCount).Select(_ => new TaskCompletionSource()).ToArray();
         var innerTasks = taskCompletionSources.Select(x => x.Task);
@@ -25,10 +24,13 @@ public class BatchAsyncProcessorTests
             {
                 Interlocked.Increment(ref started);
                 await t;
-            })
+            }, cancellationToken)
             .ProcessInBatches(batchCount);
 
-        Enumerable.Range(0, 4).ForEach(i => taskCompletionSources[i].SetResult());
+        foreach (var taskCompletionSource in taskCompletionSources.Take(4))
+        {
+            taskCompletionSource.SetResult();
+        }
         
         await Task.WhenAll(processor.GetEnumerableTasks().Take(4));
         
@@ -41,11 +43,11 @@ public class BatchAsyncProcessorTests
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(46);
     }
     
-    [Test, Repeat(5), Timeout(10000)]
+    [Test, Repeat(5)]
     public async Task When_Batch_Finished_Then_Start_Next_Batch(CancellationToken cancellationToken)
     {
-        var taskCount = 50;
-        var batchCount = 5;
+        const int taskCount = 50;
+        const int batchCount = 5;
 
         var taskCompletionSources = Enumerable.Range(0, taskCount).Select(_ => new TaskCompletionSource()).ToArray();
         var innerTasks = taskCompletionSources.Select(x => x.Task);
@@ -58,19 +60,24 @@ public class BatchAsyncProcessorTests
             {
                 Interlocked.Increment(ref started);
                 await t;
-            })
+            }, cancellationToken)
             .ProcessInBatches(batchCount);
 
-        Enumerable.Range(0, 5).ForEach(i => taskCompletionSources[i].SetResult());
+        foreach (var taskCompletionSource in taskCompletionSources.Take(5))
+        {
+            taskCompletionSource.SetResult();
+        }
+
+        var enumerableTasks = processor.GetEnumerableTasks().ToArray();
         
-        await Task.WhenAll(processor.GetEnumerableTasks().Take(4));
+        await Task.WhenAll(enumerableTasks.Take(5));
         
         // Delay to allow remaining Tasks to start
         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         
         await Assert.That(started).IsEqualTo(10);
         
-        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(5);
-        await Assert.That(processor.GetEnumerableTasks().Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(45);
+        await Assert.That(enumerableTasks.Count(x => x.Status == TaskStatus.RanToCompletion)).IsEqualTo(5);
+        await Assert.That(enumerableTasks.Count(x => x.Status == TaskStatus.WaitingForActivation)).IsEqualTo(45);
     }
 }

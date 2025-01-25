@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
@@ -9,7 +8,7 @@ public class TimedRateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProce
     private readonly int _levelsOfParallelism;
     private readonly TimeSpan _timeSpan;
 
-    internal TimedRateLimitedParallelAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, int levelsOfParallelism, TimeSpan timeSpan, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
+    internal TimedRateLimitedParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, int levelsOfParallelism, TimeSpan timeSpan, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
         _levelsOfParallelism = levelsOfParallelism;
         _timeSpan = timeSpan;
@@ -17,11 +16,11 @@ public class TimedRateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProce
 
     internal override Task Process()
     {
-        return ItemisedTaskCompletionSourceContainers.InParallelAsync(_levelsOfParallelism, 
-            async taskCompletionSource =>
+        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
+            async taskWrapper =>
             {
                 await Task.WhenAll(
-                    Task.Run(() => ProcessItem(taskCompletionSource)),
+                    Task.Run(() => taskWrapper.Process(CancellationToken)),
                     Task.Delay(_timeSpan, CancellationToken));
             });
     }

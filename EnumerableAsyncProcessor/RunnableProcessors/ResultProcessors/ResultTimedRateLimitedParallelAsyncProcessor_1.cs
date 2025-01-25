@@ -16,11 +16,11 @@ public class ResultTimedRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstr
 
     internal override Task Process()
     {
-        return EnumerableTaskCompletionSources.InParallelAsync(_levelsOfParallelism, 
-            async taskCompletionSource =>
+        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
+            async taskWrapper =>
             {
                 await Task.WhenAll(
-                    Task.Run(() => ProcessItem(taskCompletionSource)),
+                    Task.Run(() => taskWrapper.Process(CancellationToken)),
                     Task.Delay(_timeSpan, CancellationToken));
             });
     }

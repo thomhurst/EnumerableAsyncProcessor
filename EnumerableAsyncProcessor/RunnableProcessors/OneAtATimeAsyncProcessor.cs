@@ -10,9 +10,9 @@ public class OneAtATimeAsyncProcessor : AbstractAsyncProcessor
 
     internal override async Task Process()
     {
-        foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
+        foreach (var taskWrapper in TaskWrappers)
         {
-            await ProcessItem(taskCompletionSource);
+            await taskWrapper.Process(CancellationToken);
         }
     }
 }

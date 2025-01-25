@@ -10,24 +10,24 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
     {
         _batchSize = batchSize;
     }
-
+    
     internal override async Task Process()
     {
-        var batchedTaskCompletionSources = EnumerableTaskCompletionSources.Chunk(_batchSize);
+        var batchedTaskWrappers = TaskWrappers.Chunk(_batchSize);
         
-        foreach (var currentTaskCompletionSourceBatch in batchedTaskCompletionSources)
+        foreach (var taskWrappers in batchedTaskWrappers)
         {
-            await ProcessBatch(currentTaskCompletionSourceBatch);
+            await ProcessBatch(taskWrappers);
         }
     }
 
-    private Task ProcessBatch(TaskCompletionSource[] currentTaskCompletionSourceBatch)
+    private Task ProcessBatch(ActionTaskWrapper[] taskWrappers)
     {
-        foreach (var taskCompletionSource in currentTaskCompletionSourceBatch)
+        foreach (var taskWrapper in taskWrappers)
         {
-            _ = Task.Run(() => ProcessItem(taskCompletionSource));
+            _ = Task.Run(() => taskWrapper.Process(CancellationToken));
         }
 
-        return Task.WhenAll(currentTaskCompletionSourceBatch.Select(x => x.Task));
+        return Task.WhenAll(taskWrappers.Select(x => x.TaskCompletionSource.Task));
     }
 }

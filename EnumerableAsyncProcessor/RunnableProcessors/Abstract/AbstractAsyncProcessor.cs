@@ -1,30 +1,21 @@
-﻿namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
+
+namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 public abstract class AbstractAsyncProcessor : AbstractAsyncProcessorBase
 {
-    private readonly Func<Task> _taskSelector;
+    private readonly ConcurrentDictionary<int, TaskCompletionSource> _taskCompletionSources = [];
 
-    protected AbstractAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, cancellationTokenSource)
-    {
-        _taskSelector = taskSelector;
-    }
+    protected readonly IEnumerable<ActionTaskWrapper> TaskWrappers;
+
+    [field: AllowNull, MaybeNull]
+    protected override IEnumerable<TaskCompletionSource> EnumerableTaskCompletionSources
+        => field ??= TaskWrappers.Select(x => x.TaskCompletionSource);
+
     
-    protected async Task ProcessItem(TaskCompletionSource taskCompletionSource)
+    protected AbstractAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
-        try
-        {
-            if (CancellationToken.IsCancellationRequested)
-            {
-                taskCompletionSource.TrySetCanceled(CancellationToken);
-                return;
-            }
-            
-            await _taskSelector();
-            taskCompletionSource.TrySetResult();
-        }
-        catch (Exception e)
-        {
-            taskCompletionSource.TrySetException(e);
-        }
+        TaskWrappers = Enumerable.Range(0, count).Select(index => new ActionTaskWrapper(taskSelector, _taskCompletionSources.GetOrAdd(index, new TaskCompletionSource())));
     }
 }

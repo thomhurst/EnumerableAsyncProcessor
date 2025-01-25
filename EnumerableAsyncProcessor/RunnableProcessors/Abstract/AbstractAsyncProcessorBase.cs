@@ -1,35 +1,36 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using EnumerableAsyncProcessor.Interfaces;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 public abstract class AbstractAsyncProcessorBase : IAsyncProcessor, IDisposable
 {
-    protected readonly List<TaskCompletionSource> EnumerableTaskCompletionSources;
+    protected abstract IEnumerable<TaskCompletionSource> EnumerableTaskCompletionSources { get; }
     protected readonly CancellationToken CancellationToken;
 
-    private readonly List<Task> _enumerableTasks;
-    private readonly CancellationTokenSource _cancellationTokenSource;
-    private readonly Task _overallTask;
+    [field: MaybeNull, AllowNull]
+    private IEnumerable<Task> EnumerableTasks => field ??= EnumerableTaskCompletionSources.Select(x => x.Task);
     
-    protected AbstractAsyncProcessorBase(int count, CancellationTokenSource cancellationTokenSource)
+    private readonly CancellationTokenSource _cancellationTokenSource;
+
+    [field: AllowNull, MaybeNull]
+    private Task OverallTask  => field ??= Task.WhenAll(EnumerableTasks);
+    
+    protected AbstractAsyncProcessorBase(CancellationTokenSource cancellationTokenSource)
     {
-        EnumerableTaskCompletionSources = Enumerable.Range(0, count).Select(_ => new TaskCompletionSource()).ToList();
-        _enumerableTasks = EnumerableTaskCompletionSources.Select(x => x.Task).ToList();
-        _overallTask = Task.WhenAll(_enumerableTasks);
-        
-        _cancellationTokenSource = cancellationTokenSource;
-        
         CancellationToken = cancellationTokenSource.Token;
         CancellationToken.Register(Dispose);
         CancellationToken.ThrowIfCancellationRequested();
+        
+        _cancellationTokenSource = cancellationTokenSource;
     }
 
     internal abstract Task Process();
     
     public IEnumerable<Task> GetEnumerableTasks()
     {
-        return _enumerableTasks;
+        return EnumerableTasks;
     }
 
     public TaskAwaiter GetAwaiter()
@@ -39,7 +40,7 @@ public abstract class AbstractAsyncProcessorBase : IAsyncProcessor, IDisposable
 
     public Task WaitAsync()
     {
-        return _overallTask;
+        return OverallTask;
     }
     
     public void CancelAll()
@@ -49,7 +50,10 @@ public abstract class AbstractAsyncProcessorBase : IAsyncProcessor, IDisposable
             _cancellationTokenSource.Cancel();
         }
 
-        EnumerableTaskCompletionSources.ForEach(t => t.TrySetCanceled(CancellationToken));
+        foreach (var tcs in EnumerableTaskCompletionSources)
+        {
+            tcs.TrySetCanceled(CancellationToken);
+        }
         
         _cancellationTokenSource.Dispose();
     }

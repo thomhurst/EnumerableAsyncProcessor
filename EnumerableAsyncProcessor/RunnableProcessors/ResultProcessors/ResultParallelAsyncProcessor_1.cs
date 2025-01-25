@@ -10,6 +10,6 @@ public class ResultParallelAsyncProcessor<TOutput> : ResultAbstractAsyncProcesso
 
     internal override Task Process()
     {
-        return Task.WhenAll(EnumerableTaskCompletionSources.Select(x => Task.Run(() => ProcessItem(x))));
+        return Task.WhenAll(TaskWrappers.Select(taskWrapper => Task.Run(() => taskWrapper.Process(CancellationToken))));
     }
 }

@@ -1,30 +1,20 @@
-﻿namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
+
+namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
 public abstract class ResultAbstractAsyncProcessor<TOutput> : ResultAbstractAsyncProcessorBase<TOutput>
 {
-    private readonly Func<Task<TOutput>> _taskSelector;
+    private readonly ConcurrentDictionary<int, TaskCompletionSource<TOutput>> _taskCompletionSources = [];
 
-    protected ResultAbstractAsyncProcessor(int count, Func<Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, cancellationTokenSource)
+    protected readonly IEnumerable<ActionTaskWrapper<TOutput>> TaskWrappers;
+
+    protected ResultAbstractAsyncProcessor(int count, Func<Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
-        _taskSelector = taskSelector;
+        TaskWrappers = Enumerable.Range(0, count).Select(index => new ActionTaskWrapper<TOutput>(taskSelector, _taskCompletionSources.GetOrAdd(index, new TaskCompletionSource<TOutput>())));
     }
-    
-    protected async Task ProcessItem(TaskCompletionSource<TOutput> taskCompletionSource)
-    {
-        try
-        {
-            if (CancellationToken.IsCancellationRequested)
-            {
-                taskCompletionSource.TrySetCanceled(CancellationToken);
-                return;
-            }
-            
-            var result = await _taskSelector();
-            taskCompletionSource.TrySetResult(result);
-        }
-        catch (Exception e)
-        {
-            taskCompletionSource.TrySetException(e);
-        }
-    }
+
+    [field: AllowNull, MaybeNull]
+    protected override IEnumerable<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources =>
+        field ??= TaskWrappers.Select(x => x.TaskCompletionSource);
 }

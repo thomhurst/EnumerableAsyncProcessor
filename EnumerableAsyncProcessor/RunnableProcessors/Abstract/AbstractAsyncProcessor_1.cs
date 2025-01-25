@@ -1,37 +1,20 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBase
 {
-    protected readonly IEnumerable<Tuple<TInput, TaskCompletionSource>> ItemisedTaskCompletionSourceContainers;
+    private readonly ConcurrentDictionary<int, TaskCompletionSource> _taskCompletionSources = [];
     
-    private readonly Func<TInput, Task> _taskSelector;
+    protected readonly IEnumerable<ItemTaskWrapper<TInput>> TaskWrappers;
 
-    protected AbstractAsyncProcessor(ImmutableList<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(items.Count, cancellationTokenSource)
-    {
-        ItemisedTaskCompletionSourceContainers = items.Select((item, index) =>
-            new Tuple<TInput, TaskCompletionSource>(item, EnumerableTaskCompletionSources[index]));
-        _taskSelector = taskSelector;
-    }
+    [field: AllowNull, MaybeNull]
+    protected override IEnumerable<TaskCompletionSource> EnumerableTaskCompletionSources
+        => field ??= TaskWrappers.Select(x => x.TaskCompletionSource);
     
-    protected async Task ProcessItem(Tuple<TInput, TaskCompletionSource> itemTaskCompletionSourceTuple)
+    protected AbstractAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
-        var (item, taskCompletionSource) = itemTaskCompletionSourceTuple;
-        try
-        {
-            if (CancellationToken.IsCancellationRequested)
-            {
-                taskCompletionSource.TrySetCanceled(CancellationToken);
-                return;
-            }
-            
-            await _taskSelector(item);
-            taskCompletionSource.TrySetResult();
-        }
-        catch (Exception e)
-        {
-            taskCompletionSource.TrySetException(e);
-        }
+        TaskWrappers = items.Select((item, index) => new ItemTaskWrapper<TInput>(item, taskSelector, _taskCompletionSources.GetOrAdd(index, new TaskCompletionSource())));
     }
 }

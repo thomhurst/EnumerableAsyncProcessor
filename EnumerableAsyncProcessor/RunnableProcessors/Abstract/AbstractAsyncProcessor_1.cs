@@ -14,9 +14,4 @@ public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBas
     {
         TaskWrappers = items.Select(item => new ItemTaskWrapper<TInput>(item, taskSelector));
     }
-    
-    protected Task ProcessItem(ItemTaskWrapper<TInput> taskWrapper)
-    {
-        return taskWrapper.Process(CancellationToken);
-    }
 }

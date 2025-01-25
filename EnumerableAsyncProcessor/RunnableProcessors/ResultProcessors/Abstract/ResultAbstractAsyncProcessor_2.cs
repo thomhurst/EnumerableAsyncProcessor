@@ -14,9 +14,4 @@ public abstract class ResultAbstractAsyncProcessor<TInput, TOutput> : ResultAbst
     [field: AllowNull, MaybeNull]
     protected override IEnumerable<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources =>
         field ??= TaskWrappers.Select(x => x.TaskCompletionSource);
-
-    protected Task ProcessItem(ItemTaskWrapper<TInput, TOutput> taskWrapper)
-    {
-        return taskWrapper.Process(CancellationToken);
-    }
 }

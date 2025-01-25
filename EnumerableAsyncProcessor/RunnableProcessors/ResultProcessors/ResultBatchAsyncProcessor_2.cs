@@ -24,9 +24,9 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
 
     private Task ProcessBatch(ItemTaskWrapper<TInput, TOutput>[] currentBatch)
     {
-        foreach (var currentItem in currentBatch)
+        foreach (var taskWrapper in currentBatch)
         {
-            _ = Task.Run(() => ProcessItem(currentItem));
+            _ = Task.Run(() => taskWrapper.Process(CancellationToken));
         }
 
         return Task.WhenAll(currentBatch.Select(x => x.TaskCompletionSource.Task));

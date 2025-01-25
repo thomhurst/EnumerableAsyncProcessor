@@ -12,7 +12,7 @@ public class OneAtATimeAsyncProcessor : AbstractAsyncProcessor
     {
         foreach (var taskWrapper in TaskWrappers)
         {
-            await ProcessItem(taskWrapper);
+            await taskWrapper.Process(CancellationToken);
         }
     }
 }

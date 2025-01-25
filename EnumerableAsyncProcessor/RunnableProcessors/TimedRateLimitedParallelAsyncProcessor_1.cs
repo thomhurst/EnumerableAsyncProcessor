@@ -17,10 +17,10 @@ public class TimedRateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProce
     internal override Task Process()
     {
         return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
-            async taskCompletionSource =>
+            async taskWrapper =>
             {
                 await Task.WhenAll(
-                    Task.Run(() => ProcessItem(taskCompletionSource)),
+                    Task.Run(() => taskWrapper.Process(CancellationToken)),
                     Task.Delay(_timeSpan, CancellationToken));
             });
     }

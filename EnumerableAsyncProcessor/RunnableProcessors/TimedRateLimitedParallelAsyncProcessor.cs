@@ -20,7 +20,7 @@ public class TimedRateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
             async taskWrapper =>
             {
                 await Task.WhenAll(
-                    Task.Run(() => ProcessItem(taskWrapper)),
+                    Task.Run(() => taskWrapper.Process(CancellationToken)),
                     Task.Delay(_timeSpan, CancellationToken));
             });
     }

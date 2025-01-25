@@ -10,9 +10,9 @@ public class ResultOneAtATimeAsyncProcessor<TInput, TOutput> : ResultAbstractAsy
 
     internal override async Task Process()
     {
-        foreach (var itemTaskCompletionSourceTuple in TaskWrappers)
+        foreach (var taskWrapper in TaskWrappers)
         {
-            await ProcessItem(itemTaskCompletionSourceTuple);
+            await taskWrapper.Process(CancellationToken);
         }
     }
 }

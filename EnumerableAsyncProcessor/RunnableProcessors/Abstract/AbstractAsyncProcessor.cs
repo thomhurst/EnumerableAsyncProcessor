@@ -15,9 +15,4 @@ public abstract class AbstractAsyncProcessor : AbstractAsyncProcessorBase
     {
         TaskWrappers = Enumerable.Range(0, count).Select(_ => new ActionTaskWrapper(taskSelector));
     }
-    
-    protected Task ProcessItem(ActionTaskWrapper wrapper)
-    {
-        return wrapper.Process(CancellationToken);
-    }
 }

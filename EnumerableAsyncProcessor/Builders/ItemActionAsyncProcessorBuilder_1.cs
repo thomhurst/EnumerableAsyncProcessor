@@ -19,26 +19,31 @@ public class ItemActionAsyncProcessorBuilder<TInput>
 
     public IAsyncProcessor ProcessInBatches(int batchSize)
     {
-        return new BatchAsyncProcessor<TInput>(batchSize, _items, _taskSelector, _cancellationTokenSource).StartProcessing();
+        return new BatchAsyncProcessor<TInput>(batchSize, _items, _taskSelector, _cancellationTokenSource)
+            .StartProcessing();
     }
     
     public IAsyncProcessor ProcessInParallel(int levelOfParallelism)
     {
-        return new RateLimitedParallelAsyncProcessor<TInput>(_items, _taskSelector, levelOfParallelism, _cancellationTokenSource).StartProcessing();
+        return new RateLimitedParallelAsyncProcessor<TInput>(_items, _taskSelector, levelOfParallelism, _cancellationTokenSource)
+            .StartProcessing();
     }
     
     public IAsyncProcessor ProcessInParallel(int levelOfParallelism, TimeSpan timeSpan)
     {
-        return new TimedRateLimitedParallelAsyncProcessor<TInput>(_items, _taskSelector, levelOfParallelism, timeSpan, _cancellationTokenSource).StartProcessing();
+        return new TimedRateLimitedParallelAsyncProcessor<TInput>(_items, _taskSelector, levelOfParallelism, timeSpan, _cancellationTokenSource)
+            .StartProcessing();
     }
     
     public IAsyncProcessor ProcessInParallel()
     {
-        return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource).StartProcessing();
+        return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource)
+            .StartProcessing();
     }
     
     public IAsyncProcessor ProcessOneAtATime()
     {
-        return new OneAtATimeAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource).StartProcessing();
+        return new OneAtATimeAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource)
+            .StartProcessing();
     }
 }

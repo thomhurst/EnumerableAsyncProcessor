@@ -1,6 +1,6 @@
 ﻿namespace EnumerableAsyncProcessor;
 
-public record struct ActionTaskWrapper(Func<Task> TaskFactory)
+public record ActionTaskWrapper(Func<Task> TaskFactory)
 {
     public TaskCompletionSource TaskCompletionSource { get; } = new();
 
@@ -24,7 +24,7 @@ public record struct ActionTaskWrapper(Func<Task> TaskFactory)
     }
 }
 
-public record struct ItemTaskWrapper<TInput>(TInput Input, Func<TInput, Task> TaskFactory)
+public record ItemTaskWrapper<TInput>(TInput Input, Func<TInput, Task> TaskFactory)
 {
     public TaskCompletionSource TaskCompletionSource { get; } = new();
 
@@ -48,7 +48,7 @@ public record struct ItemTaskWrapper<TInput>(TInput Input, Func<TInput, Task> Ta
     }
 }
 
-public record struct ItemTaskWrapper<TInput, TOutput>(TInput Input, Func<TInput, Task<TOutput>> TaskFactory)
+public record ItemTaskWrapper<TInput, TOutput>(TInput Input, Func<TInput, Task<TOutput>> TaskFactory)
 {
     public TaskCompletionSource<TOutput> TaskCompletionSource { get; } = new();
     
@@ -72,7 +72,7 @@ public record struct ItemTaskWrapper<TInput, TOutput>(TInput Input, Func<TInput,
     }
 }
 
-public record struct ActionTaskWrapper<TOutput>(Func<Task<TOutput>> TaskFactory)
+public record ActionTaskWrapper<TOutput>(Func<Task<TOutput>> TaskFactory)
 {
     public TaskCompletionSource<TOutput> TaskCompletionSource { get; } = new();
 

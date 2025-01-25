@@ -23,7 +23,7 @@
 
     <ItemGroup Condition="'$(TargetFrameworkIdentifier)'!='.NETCoreApp'">
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
-        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+        <PackageReference Include="System.Collections.Immutable" Version="9.0.1" />
 
     </ItemGroup>
 

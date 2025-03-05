@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="TUnit" Version="0.16.22" />
+      <PackageReference Include="TUnit" Version="0.16.23" />
     </ItemGroup>
 
 </Project>

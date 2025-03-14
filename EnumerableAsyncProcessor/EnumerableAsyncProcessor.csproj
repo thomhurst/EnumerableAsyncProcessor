@@ -22,7 +22,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="'$(TargetFrameworkIdentifier)'!='.NETCoreApp'">
-        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.3" />
 
     </ItemGroup>
 

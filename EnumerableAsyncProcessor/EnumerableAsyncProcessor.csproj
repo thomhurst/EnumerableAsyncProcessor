@@ -35,7 +35,7 @@
         
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
 
-        <PackageReference Include="Polyfill" Version="7.25.0">
+        <PackageReference Include="Polyfill" Version="7.26.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

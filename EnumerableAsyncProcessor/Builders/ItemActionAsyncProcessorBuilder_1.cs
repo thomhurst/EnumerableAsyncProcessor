@@ -41,6 +41,29 @@ public class ItemActionAsyncProcessorBuilder<TInput>
             .StartProcessing();
     }
     
+    /// <summary>
+    /// Process items in parallel with optimizations for I/O-bound tasks.
+    /// Removes Task.Run overhead and allows higher concurrency levels.
+    /// </summary>
+    /// <param name="maxConcurrency">Maximum concurrent operations. If null, defaults to 10x processor count or minimum 100 for I/O-bound tasks.</param>
+    /// <returns>An async processor optimized for I/O operations.</returns>
+    public IAsyncProcessor ProcessInParallelForIO(int? maxConcurrency = null)
+    {
+        return new IOBoundParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource, maxConcurrency)
+            .StartProcessing();
+    }
+    
+    /// <summary>
+    /// Process items in parallel with explicit I/O vs CPU-bound configuration.
+    /// </summary>
+    /// <param name="isIOBound">True for I/O-bound tasks (removes Task.Run overhead), false for CPU-bound tasks.</param>
+    /// <returns>An async processor configured for the specified workload type.</returns>
+    public IAsyncProcessor ProcessInParallel(bool isIOBound)
+    {
+        return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource, isIOBound)
+            .StartProcessing();
+    }
+    
     public IAsyncProcessor ProcessOneAtATime()
     {
         return new OneAtATimeAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource)

@@ -27,7 +27,27 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
         
         try
         {
-            await TaskFactory.Invoke().ConfigureAwait(false);
+            var task = TaskFactory.Invoke();
+            
+            // Fast-path for already completed tasks
+            if (task.IsCompleted)
+            {
+                if (task.IsFaulted)
+                {
+                    TaskCompletionSource.SetException(task.Exception?.GetBaseException() ?? task.Exception!);
+                }
+                else if (task.IsCanceled)
+                {
+                    TaskCompletionSource.SetCanceled(cancellationToken);
+                }
+                else
+                {
+                    TaskCompletionSource.SetResult();
+                }
+                return;
+            }
+
+            await task.ConfigureAwait(false);
             TaskCompletionSource.SetResult();
         }
         catch (Exception e)
@@ -101,7 +121,27 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
         
         try
         {
-            await TaskFactory.Invoke(Input).ConfigureAwait(false);
+            var task = TaskFactory.Invoke(Input);
+            
+            // Fast-path for already completed tasks
+            if (task.IsCompleted)
+            {
+                if (task.IsFaulted)
+                {
+                    TaskCompletionSource.SetException(task.Exception?.GetBaseException() ?? task.Exception!);
+                }
+                else if (task.IsCanceled)
+                {
+                    TaskCompletionSource.SetCanceled(cancellationToken);
+                }
+                else
+                {
+                    TaskCompletionSource.SetResult();
+                }
+                return;
+            }
+
+            await task.ConfigureAwait(false);
             TaskCompletionSource.SetResult();
         }
         catch (Exception e)
@@ -178,7 +218,27 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
         
         try
         {
-            TaskCompletionSource.SetResult(await TaskFactory.Invoke(Input).ConfigureAwait(false));
+            var task = TaskFactory.Invoke(Input);
+            
+            // Fast-path for already completed tasks
+            if (task.IsCompleted)
+            {
+                if (task.IsFaulted)
+                {
+                    TaskCompletionSource.SetException(task.Exception?.GetBaseException() ?? task.Exception!);
+                }
+                else if (task.IsCanceled)
+                {
+                    TaskCompletionSource.SetCanceled(cancellationToken);
+                }
+                else
+                {
+                    TaskCompletionSource.SetResult(task.Result);
+                }
+                return;
+            }
+
+            TaskCompletionSource.SetResult(await task.ConfigureAwait(false));
         }
         catch (Exception e)
         {
@@ -251,8 +311,28 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
         }
         
         try
-        { 
-            TaskCompletionSource.SetResult(await TaskFactory.Invoke().ConfigureAwait(false));
+        {
+            var task = TaskFactory.Invoke();
+            
+            // Fast-path for already completed tasks
+            if (task.IsCompleted)
+            {
+                if (task.IsFaulted)
+                {
+                    TaskCompletionSource.SetException(task.Exception?.GetBaseException() ?? task.Exception!);
+                }
+                else if (task.IsCanceled)
+                {
+                    TaskCompletionSource.SetCanceled(cancellationToken);
+                }
+                else
+                {
+                    TaskCompletionSource.SetResult(task.Result);
+                }
+                return;
+            }
+
+            TaskCompletionSource.SetResult(await task.ConfigureAwait(false));
         }
         catch (Exception e)
         {

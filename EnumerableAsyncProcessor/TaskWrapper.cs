@@ -27,7 +27,7 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
         
         try
         {
-            await TaskFactory.Invoke();
+            await TaskFactory.Invoke().ConfigureAwait(false);
             TaskCompletionSource.SetResult();
         }
         catch (Exception e)
@@ -101,7 +101,7 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
         
         try
         {
-            await TaskFactory.Invoke(Input);
+            await TaskFactory.Invoke(Input).ConfigureAwait(false);
             TaskCompletionSource.SetResult();
         }
         catch (Exception e)
@@ -178,7 +178,7 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
         
         try
         {
-            TaskCompletionSource.SetResult(await TaskFactory.Invoke(Input));
+            TaskCompletionSource.SetResult(await TaskFactory.Invoke(Input).ConfigureAwait(false));
         }
         catch (Exception e)
         {
@@ -252,7 +252,7 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
         
         try
         { 
-            TaskCompletionSource.SetResult(await TaskFactory.Invoke());
+            TaskCompletionSource.SetResult(await TaskFactory.Invoke().ConfigureAwait(false));
         }
         catch (Exception e)
         {

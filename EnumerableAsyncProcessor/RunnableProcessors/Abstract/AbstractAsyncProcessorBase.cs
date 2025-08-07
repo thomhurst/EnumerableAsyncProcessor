@@ -25,7 +25,7 @@ public abstract class AbstractAsyncProcessorBase : IAsyncProcessor, IAsyncDispos
         ValidationHelper.ValidateCancellationTokenSource(cancellationTokenSource);
         
         CancellationToken = cancellationTokenSource.Token;
-        CancellationToken.Register(Dispose);
+        CancellationToken.Register(CancelAll);
         CancellationToken.ThrowIfCancellationRequested();
         
         _cancellationTokenSource = cancellationTokenSource;

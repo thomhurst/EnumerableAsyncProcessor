@@ -2,7 +2,7 @@
 
 namespace EnumerableAsyncProcessor.Interfaces;
 
-public interface IAsyncProcessor
+public interface IAsyncProcessor : IAsyncDisposable, IDisposable
 {
  /**
  * <summary>

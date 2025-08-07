@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git restore:*)",
+      "Bash(rm:*)",
+      "Bash(dotnet script:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(csc:*)",
+      "Bash(verify_changes.exe)",
+      "Bash(del verify_changes.cs)",
+      "Bash(dotnet run:*)",
+      "Bash(timeout 30 dotnet run:*)",
+      "Bash(.EnumerableAsyncProcessor.Example.exe)",
+      "Bash(EnumerableAsyncProcessor.Example.exe)",
+      "Bash(del \"EnumerableAsyncProcessor.UnitTests\\ValidationTests.cs\")"
+    ],
+    "deny": []
+  }
+}

@@ -1,5 +1,6 @@
 ﻿using EnumerableAsyncProcessor.Builders;
 using EnumerableAsyncProcessor.Extensions;
+using EnumerableAsyncProcessor.Example;
 
 async Task ItemAsyncProcessor()
 {
@@ -64,3 +65,8 @@ async Task CountAsyncProcessor()
         return httpClient.GetAsync("https://localhost:8080/ping");
     }
 }
+
+#if NET6_0_OR_GREATER
+// Run channel processing examples
+await ChannelProcessingExamples.RunAllExamples();
+#endif

@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace EnumerableAsyncProcessor.Interfaces;
 
-public interface IAsyncProcessor<TOutput>
+public interface IAsyncProcessor<TOutput> : IAsyncDisposable, IDisposable
 {
     /**
      * <summary>

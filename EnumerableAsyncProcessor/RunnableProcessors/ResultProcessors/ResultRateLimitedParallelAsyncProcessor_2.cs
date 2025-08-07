@@ -17,7 +17,7 @@ public class ResultRateLimitedParallelAsyncProcessor<TInput, TOutput> : ResultAb
         return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
             async taskWrapper =>
             {
-                await Task.Run(() => taskWrapper.Process(CancellationToken));
+                await Task.Run(() => taskWrapper.Process(CancellationToken)).ConfigureAwait(false);
             });
     }
 }

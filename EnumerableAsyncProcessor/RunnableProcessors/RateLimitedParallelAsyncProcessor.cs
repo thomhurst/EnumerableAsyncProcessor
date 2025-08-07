@@ -1,5 +1,6 @@
 ﻿using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
+using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors;
 
@@ -9,6 +10,8 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal RateLimitedParallelAsyncProcessor(int count, Func<Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
+        ValidationHelper.ValidateParallelism(levelsOfParallelism);
+
         _levelsOfParallelism = levelsOfParallelism;
     }
 
@@ -17,7 +20,7 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
         return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
             async taskWrapper =>
             {
-                await Task.Run(() => taskWrapper.Process(CancellationToken));
+                await Task.Run(() => taskWrapper.Process(CancellationToken)).ConfigureAwait(false);
             });
     }
 }

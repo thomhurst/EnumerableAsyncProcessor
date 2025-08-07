@@ -21,7 +21,7 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
     {
         if (cancellationToken.IsCancellationRequested)
         {
-            TaskCompletionSource.SetCanceled(cancellationToken);
+            TaskCompletionSource.TrySetCanceled(cancellationToken);
             return;
         }
         
@@ -34,25 +34,25 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
             {
                 if (task.IsFaulted)
                 {
-                    TaskCompletionSource.SetException(task.Exception?.GetBaseException() ?? task.Exception!);
+                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
                 }
                 else if (task.IsCanceled)
                 {
-                    TaskCompletionSource.SetCanceled(cancellationToken);
+                    TaskCompletionSource.TrySetCanceled(cancellationToken);
                 }
                 else
                 {
-                    TaskCompletionSource.SetResult();
+                    TaskCompletionSource.TrySetResult();
                 }
                 return;
             }
 
             await task.ConfigureAwait(false);
-            TaskCompletionSource.SetResult();
+            TaskCompletionSource.TrySetResult();
         }
         catch (Exception e)
         {
-            TaskCompletionSource.SetException(e);
+            TaskCompletionSource.TrySetException(e);
         }
     }
 
@@ -115,7 +115,7 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
     {
         if (cancellationToken.IsCancellationRequested)
         {
-            TaskCompletionSource.SetCanceled(cancellationToken);
+            TaskCompletionSource.TrySetCanceled(cancellationToken);
             return;
         }
         
@@ -128,25 +128,25 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
             {
                 if (task.IsFaulted)
                 {
-                    TaskCompletionSource.SetException(task.Exception?.GetBaseException() ?? task.Exception!);
+                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
                 }
                 else if (task.IsCanceled)
                 {
-                    TaskCompletionSource.SetCanceled(cancellationToken);
+                    TaskCompletionSource.TrySetCanceled(cancellationToken);
                 }
                 else
                 {
-                    TaskCompletionSource.SetResult();
+                    TaskCompletionSource.TrySetResult();
                 }
                 return;
             }
 
             await task.ConfigureAwait(false);
-            TaskCompletionSource.SetResult();
+            TaskCompletionSource.TrySetResult();
         }
         catch (Exception e)
         {
-            TaskCompletionSource.SetException(e);
+            TaskCompletionSource.TrySetException(e);
         }
     }
 
@@ -212,7 +212,7 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
     {
         if (cancellationToken.IsCancellationRequested)
         {
-            TaskCompletionSource.SetCanceled(cancellationToken);
+            TaskCompletionSource.TrySetCanceled(cancellationToken);
             return;
         }
         
@@ -225,24 +225,24 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
             {
                 if (task.IsFaulted)
                 {
-                    TaskCompletionSource.SetException(task.Exception?.GetBaseException() ?? task.Exception!);
+                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
                 }
                 else if (task.IsCanceled)
                 {
-                    TaskCompletionSource.SetCanceled(cancellationToken);
+                    TaskCompletionSource.TrySetCanceled(cancellationToken);
                 }
                 else
                 {
-                    TaskCompletionSource.SetResult(task.Result);
+                    TaskCompletionSource.TrySetResult(task.Result);
                 }
                 return;
             }
 
-            TaskCompletionSource.SetResult(await task.ConfigureAwait(false));
+            TaskCompletionSource.TrySetResult(await task.ConfigureAwait(false));
         }
         catch (Exception e)
         {
-            TaskCompletionSource.SetException(e);
+            TaskCompletionSource.TrySetException(e);
         }
     }
 
@@ -306,7 +306,7 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
     {
         if (cancellationToken.IsCancellationRequested)
         {
-            TaskCompletionSource.SetCanceled(cancellationToken);
+            TaskCompletionSource.TrySetCanceled(cancellationToken);
             return;
         }
         
@@ -319,24 +319,24 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
             {
                 if (task.IsFaulted)
                 {
-                    TaskCompletionSource.SetException(task.Exception?.GetBaseException() ?? task.Exception!);
+                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
                 }
                 else if (task.IsCanceled)
                 {
-                    TaskCompletionSource.SetCanceled(cancellationToken);
+                    TaskCompletionSource.TrySetCanceled(cancellationToken);
                 }
                 else
                 {
-                    TaskCompletionSource.SetResult(task.Result);
+                    TaskCompletionSource.TrySetResult(task.Result);
                 }
                 return;
             }
 
-            TaskCompletionSource.SetResult(await task.ConfigureAwait(false));
+            TaskCompletionSource.TrySetResult(await task.ConfigureAwait(false));
         }
         catch (Exception e)
         {
-            TaskCompletionSource.SetException(e);
+            TaskCompletionSource.TrySetException(e);
         }
     }
 

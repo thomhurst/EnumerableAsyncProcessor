@@ -28,11 +28,6 @@ public class ResultBatchAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<T
 
     private Task ProcessBatch(ActionTaskWrapper<TOutput>[] batch)
     {
-        foreach (var taskWrapper in batch)
-        {
-            _ = Task.Run(() => taskWrapper.Process(CancellationToken));
-        }
-
-        return Task.WhenAll(batch.Select(x => x.TaskCompletionSource.Task));
+        return Task.WhenAll(batch.Select(tw => tw.Process(CancellationToken)));
     }
 }

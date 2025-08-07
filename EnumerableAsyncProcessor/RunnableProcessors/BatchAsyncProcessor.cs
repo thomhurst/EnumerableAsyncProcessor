@@ -26,11 +26,6 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
 
     private Task ProcessBatch(ActionTaskWrapper[] taskWrappers)
     {
-        foreach (var taskWrapper in taskWrappers)
-        {
-            _ = Task.Run(() => taskWrapper.Process(CancellationToken));
-        }
-
-        return Task.WhenAll(taskWrappers.Select(x => x.TaskCompletionSource.Task));
+        return Task.WhenAll(taskWrappers.Select(tw => tw.Process(CancellationToken)));
     }
 }

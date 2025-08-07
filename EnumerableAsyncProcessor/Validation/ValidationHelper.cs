@@ -177,12 +177,6 @@ internal static class ValidationHelper
             throw new ArgumentOutOfRangeException(paramName, levelsOfParallelism, 
                 $"'{paramName}' must be at least {MIN_PARALLELISM}.");
         }
-
-        if (levelsOfParallelism > MAX_PARALLELISM)
-        {
-            throw new ArgumentOutOfRangeException(paramName, levelsOfParallelism, 
-                $"'{paramName}' cannot exceed {MAX_PARALLELISM} to prevent system overload.");
-        }
     }
 
     /// <summary>

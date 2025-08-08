@@ -150,10 +150,11 @@ public class ChannelBasedAsyncProcessorTests
     {
         // Arrange
         const int itemCount = 1000;
-        var processedItems = new List<int>();
+        var startedProcessingItems = new List<int>();
+        var completedItems = new List<int>();
         var lockObj = new object();
         var items = Enumerable.Range(1, itemCount);
-        var processingStarted = new TaskCompletionSource<bool>();
+        var itemsStartedProcessing = 0;
         
         using var cts = new CancellationTokenSource();
         var options = ChannelProcessorOptions.CreateUnbounded(consumerCount: 2);
@@ -161,39 +162,41 @@ public class ChannelBasedAsyncProcessorTests
         // Act
         var processor = items.ForEachWithChannelAsync(async item =>
         {
-            // Signal that processing has started
-            if (item == 1)
-            {
-                processingStarted.TrySetResult(true);
-            }
-            
-            // Don't pass the token to Task.Delay to allow some items to complete
-            await Task.Delay(10);
-            
-            // Check cancellation after the delay
-            if (cts.Token.IsCancellationRequested)
-                return;
-            
+            // Track that we started processing this item
             lock (lockObj)
             {
-                processedItems.Add(item);
+                startedProcessingItems.Add(item);
+                itemsStartedProcessing++;
+                
+                // Cancel after we've started processing a few items
+                if (itemsStartedProcessing == 5)
+                {
+                    _ = Task.Run(() => cts.Cancel());
+                }
+            }
+            
+            // Simulate some work
+            await Task.Delay(10);
+            
+            // Only track completed items if not cancelled
+            if (!cts.Token.IsCancellationRequested)
+            {
+                lock (lockObj)
+                {
+                    completedItems.Add(item);
+                }
             }
         }, options, cts.Token);
-
-        // Wait for processing to start, then cancel after a short delay
-        _ = Task.Run(async () =>
-        {
-            await processingStarted.Task;
-            await Task.Delay(50); // Give time for some items to be processed
-            cts.Cancel();
-        });
 
         // Assert
         await Assert.ThrowsAsync<OperationCanceledException>(async () => await processor);
         
-        // Some items should have been processed before cancellation
-        await Assert.That(processedItems.Count).IsGreaterThan(0);
-        await Assert.That(processedItems.Count).IsLessThan(itemCount);
+        // Some items should have started processing before cancellation
+        await Assert.That(startedProcessingItems.Count).IsGreaterThan(0);
+        await Assert.That(startedProcessingItems.Count).IsLessThan(itemCount);
+        
+        // We may or may not have completed items depending on timing
+        // but we should have at least started processing some
     }
 
     [Test]

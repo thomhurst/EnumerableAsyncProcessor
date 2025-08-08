@@ -13,7 +13,7 @@ public class UnboundedParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TI
     {
     }
 
-    internal override Task Process()
+    internal override async Task Process()
     {
         // Start ALL tasks immediately without any throttling
         // This provides true unbounded parallelism
@@ -28,6 +28,6 @@ public class UnboundedParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TI
             return task;
         });
 
-        return Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 }

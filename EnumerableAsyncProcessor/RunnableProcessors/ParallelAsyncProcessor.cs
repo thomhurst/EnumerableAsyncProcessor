@@ -11,13 +11,13 @@ public class ParallelAsyncProcessor : AbstractAsyncProcessor
         _isIOBound = isIOBound;
     }
 
-    internal override Task Process()
+    internal override async Task Process()
     {
         // For I/O-bound tasks, don't use Task.Run wrapper as it adds unnecessary overhead
         // The tasks are already async and won't block threads
         if (_isIOBound)
         {
-            return Task.WhenAll(TaskWrappers.Select(taskWrapper => 
+            await Task.WhenAll(TaskWrappers.Select(taskWrapper => 
             {
                 var task = taskWrapper.Process(CancellationToken);
                 // Fast-path for already completed tasks
@@ -26,10 +26,11 @@ public class ParallelAsyncProcessor : AbstractAsyncProcessor
                     return task;
                 }
                 return task;
-            }));
+            })).ConfigureAwait(false);
+            return;
         }
 
         // For CPU-bound tasks, use Task.Run to offload to ThreadPool
-        return Task.WhenAll(TaskWrappers.Select(taskWrapper => Task.Run(() => taskWrapper.Process(CancellationToken))));
+        await Task.WhenAll(TaskWrappers.Select(taskWrapper => Task.Run(() => taskWrapper.Process(CancellationToken)))).ConfigureAwait(false);
     }
 }

@@ -24,8 +24,8 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
         }
     }
 
-    private Task ProcessBatch(ActionTaskWrapper[] taskWrappers)
+    private async Task ProcessBatch(ActionTaskWrapper[] taskWrappers)
     {
-        return Task.WhenAll(taskWrappers.Select(tw => tw.Process(CancellationToken)));
+        await Task.WhenAll(taskWrappers.Select(tw => tw.Process(CancellationToken))).ConfigureAwait(false);
     }
 }

@@ -25,8 +25,8 @@ public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
         }
     }
 
-    private Task ProcessBatch(ItemTaskWrapper<TInput>[] currentBatch)
+    private async Task ProcessBatch(ItemTaskWrapper<TInput>[] currentBatch)
     {
-        return Task.WhenAll(currentBatch.Select(tw => tw.Process(CancellationToken)));
+        await Task.WhenAll(currentBatch.Select(tw => tw.Process(CancellationToken))).ConfigureAwait(false);
     }
 }

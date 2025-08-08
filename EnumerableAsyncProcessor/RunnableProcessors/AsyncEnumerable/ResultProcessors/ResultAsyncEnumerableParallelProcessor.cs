@@ -32,13 +32,13 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
         var processingTask = ProcessAsync(outputChannel.Writer, cancellationToken);
 
         // Yield results as they become available
-        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return result;
         }
 
         // Ensure processing completes
-        await processingTask;
+        await processingTask.ConfigureAwait(false);
     }
 
     private async Task ProcessAsync(ChannelWriter<TOutput> writer, CancellationToken cancellationToken)
@@ -48,9 +48,9 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
 
         try
         {
-            await foreach (var item in _items.WithCancellation(cancellationToken))
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await semaphore.WaitAsync(cancellationToken);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 var task = ProcessItemAsync(item, writer, semaphore, cancellationToken);
                 tasks.Add(task);
@@ -62,7 +62,7 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
                 }
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
         finally
         {
@@ -79,8 +79,8 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
     {
         try
         {
-            var result = await _taskSelector(item);
-            await writer.WriteAsync(result, cancellationToken);
+            var result = await _taskSelector(item).ConfigureAwait(false);
+            await writer.WriteAsync(result, cancellationToken).ConfigureAwait(false);
         }
         finally
         {

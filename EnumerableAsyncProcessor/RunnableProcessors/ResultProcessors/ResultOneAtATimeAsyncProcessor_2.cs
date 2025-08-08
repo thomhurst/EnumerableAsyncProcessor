@@ -12,7 +12,7 @@ public class ResultOneAtATimeAsyncProcessor<TInput, TOutput> : ResultAbstractAsy
     {
         foreach (var taskWrapper in TaskWrappers)
         {
-            await taskWrapper.Process(CancellationToken);
+            await taskWrapper.Process(CancellationToken).ConfigureAwait(false);
         }
     }
 }

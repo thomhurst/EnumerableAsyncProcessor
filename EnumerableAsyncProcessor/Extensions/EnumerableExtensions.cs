@@ -27,7 +27,7 @@ public static class EnumerableExtensions
     internal static async IAsyncEnumerable<T> ToIAsyncEnumerable<T>(this IEnumerable<Task<T>> tasks)
     {
 #if NET9_0_OR_GREATER
-        await foreach (var task in Task.WhenEach(tasks))
+        await foreach (var task in Task.WhenEach(tasks).ConfigureAwait(false))
         {
             yield return task.Result;
         }
@@ -36,9 +36,9 @@ public static class EnumerableExtensions
 
         while (managedTasksList.Count != 0)
         {
-            var finishedTask = await Task.WhenAny(managedTasksList);
+            var finishedTask = await Task.WhenAny(managedTasksList).ConfigureAwait(false);
             managedTasksList.Remove(finishedTask);
-            yield return await finishedTask;
+            yield return await finishedTask.ConfigureAwait(false);
         }
 #endif
     }

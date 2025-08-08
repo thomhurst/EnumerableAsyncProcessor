@@ -21,12 +21,12 @@ public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
         
         foreach (var currentBatch in batchedItems)
         {
-            await ProcessBatch(currentBatch);
+            await ProcessBatch(currentBatch).ConfigureAwait(false);
         }
     }
 
-    private Task ProcessBatch(ItemTaskWrapper<TInput>[] currentBatch)
+    private async Task ProcessBatch(ItemTaskWrapper<TInput>[] currentBatch)
     {
-        return Task.WhenAll(currentBatch.Select(tw => tw.Process(CancellationToken)));
+        await Task.WhenAll(currentBatch.Select(tw => tw.Process(CancellationToken))).ConfigureAwait(false);
     }
 }

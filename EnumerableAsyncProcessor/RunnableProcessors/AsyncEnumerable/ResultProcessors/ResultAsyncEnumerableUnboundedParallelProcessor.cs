@@ -34,13 +34,13 @@ public class ResultAsyncEnumerableUnboundedParallelProcessor<TInput, TOutput> : 
         var processingTask = ProcessAsync(outputChannel.Writer, cancellationToken);
 
         // Yield results as they become available
-        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return result;
         }
 
         // Ensure processing completes
-        await processingTask;
+        await processingTask.ConfigureAwait(false);
     }
 
     private async Task ProcessAsync(ChannelWriter<TOutput> writer, CancellationToken cancellationToken)
@@ -50,7 +50,7 @@ public class ResultAsyncEnumerableUnboundedParallelProcessor<TInput, TOutput> : 
         try
         {
             // Start a task for each item immediately as it arrives
-            await foreach (var item in _items.WithCancellation(cancellationToken))
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 // Capture the item in a local variable for the closure
                 var capturedItem = item;
@@ -60,8 +60,8 @@ public class ResultAsyncEnumerableUnboundedParallelProcessor<TInput, TOutput> : 
                 {
                     try
                     {
-                        var result = await _taskSelector(capturedItem);
-                        await writer.WriteAsync(result, cancellationToken);
+                        var result = await _taskSelector(capturedItem).ConfigureAwait(false);
+                        await writer.WriteAsync(result, cancellationToken).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
@@ -73,7 +73,7 @@ public class ResultAsyncEnumerableUnboundedParallelProcessor<TInput, TOutput> : 
             }
 
             // Wait for all tasks to complete
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
         finally
         {

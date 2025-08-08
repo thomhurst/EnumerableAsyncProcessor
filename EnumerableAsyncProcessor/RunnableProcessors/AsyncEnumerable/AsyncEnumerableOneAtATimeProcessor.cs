@@ -26,9 +26,9 @@ public class AsyncEnumerableOneAtATimeProcessor<TInput> : IAsyncEnumerableProces
     {
         var cancellationToken = _cancellationTokenSource.Token;
 
-        await foreach (var item in _items.WithCancellation(cancellationToken))
+        await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
-            await _taskSelector(item);
+            await _taskSelector(item).ConfigureAwait(false);
         }
     }
 }

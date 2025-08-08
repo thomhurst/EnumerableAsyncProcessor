@@ -20,12 +20,12 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
         
         foreach (var taskWrappers in batchedTaskWrappers)
         {
-            await ProcessBatch(taskWrappers);
+            await ProcessBatch(taskWrappers).ConfigureAwait(false);
         }
     }
 
-    private Task ProcessBatch(ActionTaskWrapper[] taskWrappers)
+    private async Task ProcessBatch(ActionTaskWrapper[] taskWrappers)
     {
-        return Task.WhenAll(taskWrappers.Select(tw => tw.Process(CancellationToken)));
+        await Task.WhenAll(taskWrappers.Select(tw => tw.Process(CancellationToken))).ConfigureAwait(false);
     }
 }

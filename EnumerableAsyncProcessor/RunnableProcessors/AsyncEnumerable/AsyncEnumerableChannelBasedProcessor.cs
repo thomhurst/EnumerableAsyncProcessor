@@ -54,17 +54,17 @@ public class AsyncEnumerableChannelBasedProcessor<TInput> : IAsyncEnumerableProc
             .ToArray();
 
         // Wait for all tasks
-        await producerTask;
-        await Task.WhenAll(consumerTasks);
+        await producerTask.ConfigureAwait(false);
+        await Task.WhenAll(consumerTasks).ConfigureAwait(false);
     }
 
     private async Task ProduceAsync(ChannelWriter<TInput> writer, CancellationToken cancellationToken)
     {
         try
         {
-            await foreach (var item in _items.WithCancellation(cancellationToken))
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await writer.WriteAsync(item, cancellationToken);
+                await writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -82,9 +82,9 @@ public class AsyncEnumerableChannelBasedProcessor<TInput> : IAsyncEnumerableProc
         if (_options.IsIOBound)
         {
             // For I/O-bound tasks, process directly without Task.Run
-            await foreach (var item in reader.ReadAllAsync(cancellationToken))
+            await foreach (var item in reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
             {
-                await _taskSelector(item);
+                await _taskSelector(item).ConfigureAwait(false);
             }
         }
         else
@@ -92,11 +92,11 @@ public class AsyncEnumerableChannelBasedProcessor<TInput> : IAsyncEnumerableProc
             // For CPU-bound tasks, use Task.Run to avoid blocking
             await Task.Run(async () =>
             {
-                await foreach (var item in reader.ReadAllAsync(cancellationToken))
+                await foreach (var item in reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    await _taskSelector(item);
+                    await _taskSelector(item).ConfigureAwait(false);
                 }
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
     }
 }

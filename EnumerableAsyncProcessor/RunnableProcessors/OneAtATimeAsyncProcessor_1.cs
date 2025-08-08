@@ -12,7 +12,7 @@ public class OneAtATimeAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
     {
         foreach (var taskWrapper in TaskWrappers)
         {
-            await taskWrapper.Process(CancellationToken);
+            await taskWrapper.Process(CancellationToken).ConfigureAwait(false);
         }
     }
 }

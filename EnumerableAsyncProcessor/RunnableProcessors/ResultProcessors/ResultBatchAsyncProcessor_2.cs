@@ -18,12 +18,12 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
         
         foreach (var currentBatch in batchedItems)
         {
-            await ProcessBatch(currentBatch);
+            await ProcessBatch(currentBatch).ConfigureAwait(false);
         }
     }
 
-    private Task ProcessBatch(ItemTaskWrapper<TInput, TOutput>[] currentBatch)
+    private async Task ProcessBatch(ItemTaskWrapper<TInput, TOutput>[] currentBatch)
     {
-        return Task.WhenAll(currentBatch.Select(tw => tw.Process(CancellationToken)));
+        await Task.WhenAll(currentBatch.Select(tw => tw.Process(CancellationToken))).ConfigureAwait(false);
     }
 }

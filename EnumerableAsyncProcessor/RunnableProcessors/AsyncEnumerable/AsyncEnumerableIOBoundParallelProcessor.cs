@@ -35,9 +35,9 @@ public class AsyncEnumerableIOBoundParallelProcessor<TInput> : IAsyncEnumerableP
 
         try
         {
-            await foreach (var item in _items.WithCancellation(cancellationToken))
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await semaphore.WaitAsync(cancellationToken);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 // Start task without Task.Run for I/O-bound operations
                 var task = ProcessItemAsync(item, semaphore, cancellationToken);
@@ -50,7 +50,7 @@ public class AsyncEnumerableIOBoundParallelProcessor<TInput> : IAsyncEnumerableP
                 }
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
         finally
         {
@@ -62,7 +62,7 @@ public class AsyncEnumerableIOBoundParallelProcessor<TInput> : IAsyncEnumerableP
     {
         try
         {
-            await _taskSelector(item);
+            await _taskSelector(item).ConfigureAwait(false);
         }
         finally
         {

@@ -32,14 +32,14 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
 
         if (_options.PreserveOrder)
         {
-            await foreach (var result in ExecuteWithOrderPreservationAsync(cancellationToken))
+            await foreach (var result in ExecuteWithOrderPreservationAsync(cancellationToken).ConfigureAwait(false))
             {
                 yield return result;
             }
         }
         else
         {
-            await foreach (var result in ExecuteWithoutOrderPreservationAsync(cancellationToken))
+            await foreach (var result in ExecuteWithoutOrderPreservationAsync(cancellationToken).ConfigureAwait(false))
             {
                 yield return result;
             }
@@ -62,18 +62,18 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         // Complete output when all processing is done
         var completionTask = Task.Run(async () =>
         {
-            await producerTask;
-            await Task.WhenAll(consumerTasks);
+            await producerTask.ConfigureAwait(false);
+            await Task.WhenAll(consumerTasks).ConfigureAwait(false);
             outputChannel.Writer.Complete();
         }, cancellationToken);
 
         // Yield results as they complete
-        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return result;
         }
 
-        await completionTask;
+        await completionTask.ConfigureAwait(false);
     }
 
     private async IAsyncEnumerable<TOutput> ExecuteWithOrderPreservationAsync(CancellationToken cancellationToken)
@@ -90,7 +90,7 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         var orderedInputChannel = CreateOrderedInputChannel();
         var producerTask = Task.Run(async () =>
         {
-            await ProduceOrderedAsync(orderedInputChannel.Writer, cancellationToken);
+            await ProduceOrderedAsync(orderedInputChannel.Writer, cancellationToken).ConfigureAwait(false);
             producerCompleted = true;
         }, cancellationToken);
 
@@ -98,14 +98,14 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         var consumerTasks = new List<Task>();
         var consumerTask = Task.Run(async () =>
         {
-            await foreach (var (item, index) in orderedInputChannel.Reader.ReadAllAsync(cancellationToken))
+            await foreach (var (item, index) in orderedInputChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
             {
-                await semaphore.WaitAsync(cancellationToken);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 totalProduced = Math.Max(totalProduced, index + 1);
                 var task = ProcessOrderedItemAsync(item, index, orderingDictionary, orderingLock, semaphore, cancellationToken);
                 consumerTasks.Add(task);
             }
-            await Task.WhenAll(consumerTasks);
+            await Task.WhenAll(consumerTasks).ConfigureAwait(false);
         }, cancellationToken);
 
         // Yield results in order
@@ -113,7 +113,7 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         {
             while (!producerCompleted || nextYieldIndex < totalProduced || orderingDictionary.Count > 0)
             {
-                await orderingLock.WaitAsync(cancellationToken);
+                await orderingLock.WaitAsync(cancellationToken).ConfigureAwait(false);
                 TaskCompletionSource<TOutput>? tcs = null;
                 var found = false;
                 
@@ -127,7 +127,7 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
                 
                 if (found && tcs != null)
                 {
-                    await outputChannel.Writer.WriteAsync(await tcs.Task, cancellationToken);
+                    await outputChannel.Writer.WriteAsync(await tcs.Task.ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
                 }
                 else if (producerCompleted && consumerTasks.All(t => t.IsCompleted) && orderingDictionary.Count == 0)
                 {
@@ -135,21 +135,21 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
                 }
                 else
                 {
-                    await Task.Delay(10, cancellationToken);
+                    await Task.Delay(10, cancellationToken).ConfigureAwait(false);
                 }
             }
             outputChannel.Writer.Complete();
         }, cancellationToken);
         
         // Yield from output channel
-        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return result;
         }
 
-        await producerTask;
-        await consumerTask;
-        await yieldingTask;
+        await producerTask.ConfigureAwait(false);
+        await consumerTask.ConfigureAwait(false);
+        await yieldingTask.ConfigureAwait(false);
     }
 
     private async Task ProcessOrderedItemAsync(
@@ -162,9 +162,9 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
     {
         try
         {
-            var result = await _taskSelector(item);
+            var result = await _taskSelector(item).ConfigureAwait(false);
 
-            await orderingLock.WaitAsync(cancellationToken);
+            await orderingLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var tcs = new TaskCompletionSource<TOutput>();
@@ -218,9 +218,9 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
     {
         try
         {
-            await foreach (var item in _items.WithCancellation(cancellationToken))
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await writer.WriteAsync(item, cancellationToken);
+                await writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
             }
         }
         finally
@@ -234,9 +234,9 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         try
         {
             var index = 0;
-            await foreach (var item in _items.WithCancellation(cancellationToken))
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await writer.WriteAsync((item, index++), cancellationToken);
+                await writer.WriteAsync((item, index++), cancellationToken).ConfigureAwait(false);
             }
         }
         finally
@@ -254,22 +254,22 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         {
             if (_options.IsIOBound)
             {
-                await foreach (var item in reader.ReadAllAsync(cancellationToken))
+                await foreach (var item in reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    var result = await _taskSelector(item);
-                    await writer.WriteAsync(result, cancellationToken);
+                    var result = await _taskSelector(item).ConfigureAwait(false);
+                    await writer.WriteAsync(result, cancellationToken).ConfigureAwait(false);
                 }
             }
             else
             {
                 await Task.Run(async () =>
                 {
-                    await foreach (var item in reader.ReadAllAsync(cancellationToken))
+                    await foreach (var item in reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                     {
-                        var result = await _taskSelector(item);
-                        await writer.WriteAsync(result, cancellationToken);
+                        var result = await _taskSelector(item).ConfigureAwait(false);
+                        await writer.WriteAsync(result, cancellationToken).ConfigureAwait(false);
                     }
-                }, cancellationToken);
+                }, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)

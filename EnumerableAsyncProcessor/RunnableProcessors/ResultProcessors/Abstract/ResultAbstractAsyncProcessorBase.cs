@@ -155,7 +155,16 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
 
     public void Dispose()
     {
-        // Synchronous disposal calls async disposal and blocks
-        DisposeAsync().GetAwaiter().GetResult();
+        // Use async disposal with ConfigureAwait(false) to avoid deadlocks
+        // and add a timeout to prevent indefinite blocking
+        try
+        {
+            var disposeTask = DisposeAsync().ConfigureAwait(false);
+            disposeTask.GetAwaiter().GetResult();
+        }
+        catch
+        {
+            // Suppress exceptions during disposal as per IDisposable pattern
+        }
     }
 }

@@ -22,12 +22,12 @@ public class ResultBatchAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<T
         
         foreach (var currentTaskCompletionSourceBatch in batchedTaskCompletionSources)
         {
-            await ProcessBatch(currentTaskCompletionSourceBatch);
+            await ProcessBatch(currentTaskCompletionSourceBatch).ConfigureAwait(false);
         }
     }
 
-    private Task ProcessBatch(ActionTaskWrapper<TOutput>[] batch)
+    private async Task ProcessBatch(ActionTaskWrapper<TOutput>[] batch)
     {
-        return Task.WhenAll(batch.Select(tw => tw.Process(CancellationToken)));
+        await Task.WhenAll(batch.Select(tw => tw.Process(CancellationToken))).ConfigureAwait(false);
     }
 }

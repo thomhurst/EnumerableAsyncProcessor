@@ -33,9 +33,9 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
         {
             try
             {
-                await foreach (var item in _items.WithCancellation(cancellationToken))
+                await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
                 {
-                    await channel.Writer.WriteAsync(item, cancellationToken);
+                    await channel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
                 }
             }
             finally
@@ -48,16 +48,16 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
         var consumerTasks = Enumerable.Range(0, _maxConcurrency)
             .Select(_ => Task.Run(async () =>
             {
-                await foreach (var item in channel.Reader.ReadAllAsync(cancellationToken))
+                await foreach (var item in channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    await _taskSelector(item);
+                    await _taskSelector(item).ConfigureAwait(false);
                 }
             }, cancellationToken))
             .ToArray();
 
         // Wait for producer and all consumers to complete
-        await producerTask;
-        await Task.WhenAll(consumerTasks);
+        await producerTask.ConfigureAwait(false);
+        await Task.WhenAll(consumerTasks).ConfigureAwait(false);
     }
 }
 #endif

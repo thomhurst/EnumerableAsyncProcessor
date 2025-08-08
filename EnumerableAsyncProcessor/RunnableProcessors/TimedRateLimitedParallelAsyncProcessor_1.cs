@@ -26,7 +26,7 @@ public class TimedRateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProce
             {
                 await Task.WhenAll(
                     Task.Run(() => taskWrapper.Process(CancellationToken)),
-                    Task.Delay(_timeSpan, CancellationToken));
+                    Task.Delay(_timeSpan, CancellationToken)).ConfigureAwait(false);
             }, CancellationToken.None, false); // false = CPU-bound
     }
 }

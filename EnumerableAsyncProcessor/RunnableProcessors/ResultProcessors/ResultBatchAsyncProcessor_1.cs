@@ -22,7 +22,7 @@ public class ResultBatchAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<T
         
         foreach (var currentTaskCompletionSourceBatch in batchedTaskCompletionSources)
         {
-            await ProcessBatch(currentTaskCompletionSourceBatch);
+            await ProcessBatch(currentTaskCompletionSourceBatch).ConfigureAwait(false);
         }
     }
 

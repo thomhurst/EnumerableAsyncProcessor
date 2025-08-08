@@ -20,7 +20,7 @@ public class BatchAsyncProcessor : AbstractAsyncProcessor
         
         foreach (var taskWrappers in batchedTaskWrappers)
         {
-            await ProcessBatch(taskWrappers);
+            await ProcessBatch(taskWrappers).ConfigureAwait(false);
         }
     }
 

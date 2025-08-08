@@ -21,7 +21,7 @@ public class BatchAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
         
         foreach (var currentBatch in batchedItems)
         {
-            await ProcessBatch(currentBatch);
+            await ProcessBatch(currentBatch).ConfigureAwait(false);
         }
     }
 

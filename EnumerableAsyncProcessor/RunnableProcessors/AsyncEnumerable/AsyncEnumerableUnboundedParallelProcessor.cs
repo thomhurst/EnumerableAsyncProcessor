@@ -32,7 +32,7 @@ public class AsyncEnumerableUnboundedParallelProcessor<TInput> : IAsyncEnumerabl
 
         // Start a task for each item immediately as it arrives
         // No throttling or concurrency control
-        await foreach (var item in _items.WithCancellation(cancellationToken))
+        await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             // Start task immediately without waiting
             var task = _taskSelector(item);
@@ -40,7 +40,7 @@ public class AsyncEnumerableUnboundedParallelProcessor<TInput> : IAsyncEnumerabl
         }
 
         // Wait for all tasks to complete
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 }
 #endif

@@ -35,12 +35,12 @@ public class ResultAsyncEnumerableIOBoundParallelProcessor<TInput, TOutput> : IA
         var processingTask = ProcessAsync(outputChannel.Writer, cancellationToken);
 
         // Yield results as they complete
-        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return result;
         }
 
-        await processingTask;
+        await processingTask.ConfigureAwait(false);
     }
 
     private async Task ProcessAsync(ChannelWriter<TOutput> writer, CancellationToken cancellationToken)
@@ -50,9 +50,9 @@ public class ResultAsyncEnumerableIOBoundParallelProcessor<TInput, TOutput> : IA
 
         try
         {
-            await foreach (var item in _items.WithCancellation(cancellationToken))
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await semaphore.WaitAsync(cancellationToken);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 // For I/O-bound, don't use Task.Run
                 var task = ProcessItemAsync(item, writer, semaphore, cancellationToken);
@@ -65,7 +65,7 @@ public class ResultAsyncEnumerableIOBoundParallelProcessor<TInput, TOutput> : IA
                 }
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
         finally
         {
@@ -82,8 +82,8 @@ public class ResultAsyncEnumerableIOBoundParallelProcessor<TInput, TOutput> : IA
     {
         try
         {
-            var result = await _taskSelector(item);
-            await writer.WriteAsync(result, cancellationToken);
+            var result = await _taskSelector(item).ConfigureAwait(false);
+            await writer.WriteAsync(result, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

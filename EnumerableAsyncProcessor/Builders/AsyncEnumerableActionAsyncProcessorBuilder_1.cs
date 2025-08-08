@@ -57,6 +57,16 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput>
     }
 
     /// <summary>
+    /// Process ALL items in parallel without any concurrency limits.
+    /// WARNING: Use with caution - can overwhelm system resources with large async enumerables.
+    /// </summary>
+    public IAsyncEnumerableProcessor ProcessInParallelUnbounded()
+    {
+        return new AsyncEnumerableUnboundedParallelProcessor<TInput>(
+            _items, _taskSelector, _cancellationTokenSource);
+    }
+
+    /// <summary>
     /// Process items using a channel-based approach with producer-consumer pattern.
     /// </summary>
     public IAsyncEnumerableProcessor ProcessWithChannel(AsyncEnumerableChannelOptions? options = null)

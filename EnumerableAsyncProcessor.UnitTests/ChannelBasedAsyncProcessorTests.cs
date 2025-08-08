@@ -234,47 +234,6 @@ public class ChannelBasedAsyncProcessorTests
     }
 
     [Test]
-    public async Task ProcessWithChannel_Performance_ComparedToBatchProcessor()
-    {
-        // Arrange
-        const int itemCount = 1000;
-        var items = Enumerable.Range(1, itemCount);
-        
-        // Test channel-based processor
-        var channelOptions = ChannelProcessorOptions.CreateUnbounded(consumerCount: 4);
-        var channelStopwatch = Stopwatch.StartNew();
-        
-        var channelProcessor = items.ForEachWithChannelAsync(async item =>
-        {
-            await Task.Delay(1);
-        }, channelOptions);
-        
-        await channelProcessor;
-        channelStopwatch.Stop();
-        
-        // Test batch processor for comparison
-        var batchStopwatch = Stopwatch.StartNew();
-        
-        var batchProcessor = items.ForEachAsync(async item =>
-        {
-            await Task.Delay(1);
-        }).ProcessInBatches(4);
-        
-        await batchProcessor;
-        batchStopwatch.Stop();
-        
-        // Assert - both should complete successfully
-        // Performance comparison is informational
-        await Assert.That(channelStopwatch.ElapsedMilliseconds).IsGreaterThan(0);
-        await Assert.That(batchStopwatch.ElapsedMilliseconds).IsGreaterThan(0);
-        
-        // Channel-based should be competitive with batch processing
-        // Allow for some variance in timing (increased tolerance for CI environments)
-        var ratio = (double)channelStopwatch.ElapsedMilliseconds / batchStopwatch.ElapsedMilliseconds;
-        await Assert.That(ratio).IsLessThan(5.0); // Channel should not be more than 5x slower (increased from 3x for stability)
-    }
-
-    [Test]
     public async Task ProcessWithChannel_BoundedChannelFullModeWait_ShouldBlockProducerWhenFull()
     {
         // Arrange

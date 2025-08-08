@@ -260,6 +260,68 @@ public class AsyncEnumerableProcessorTests
     }
 
     [Test]
+    public async Task ForEachAsync_ProcessInParallelUnbounded_ProcessesAllItems()
+    {
+        var processedItems = new List<int>();
+        var maxConcurrency = 0;
+        var currentConcurrency = 0;
+        var asyncEnumerable = GenerateAsyncEnumerable(50);
+
+        await asyncEnumerable
+            .ForEachAsync(async item =>
+            {
+                var current = Interlocked.Increment(ref currentConcurrency);
+                lock (processedItems)
+                {
+                    if (current > maxConcurrency)
+                        maxConcurrency = current;
+                }
+                
+                await Task.Delay(10);
+                lock (processedItems)
+                {
+                    processedItems.Add(item);
+                }
+                Interlocked.Decrement(ref currentConcurrency);
+            })
+            .ProcessInParallelUnbounded()
+            .ExecuteAsync();
+
+        await Assert.That(processedItems.Count).IsEqualTo(50);
+        await Assert.That(processedItems.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 50));
+        // Should have high concurrency since it's unbounded (at least 5)
+        await Assert.That(maxConcurrency).IsGreaterThan(5);
+    }
+
+    [Test]
+    public async Task SelectAsync_ProcessInParallelUnbounded_ReturnsAllResults()
+    {
+        var asyncEnumerable = GenerateAsyncEnumerable(30);
+        var maxConcurrency = 0;
+        var currentConcurrency = 0;
+
+        var results = await asyncEnumerable
+            .SelectAsync(async item =>
+            {
+                var current = Interlocked.Increment(ref currentConcurrency);
+                if (current > maxConcurrency)
+                    maxConcurrency = current;
+                
+                await Task.Delay(10);
+                Interlocked.Decrement(ref currentConcurrency);
+                return item * 3;
+            })
+            .ProcessInParallelUnbounded()
+            .ExecuteAsync()
+            .ToListAsync();
+
+        await Assert.That(results.Count).IsEqualTo(30);
+        await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 30).Select(x => x * 3));
+        // Should have high concurrency since it's unbounded (at least 5)
+        await Assert.That(maxConcurrency).IsGreaterThan(5);
+    }
+
+    [Test]
     public async Task ForEachAsync_WithException_PropagatesException()
     {
         var asyncEnumerable = GenerateAsyncEnumerable(10);

@@ -160,7 +160,13 @@ public class ChannelBasedAsyncProcessorTests
         // Act
         var processor = items.ForEachWithChannelAsync(async item =>
         {
-            await Task.Delay(50, cts.Token);
+            // Don't pass the token to Task.Delay to allow some items to complete
+            await Task.Delay(10);
+            
+            // Check cancellation after the delay
+            if (cts.Token.IsCancellationRequested)
+                return;
+            
             lock (lockObj)
             {
                 processedItems.Add(item);

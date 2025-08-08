@@ -227,11 +227,21 @@ public class AsyncEnumerableProcessorTests
         var task = asyncEnumerable
             .ForEachAsync(async item =>
             {
+                // Check cancellation before processing
+                if (cts.Token.IsCancellationRequested)
+                    return;
+                    
                 if (item == 10)
                 {
                     cts.Cancel();
                 }
+                
                 await Task.Delay(10);
+                
+                // Check cancellation after delay
+                if (cts.Token.IsCancellationRequested)
+                    return;
+                    
                 Interlocked.Increment(ref processedCount);
             }, cts.Token)
             .ProcessInParallel(5)

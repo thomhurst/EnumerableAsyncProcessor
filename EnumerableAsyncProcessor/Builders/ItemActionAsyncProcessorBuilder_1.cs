@@ -69,6 +69,18 @@ public class ItemActionAsyncProcessorBuilder<TInput>
         return new OneAtATimeAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource)
             .StartProcessing();
     }
+    
+    /// <summary>
+    /// Process ALL items in parallel without any concurrency limits.
+    /// WARNING: Use with caution - can overwhelm system resources with large item counts.
+    /// Ideal for scenarios requiring maximum parallelism like running thousands of unit tests.
+    /// </summary>
+    /// <returns>An async processor with unbounded parallelism.</returns>
+    public IAsyncProcessor ProcessInParallelUnbounded()
+    {
+        return new UnboundedParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource)
+            .StartProcessing();
+    }
 
 #if NET6_0_OR_GREATER
     /// <summary>

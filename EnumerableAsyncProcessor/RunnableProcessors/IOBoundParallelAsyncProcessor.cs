@@ -13,8 +13,9 @@ public class IOBoundParallelAsyncProcessor : AbstractAsyncProcessor
     
     internal IOBoundParallelAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource, int? maxConcurrency = null) : base(count, taskSelector, cancellationTokenSource)
     {
-        // For I/O operations, allow much higher concurrency - default to 10x processor count or minimum 100
-        _maxConcurrency = maxConcurrency ?? Math.Max(100, Environment.ProcessorCount * 10);
+        // For I/O operations, allow much higher concurrency - default to 64x processor count or minimum 1000
+        // This enables scenarios like running 10,000 unit tests in parallel
+        _maxConcurrency = maxConcurrency ?? Math.Max(1000, Environment.ProcessorCount * 64);
     }
 
     internal override async Task Process()

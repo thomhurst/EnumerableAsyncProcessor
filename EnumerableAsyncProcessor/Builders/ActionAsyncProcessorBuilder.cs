@@ -62,6 +62,17 @@ public class ActionAsyncProcessorBuilder
     {
         return new OneAtATimeAsyncProcessor(_count, _taskSelector, _cancellationTokenSource).StartProcessing();
     }
+    
+    /// <summary>
+    /// Process ALL tasks in parallel without any concurrency limits.
+    /// WARNING: Use with caution - can overwhelm system resources with large task counts.
+    /// Ideal for scenarios requiring maximum parallelism like running thousands of unit tests.
+    /// </summary>
+    /// <returns>An async processor with unbounded parallelism.</returns>
+    public IAsyncProcessor ProcessInParallelUnbounded()
+    {
+        return new UnboundedParallelAsyncProcessor(_count, _taskSelector, _cancellationTokenSource).StartProcessing();
+    }
 
 #if NET6_0_OR_GREATER
     /// <summary>

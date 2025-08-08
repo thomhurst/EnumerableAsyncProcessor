@@ -42,7 +42,7 @@ public class AsyncEnumerableProcessorTests
             .ExecuteAsync();
 
         await Assert.That(processedItems.Count).IsEqualTo(10);
-        await Assert.That(processedItems).IsEqualTo(Enumerable.Range(1, 10).ToList());
+        await Assert.That(processedItems).IsEquivalentTo(Enumerable.Range(1, 10));
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class AsyncEnumerableProcessorTests
             .ExecuteAsync();
 
         await Assert.That(processedItems.Count).IsEqualTo(20);
-        await Assert.That(processedItems.OrderBy(x => x).ToList()).IsEqualTo(Enumerable.Range(1, 20).ToList());
+        await Assert.That(processedItems.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 20));
     }
 
     [Test]
@@ -83,7 +83,7 @@ public class AsyncEnumerableProcessorTests
             .ToListAsync();
 
         await Assert.That(results.Count).IsEqualTo(5);
-        await Assert.That(results).IsEqualTo(new[] { 2, 4, 6, 8, 10 }.ToList());
+        await Assert.That(results).IsEquivalentTo(new[] { 2, 4, 6, 8, 10 });
     }
 
     [Test]
@@ -102,7 +102,7 @@ public class AsyncEnumerableProcessorTests
             .ToListAsync();
 
         await Assert.That(results.Count).IsEqualTo(10);
-        await Assert.That(results.OrderBy(x => x).ToList()).IsEqualTo(Enumerable.Range(1, 10).Select(x => x * 2).ToList());
+        await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 10).Select(x => x * 2));
     }
 
     [Test]
@@ -139,7 +139,7 @@ public class AsyncEnumerableProcessorTests
             .ToListAsync();
 
         await Assert.That(results.Count).IsEqualTo(50);
-        await Assert.That(results.OrderBy(x => x).ToList()).IsEqualTo(Enumerable.Range(1, 50).Select(x => x * 3).ToList());
+        await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 50).Select(x => x * 3));
     }
 
     [Test]
@@ -165,7 +165,7 @@ public class AsyncEnumerableProcessorTests
             .ExecuteAsync();
 
         await Assert.That(processedItems.Count).IsEqualTo(30);
-        await Assert.That(processedItems.OrderBy(x => x).ToList()).IsEqualTo(Enumerable.Range(1, 30).ToList());
+        await Assert.That(processedItems.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 30));
     }
 
     [Test]
@@ -191,7 +191,7 @@ public class AsyncEnumerableProcessorTests
             .ToListAsync();
 
         await Assert.That(results.Count).IsEqualTo(20);
-        await Assert.That(results).IsEqualTo(Enumerable.Range(1, 20).Select(x => x * 2).ToList());
+        await Assert.That(results).IsEquivalentTo(Enumerable.Range(1, 20).Select(x => x * 2));
     }
 
     [Test]
@@ -214,7 +214,7 @@ public class AsyncEnumerableProcessorTests
             .ToListAsync();
 
         await Assert.That(results.Count).IsEqualTo(20);
-        await Assert.That(results.OrderBy(x => x).ToList()).IsEqualTo(Enumerable.Range(1, 20).Select(x => x * 2).ToList());
+        await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 20).Select(x => x * 2));
     }
 
     [Test]

@@ -82,28 +82,36 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         var semaphore = new SemaphoreSlim(_options.MaxConcurrency, _options.MaxConcurrency);
         var orderingDictionary = new SortedDictionary<int, TaskCompletionSource<TOutput>>();
         var orderingLock = new SemaphoreSlim(1, 1);
-        var totalItemsProduced = 0;
         var nextYieldIndex = 0;
+        var totalProduced = 0;
+        var producerCompleted = false;
 
         // Start producer
         var orderedInputChannel = CreateOrderedInputChannel();
-        var producerTask = ProduceOrderedAsync(orderedInputChannel.Writer, cancellationToken);
+        var producerTask = Task.Run(async () =>
+        {
+            await ProduceOrderedAsync(orderedInputChannel.Writer, cancellationToken);
+            producerCompleted = true;
+        }, cancellationToken);
 
         // Start ordered consumer
+        var consumerTasks = new List<Task>();
         var consumerTask = Task.Run(async () =>
         {
             await foreach (var (item, index) in orderedInputChannel.Reader.ReadAllAsync(cancellationToken))
             {
                 await semaphore.WaitAsync(cancellationToken);
-                Interlocked.Increment(ref totalItemsProduced);
-                _ = ProcessOrderedItemAsync(item, index, orderingDictionary, orderingLock, semaphore, cancellationToken);
+                totalProduced = Math.Max(totalProduced, index + 1);
+                var task = ProcessOrderedItemAsync(item, index, orderingDictionary, orderingLock, semaphore, cancellationToken);
+                consumerTasks.Add(task);
             }
+            await Task.WhenAll(consumerTasks);
         }, cancellationToken);
 
         // Yield results in order
         var yieldingTask = Task.Run(async () =>
         {
-            while (!producerTask.IsCompleted || nextYieldIndex < totalItemsProduced)
+            while (!producerCompleted || nextYieldIndex < totalProduced || orderingDictionary.Count > 0)
             {
                 await orderingLock.WaitAsync(cancellationToken);
                 TaskCompletionSource<TOutput>? tcs = null;
@@ -121,11 +129,16 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
                 {
                     await outputChannel.Writer.WriteAsync(await tcs.Task, cancellationToken);
                 }
+                else if (producerCompleted && consumerTasks.All(t => t.IsCompleted) && orderingDictionary.Count == 0)
+                {
+                    break;
+                }
                 else
                 {
                     await Task.Delay(10, cancellationToken);
                 }
             }
+            outputChannel.Writer.Complete();
         }, cancellationToken);
         
         // Yield from output channel
@@ -137,14 +150,6 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         await producerTask;
         await consumerTask;
         await yieldingTask;
-
-        // Write any remaining results to output channel
-        foreach (var kvp in orderingDictionary)
-        {
-            await outputChannel.Writer.WriteAsync(await kvp.Value.Task, cancellationToken);
-        }
-        
-        outputChannel.Writer.Complete();
     }
 
     private async Task ProcessOrderedItemAsync(

@@ -153,6 +153,7 @@ public class ChannelBasedAsyncProcessorTests
         var processedItems = new List<int>();
         var lockObj = new object();
         var items = Enumerable.Range(1, itemCount);
+        var processingStarted = new TaskCompletionSource<bool>();
         
         using var cts = new CancellationTokenSource();
         var options = ChannelProcessorOptions.CreateUnbounded(consumerCount: 2);
@@ -160,6 +161,12 @@ public class ChannelBasedAsyncProcessorTests
         // Act
         var processor = items.ForEachWithChannelAsync(async item =>
         {
+            // Signal that processing has started
+            if (item == 1)
+            {
+                processingStarted.TrySetResult(true);
+            }
+            
             // Don't pass the token to Task.Delay to allow some items to complete
             await Task.Delay(10);
             
@@ -173,10 +180,11 @@ public class ChannelBasedAsyncProcessorTests
             }
         }, options, cts.Token);
 
-        // Cancel after a short delay
+        // Wait for processing to start, then cancel after a short delay
         _ = Task.Run(async () =>
         {
-            await Task.Delay(200);
+            await processingStarted.Task;
+            await Task.Delay(50); // Give time for some items to be processed
             cts.Cancel();
         });
 

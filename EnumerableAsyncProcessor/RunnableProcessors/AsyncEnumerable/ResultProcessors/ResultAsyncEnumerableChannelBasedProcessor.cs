@@ -62,9 +62,32 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         // Complete output when all processing is done
         var completionTask = Task.Run(async () =>
         {
-            await producerTask.ConfigureAwait(false);
-            await Task.WhenAll(consumerTasks).ConfigureAwait(false);
-            outputChannel.Writer.Complete();
+            Exception? exception = null;
+            try
+            {
+                await producerTask.ConfigureAwait(false);
+                await Task.WhenAll(consumerTasks).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+            finally
+            {
+                if (exception != null)
+                {
+                    outputChannel.Writer.TryComplete(exception);
+                }
+                else
+                {
+                    outputChannel.Writer.TryComplete();
+                }
+            }
+            
+            if (exception != null)
+            {
+                throw exception;
+            }
         }, cancellationToken);
 
         // Yield results as they complete
@@ -138,7 +161,36 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
                     await Task.Delay(10, cancellationToken).ConfigureAwait(false);
                 }
             }
-            outputChannel.Writer.Complete();
+        }, cancellationToken);
+        
+        // Ensure channel completion when all tasks finish
+        var channelCompletionTask = Task.Run(async () =>
+        {
+            Exception? exception = null;
+            try
+            {
+                await yieldingTask.ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+            finally
+            {
+                if (exception != null)
+                {
+                    outputChannel.Writer.TryComplete(exception);
+                }
+                else
+                {
+                    outputChannel.Writer.TryComplete();
+                }
+            }
+            
+            if (exception != null)
+            {
+                throw exception;
+            }
         }, cancellationToken);
         
         // Yield from output channel
@@ -160,21 +212,30 @@ public class ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput> : IAsyn
         SemaphoreSlim semaphore,
         CancellationToken cancellationToken)
     {
+        var tcs = new TaskCompletionSource<TOutput>();
+        
+        await orderingLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            orderingDictionary[index] = tcs;
+        }
+        finally
+        {
+            orderingLock.Release();
+        }
+        
         try
         {
             var result = await _taskSelector(item).ConfigureAwait(false);
-
-            await orderingLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                var tcs = new TaskCompletionSource<TOutput>();
-                tcs.SetResult(result);
-                orderingDictionary[index] = tcs;
-            }
-            finally
-            {
-                orderingLock.Release();
-            }
+            tcs.TrySetResult(result);
+        }
+        catch (OperationCanceledException)
+        {
+            tcs.TrySetCanceled();
+        }
+        catch (Exception ex)
+        {
+            tcs.TrySetException(ex);
         }
         finally
         {

@@ -155,12 +155,16 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
 
     public void Dispose()
     {
-        // Use async disposal with ConfigureAwait(false) to avoid deadlocks
-        // and add a timeout to prevent indefinite blocking
+        // Use Task.Run to avoid deadlocks by running async disposal on thread pool
+        // Add timeout to prevent indefinite blocking
         try
         {
-            var disposeTask = DisposeAsync().ConfigureAwait(false);
-            disposeTask.GetAwaiter().GetResult();
+            var disposeTask = Task.Run(async () => await DisposeAsync().ConfigureAwait(false));
+            if (!disposeTask.Wait(TimeSpan.FromSeconds(30)))
+            {
+                // Log warning if disposal times out, but don't throw
+                // as per IDisposable pattern
+            }
         }
         catch
         {

@@ -12,7 +12,16 @@
       "Bash(timeout 30 dotnet run:*)",
       "Bash(.EnumerableAsyncProcessor.Example.exe)",
       "Bash(EnumerableAsyncProcessor.Example.exe)",
-      "Bash(del \"EnumerableAsyncProcessor.UnitTests\\ValidationTests.cs\")"
+      "Bash(del \"EnumerableAsyncProcessor.UnitTests\\ValidationTests.cs\")",
+      "Bash(mkdir:*)",
+      "Bash(git add:*)",
+      "Bash(dotnet build)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test)",
+      "Bash(dotnet test:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(timeout 30 dotnet test --no-build --verbosity minimal)"
     ],
     "deny": []
   }

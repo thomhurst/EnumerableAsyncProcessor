@@ -37,10 +37,17 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
                 {
                     await channel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
                 }
-            }
-            finally
-            {
                 channel.Writer.Complete();
+            }
+            catch (OperationCanceledException)
+            {
+                channel.Writer.TryComplete();
+                throw;
+            }
+            catch (Exception ex)
+            {
+                channel.Writer.TryComplete(ex);
+                throw;
             }
         }, cancellationToken);
 

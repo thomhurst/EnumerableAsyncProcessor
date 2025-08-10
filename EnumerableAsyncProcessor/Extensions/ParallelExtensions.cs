@@ -75,10 +75,13 @@ public static class ParallelExtensions
         SemaphoreSlim parallelLock,
         CancellationToken cancellationToken)
     {
-        await parallelLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var semaphoreAcquired = false;
         
         try
         {
+            await parallelLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            semaphoreAcquired = true;
+            
             cancellationToken.ThrowIfCancellationRequested();
             var task = taskSelector(item);
             
@@ -92,12 +95,15 @@ public static class ParallelExtensions
                 return task.Result;
             }
 
-            // Use Task.Run to offload to ThreadPool
-            return await Task.Run(async () => await task.ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+            // Await the task directly - it's already async so no need for Task.Run
+            return await task.ConfigureAwait(false);
         }
         finally
         {
-            parallelLock.Release();
+            if (semaphoreAcquired)
+            {
+                parallelLock.Release();
+            }
         }
     }
     
@@ -107,10 +113,13 @@ public static class ParallelExtensions
         SemaphoreSlim parallelLock,
         CancellationToken cancellationToken)
     {
-        await parallelLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var semaphoreAcquired = false;
         
         try
         {
+            await parallelLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            semaphoreAcquired = true;
+            
             cancellationToken.ThrowIfCancellationRequested();
             var task = taskSelector(item);
             
@@ -124,12 +133,15 @@ public static class ParallelExtensions
                 return;
             }
 
-            // Use Task.Run to offload to ThreadPool
-            await Task.Run(async () => await task.ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+            // Await the task directly - it's already async so no need for Task.Run
+            await task.ConfigureAwait(false);
         }
         finally
         {
-            parallelLock.Release();
+            if (semaphoreAcquired)
+            {
+                parallelLock.Release();
+            }
         }
     }
 }

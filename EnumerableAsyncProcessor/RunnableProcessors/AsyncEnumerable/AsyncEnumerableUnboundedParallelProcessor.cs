@@ -31,21 +31,24 @@ public class AsyncEnumerableUnboundedParallelProcessor<TInput> : IAsyncEnumerabl
         var tasks = new List<Task>();
 
         // Start a task for each item immediately as it arrives
-        // No throttling or concurrency control
+        // No throttling or concurrency control - let the ThreadPool manage resources
         await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
-            // Start task immediately without waiting
-            // Use Task.Run to ensure we don't block if _taskSelector is synchronous
-            var task = Task.Run(async () =>
-            {
-                await Task.Yield();
-                await _taskSelector(item).ConfigureAwait(false);
-            }, cancellationToken);
+            var capturedItem = item;
+            // Create task that yields first to prevent blocking if _taskSelector is synchronous
+            var task = ProcessItemAsync(capturedItem, cancellationToken);
             tasks.Add(task);
         }
 
         // Wait for all tasks to complete
         await Task.WhenAll(tasks).ConfigureAwait(false);
+    }
+    
+    private async Task ProcessItemAsync(TInput item, CancellationToken cancellationToken)
+    {
+        // Yield to ensure we don't block the calling thread if _taskSelector is synchronous
+        await Task.Yield();
+        await _taskSelector(item).ConfigureAwait(false);
     }
 }
 #endif

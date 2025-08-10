@@ -21,21 +21,47 @@ public static class EnumerableExtensions
             .ForEachAsync(taskSelector, cancellationToken);
     }
 
-    internal static async IAsyncEnumerable<T> ToIAsyncEnumerable<T>(this IEnumerable<Task<T>> tasks)
+    internal static async IAsyncEnumerable<T> ToIAsyncEnumerable<T>(this IEnumerable<Task<T>> tasks, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
 #if NET9_0_OR_GREATER
-        await foreach (var task in Task.WhenEach(tasks).ConfigureAwait(false))
+        await foreach (var task in Task.WhenEach(tasks).ConfigureAwait(false).WithCancellation(cancellationToken))
         {
             yield return task.Result;
         }
 #else
         var managedTasksList = tasks.ToList();
 
+        // Create a cancellation task that will complete when cancellation is requested
+        using var cancellationTcs = new CancellationTokenSource();
+        var cancellationTask = Task.Delay(Timeout.Infinite, cancellationTcs.Token);
+        
+        // Register callback to trigger the cancellation task
+        using var registration = cancellationToken.Register(() => cancellationTcs.Cancel());
+
         while (managedTasksList.Count != 0)
         {
-            var finishedTask = await Task.WhenAny(managedTasksList).ConfigureAwait(false);
-            managedTasksList.Remove(finishedTask);
-            yield return await finishedTask.ConfigureAwait(false);
+            // Check for cancellation before each iteration
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            // Include the cancellation task in WhenAny
+            var allTasks = new List<Task>(managedTasksList.Count + 1);
+            allTasks.AddRange(managedTasksList);
+            allTasks.Add(cancellationTask);
+            
+            var finishedTask = await Task.WhenAny(allTasks).ConfigureAwait(false);
+            
+            // If the cancellation task completed, throw cancellation
+            if (finishedTask == cancellationTask)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                // This should not happen as cancellation should throw above, but as a safety measure:
+                throw new OperationCanceledException(cancellationToken);
+            }
+            
+            // Remove and yield the completed task
+            var completedTask = (Task<T>)finishedTask;
+            managedTasksList.Remove(completedTask);
+            yield return await completedTask.ConfigureAwait(false);
         }
 #endif
     }

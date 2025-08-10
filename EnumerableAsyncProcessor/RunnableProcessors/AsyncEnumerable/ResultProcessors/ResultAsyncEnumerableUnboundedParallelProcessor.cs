@@ -33,13 +33,7 @@ public class ResultAsyncEnumerableUnboundedParallelProcessor<TInput, TOutput> : 
         await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             var capturedItem = item;
-            var task = Task.Run(async () =>
-            {
-                // Yield to ensure we don't block the thread if _taskSelector is synchronous
-                await Task.Yield();
-                return await _taskSelector(capturedItem).ConfigureAwait(false);
-            }, cancellationToken);
-            
+            var task = ProcessItemAsync(capturedItem, cancellationToken);
             tasks.Add(task);
         }
 
@@ -50,6 +44,13 @@ public class ResultAsyncEnumerableUnboundedParallelProcessor<TInput, TOutput> : 
             tasks.Remove(completedTask);
             yield return await completedTask.ConfigureAwait(false);
         }
+    }
+    
+    private async Task<TOutput> ProcessItemAsync(TInput item, CancellationToken cancellationToken)
+    {
+        // Yield to ensure we don't block the thread if _taskSelector is synchronous
+        await Task.Yield();
+        return await _taskSelector(item).ConfigureAwait(false);
     }
 }
 #endif

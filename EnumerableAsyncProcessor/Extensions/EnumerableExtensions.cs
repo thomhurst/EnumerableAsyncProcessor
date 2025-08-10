@@ -1,7 +1,4 @@
 using EnumerableAsyncProcessor.Builders;
-#if NET6_0_OR_GREATER
-using EnumerableAsyncProcessor.Interfaces;
-#endif
 
 namespace EnumerableAsyncProcessor.Extensions;
 
@@ -43,38 +40,4 @@ public static class EnumerableExtensions
 #endif
     }
 
-#if NET6_0_OR_GREATER
-    /// <summary>
-    /// Process items using a channel-based approach with producer-consumer pattern.
-    /// </summary>
-    /// <typeparam name="T">The type of items to process.</typeparam>
-    /// <param name="items">The items to process.</param>
-    /// <param name="taskSelector">The async task selector function.</param>
-    /// <param name="options">Channel configuration options. If null, uses unbounded channel with single consumer.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>An async processor that processes items through a channel.</returns>
-    public static IAsyncProcessor ForEachWithChannelAsync<T>(this IEnumerable<T> items, Func<T, Task> taskSelector, ChannelProcessorOptions? options = null, CancellationToken cancellationToken = default)
-    {
-        return items.ToAsyncProcessorBuilder()
-            .ForEachAsync(taskSelector, cancellationToken)
-            .ProcessWithChannel(options);
-    }
-    
-    /// <summary>
-    /// Process items using a channel-based approach with producer-consumer pattern and return results.
-    /// </summary>
-    /// <typeparam name="T">The type of input items.</typeparam>
-    /// <typeparam name="TOutput">The type of output results.</typeparam>
-    /// <param name="items">The items to process.</param>
-    /// <param name="taskSelector">The async task selector function.</param>
-    /// <param name="options">Channel configuration options. If null, uses unbounded channel with single consumer.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>An async processor that processes items through a channel and returns results.</returns>
-    public static IAsyncProcessor<TOutput> SelectWithChannelAsync<T, TOutput>(this IEnumerable<T> items, Func<T, Task<TOutput>> taskSelector, ChannelProcessorOptions? options = null, CancellationToken cancellationToken = default)
-    {
-        return items.ToAsyncProcessorBuilder()
-            .SelectAsync(taskSelector, cancellationToken)
-            .ProcessWithChannel(options);
-    }
-#endif
 }

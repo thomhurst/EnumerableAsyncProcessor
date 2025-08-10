@@ -1,5 +1,5 @@
 #if NET6_0_OR_GREATER
-using System.Threading.Channels;
+using System.Collections.Concurrent;
 using EnumerableAsyncProcessor.Extensions;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors;
@@ -26,61 +26,50 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
     public async IAsyncEnumerable<TOutput> ExecuteAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
-        var outputChannel = Channel.CreateUnbounded<TOutput>();
-
-        // Start the processing task
-        var processingTask = ProcessAsync(outputChannel.Writer, cancellationToken);
-
-        // Yield results as they become available
-        await foreach (var result in outputChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
-        {
-            yield return result;
-        }
-
-        // Ensure processing completes
-        await processingTask.ConfigureAwait(false);
-    }
-
-    private async Task ProcessAsync(ChannelWriter<TOutput> writer, CancellationToken cancellationToken)
-    {
         var semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
-        var tasks = new List<Task>();
+        var tasks = new List<Task<TOutput>>();
 
         try
         {
             await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                var task = ProcessItemAsync(item, writer, semaphore, cancellationToken);
+                
+                var capturedItem = item;
+                var task = ProcessItemAsync(capturedItem, semaphore, cancellationToken);
                 tasks.Add(task);
-
-                // Clean up completed tasks periodically
-                if (tasks.Count > _maxConcurrency * 2)
+                
+                // Yield completed results
+                while (tasks.Count > 0 && tasks[0].IsCompleted)
                 {
-                    tasks.RemoveAll(t => t.IsCompleted);
+                    var completedTask = tasks[0];
+                    tasks.RemoveAt(0);
+                    yield return await completedTask.ConfigureAwait(false);
                 }
             }
 
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            // Yield remaining results
+            foreach (var task in tasks)
+            {
+                yield return await task.ConfigureAwait(false);
+            }
         }
         finally
         {
-            writer.Complete();
             semaphore.Dispose();
         }
     }
 
-    private async Task ProcessItemAsync(
+    private async Task<TOutput> ProcessItemAsync(
         TInput item, 
-        ChannelWriter<TOutput> writer, 
         SemaphoreSlim semaphore, 
         CancellationToken cancellationToken)
     {
         try
         {
-            var result = await _taskSelector(item).ConfigureAwait(false);
-            await writer.WriteAsync(result, cancellationToken).ConfigureAwait(false);
+            // Yield to ensure we don't block the thread if _taskSelector is synchronous
+            await Task.Yield();
+            return await _taskSelector(item).ConfigureAwait(false);
         }
         finally
         {

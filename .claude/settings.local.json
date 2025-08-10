@@ -24,7 +24,9 @@
       "Bash(timeout 30 dotnet test --no-build --verbosity minimal)",
       "Bash(git log:*)",
       "Bash(git log:*)",
-      "Bash(dotnet clean:*)"
+      "Bash(dotnet clean:*)",
+      "Bash(del:*)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }

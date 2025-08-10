@@ -27,8 +27,7 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
         
         try
         {
-            // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
-            await Task.Yield();
+            // Removed Task.Yield - parallelism is now handled at the processor level
             var task = TaskFactory.Invoke();
             
             // Fast-path for already completed tasks
@@ -123,8 +122,7 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
         
         try
         {
-            // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
-            await Task.Yield();
+            // Removed Task.Yield - parallelism is now handled at the processor level
             var task = TaskFactory.Invoke(Input);
             
             // Fast-path for already completed tasks
@@ -222,8 +220,7 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
         
         try
         {
-            // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
-            await Task.Yield();
+            // Removed Task.Yield - parallelism is now handled at the processor level
             var task = TaskFactory.Invoke(Input);
             
             // Fast-path for already completed tasks
@@ -318,8 +315,7 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
         
         try
         {
-            // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
-            await Task.Yield();
+            // Removed Task.Yield - parallelism is now handled at the processor level
             var task = TaskFactory.Invoke();
             
             // Fast-path for already completed tasks

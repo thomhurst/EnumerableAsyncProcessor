@@ -35,32 +35,23 @@ public class ItemActionAsyncProcessorBuilder<TInput>
             .StartProcessing();
     }
     
+    /// <summary>
+    /// Process items in parallel without concurrency limits.
+    /// </summary>
+    /// <returns>An async processor configured for parallel execution.</returns>
     public IAsyncProcessor ProcessInParallel()
     {
-        return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource)
-            .StartProcessing();
+        return ProcessInParallel(null);
     }
     
     /// <summary>
-    /// Process items in parallel with optimizations for I/O-bound tasks.
-    /// Removes Task.Run overhead and allows higher concurrency levels.
+    /// Process items in parallel with specified concurrency limit.
     /// </summary>
-    /// <param name="maxConcurrency">Maximum concurrent operations. If null, defaults to 10x processor count or minimum 100 for I/O-bound tasks.</param>
-    /// <returns>An async processor optimized for I/O operations.</returns>
-    public IAsyncProcessor ProcessInParallelForIO(int? maxConcurrency = null)
+    /// <param name="maxConcurrency">Maximum concurrent operations.</param>
+    /// <returns>An async processor configured for parallel execution.</returns>
+    public IAsyncProcessor ProcessInParallel(int? maxConcurrency)
     {
-        return new IOBoundParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource, maxConcurrency)
-            .StartProcessing();
-    }
-    
-    /// <summary>
-    /// Process items in parallel with explicit I/O vs CPU-bound configuration.
-    /// </summary>
-    /// <param name="isIOBound">True for I/O-bound tasks (removes Task.Run overhead), false for CPU-bound tasks.</param>
-    /// <returns>An async processor configured for the specified workload type.</returns>
-    public IAsyncProcessor ProcessInParallel(bool isIOBound)
-    {
-        return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource, isIOBound)
+        return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource, maxConcurrency)
             .StartProcessing();
     }
     

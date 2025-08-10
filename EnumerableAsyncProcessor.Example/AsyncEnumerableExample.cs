@@ -46,8 +46,8 @@ public static class AsyncEnumerableExample
                 await SimulateApiCall(number);
                 Console.WriteLine($"API call {number} completed");
             })
-            .ProcessInParallelForIO(10)
-            .ExecuteAsync(); // Optimized for I/O with high concurrency
+            .ProcessInParallel(10)
+            .ExecuteAsync(); // Process with controlled concurrency
 
         Console.WriteLine("\nAll examples completed!");
     }

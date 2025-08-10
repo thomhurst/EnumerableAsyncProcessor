@@ -32,30 +32,23 @@ public class ActionAsyncProcessorBuilder<TOutput>
         return new ResultTimedRateLimitedParallelAsyncProcessor<TOutput>(_count, _taskSelector, levelOfParallelism, timeSpan, _cancellationTokenSource).StartProcessing();
     }
     
+    /// <summary>
+    /// Process tasks in parallel without concurrency limits and return results.
+    /// </summary>
+    /// <returns>An async processor configured for parallel execution that returns results.</returns>
     public IAsyncProcessor<TOutput> ProcessInParallel()
     {
-        return new ResultParallelAsyncProcessor<TOutput>(_count, _taskSelector, _cancellationTokenSource).StartProcessing();
+        return ProcessInParallel(null);
     }
     
     /// <summary>
-    /// Process tasks in parallel with optimizations for I/O-bound operations and return results.
-    /// Removes Task.Run overhead and allows higher concurrency levels.
+    /// Process tasks in parallel with specified concurrency limit and return results.
     /// </summary>
-    /// <param name="maxConcurrency">Maximum concurrent operations. If null, defaults to 10x processor count or minimum 100 for I/O-bound tasks.</param>
-    /// <returns>An async processor optimized for I/O operations that returns results.</returns>
-    public IAsyncProcessor<TOutput> ProcessInParallelForIO(int? maxConcurrency = null)
+    /// <param name="maxConcurrency">Maximum concurrent operations.</param>
+    /// <returns>An async processor configured for parallel execution that returns results.</returns>
+    public IAsyncProcessor<TOutput> ProcessInParallel(int? maxConcurrency)
     {
-        return new ResultIOBoundParallelAsyncProcessor<TOutput>(_count, _taskSelector, _cancellationTokenSource, maxConcurrency).StartProcessing();
-    }
-    
-    /// <summary>
-    /// Process tasks in parallel with explicit I/O vs CPU-bound configuration and return results.
-    /// </summary>
-    /// <param name="isIOBound">True for I/O-bound tasks (removes Task.Run overhead), false for CPU-bound tasks.</param>
-    /// <returns>An async processor configured for the specified workload type that returns results.</returns>
-    public IAsyncProcessor<TOutput> ProcessInParallel(bool isIOBound)
-    {
-        return new ResultParallelAsyncProcessor<TOutput>(_count, _taskSelector, _cancellationTokenSource, isIOBound).StartProcessing();
+        return new ResultParallelAsyncProcessor<TOutput>(_count, _taskSelector, _cancellationTokenSource, maxConcurrency).StartProcessing();
     }
     
     public IAsyncProcessor<TOutput> ProcessOneAtATime()

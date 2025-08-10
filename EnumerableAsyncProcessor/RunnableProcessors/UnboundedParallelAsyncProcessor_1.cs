@@ -23,7 +23,6 @@ public class UnboundedParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TI
             // Fast-path for already completed tasks
             if (task.IsCompleted)
             {
-                return task;
             }
             return task;
         });

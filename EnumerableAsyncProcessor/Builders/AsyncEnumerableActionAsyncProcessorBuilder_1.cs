@@ -37,15 +37,6 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput>
         return ProcessInParallel(Environment.ProcessorCount);
     }
     
-    /// <summary>
-    /// Process items in parallel optimized for I/O-bound operations.
-    /// </summary>
-    public IAsyncEnumerableProcessor ProcessInParallelForIO(int? maxConcurrency = null)
-    {
-        var concurrency = maxConcurrency ?? Math.Max(Environment.ProcessorCount * 10, 100);
-        return new AsyncEnumerableIOBoundParallelProcessor<TInput>(
-            _items, _taskSelector, concurrency, _cancellationTokenSource);
-    }
     
     /// <summary>
     /// Process items one at a time (sequential processing).

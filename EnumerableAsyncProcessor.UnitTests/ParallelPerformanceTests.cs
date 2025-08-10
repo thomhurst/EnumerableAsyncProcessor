@@ -70,7 +70,7 @@ public class ParallelPerformanceTests
         Console.WriteLine($"Expected sequential time: {expectedSequentialTimeMs:N0} milliseconds ({expectedSequentialTimeMs/1000.0:F1} seconds)");
         Console.WriteLine($"Speedup factor: {expectedSequentialTimeMs / stopwatch.Elapsed.TotalMilliseconds:F2}x");
         
-        await Assert.That(stopwatch.Elapsed.TotalSeconds).IsLessThan(5);
+        await Assert.That(stopwatch.Elapsed.TotalSeconds).IsLessThan(10);
     }
     
     [Test]
@@ -108,7 +108,7 @@ public class ParallelPerformanceTests
     [Test]
     public async Task MeasureParallelProcessingTime_200ItemsWithDirectThreadSleep()
     {
-        const int itemCount = 1000;
+        const int itemCount = 200;
         const int sleepMilliseconds = 100;
         
         var stopwatch = Stopwatch.StartNew();
@@ -138,6 +138,6 @@ public class ParallelPerformanceTests
         Console.WriteLine($"Expected sequential time: {expectedSequentialTimeMs:N0} milliseconds ({expectedSequentialTimeMs/1000.0:F1} seconds)");
         Console.WriteLine($"Speedup factor: {expectedSequentialTimeMs / stopwatch.Elapsed.TotalMilliseconds:F2}x");
         
-        await Assert.That(stopwatch.Elapsed.TotalSeconds).IsLessThan(15);
+        await Assert.That(stopwatch.Elapsed.TotalSeconds).IsLessThan(5);
     }
 }

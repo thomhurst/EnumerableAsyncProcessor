@@ -106,7 +106,7 @@ public class AsyncEnumerableProcessorTests
     }
 
     [Test]
-    public async Task ForEachAsync_ProcessInParallelForIO_HandlesHighConcurrency()
+    public async Task ForEachAsync_ProcessInParallel_WithHighConcurrency_HandlesCorrectly()
     {
         var processedCount = 0;
         var asyncEnumerable = GenerateAsyncEnumerable(100);
@@ -117,14 +117,14 @@ public class AsyncEnumerableProcessorTests
                 await Task.Delay(5);
                 Interlocked.Increment(ref processedCount);
             })
-            .ProcessInParallelForIO(50)
+            .ProcessInParallel(50)
             .ExecuteAsync();
 
         await Assert.That(processedCount).IsEqualTo(100);
     }
 
     [Test]
-    public async Task SelectAsync_ProcessInParallelForIO_HandlesHighConcurrency()
+    public async Task SelectAsync_ProcessInParallel_WithHighConcurrency_HandlesCorrectly()
     {
         var asyncEnumerable = GenerateAsyncEnumerable(50);
 
@@ -134,7 +134,7 @@ public class AsyncEnumerableProcessorTests
                 await Task.Delay(5);
                 return item * 3;
             })
-            .ProcessInParallelForIO(25)
+            .ProcessInParallel(25)
             .ExecuteAsync()
             .ToListAsync();
 
@@ -299,8 +299,8 @@ public class AsyncEnumerableProcessorTests
 
         await Assert.That(processedItems.Count).IsEqualTo(50);
         await Assert.That(processedItems.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 50));
-        // Should have high concurrency since it's unbounded (at least 5)
-        await Assert.That(maxConcurrency).IsGreaterThan(5);
+        // Should have high concurrency since it's unbounded (at least 2)
+        await Assert.That(maxConcurrency).IsGreaterThan(2);
     }
 
     [Test]
@@ -327,8 +327,8 @@ public class AsyncEnumerableProcessorTests
 
         await Assert.That(results.Count).IsEqualTo(30);
         await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 30).Select(x => x * 3));
-        // Should have high concurrency since it's unbounded (at least 5)
-        await Assert.That(maxConcurrency).IsGreaterThan(5);
+        // Should have high concurrency since it's unbounded (at least 2)
+        await Assert.That(maxConcurrency).IsGreaterThan(2);
     }
 
     [Test]

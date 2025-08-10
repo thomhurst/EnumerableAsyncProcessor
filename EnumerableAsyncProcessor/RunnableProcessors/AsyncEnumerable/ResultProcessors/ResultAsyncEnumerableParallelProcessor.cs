@@ -26,7 +26,7 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
     public async IAsyncEnumerable<TOutput> ExecuteAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
-        var semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
+        using var semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
         var tasks = new List<Task<TOutput>>();
 
         try
@@ -36,7 +36,18 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
                 await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 
                 var capturedItem = item;
-                var task = ProcessItemAsync(capturedItem, semaphore, cancellationToken);
+                // Use Task.Run to ensure parallelism and prevent blocking
+                var task = Task.Run(async () => 
+                {
+                    try
+                    {
+                        return await _taskSelector(capturedItem).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }, cancellationToken);
                 tasks.Add(task);
                 
                 // Yield completed results
@@ -56,24 +67,19 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
         }
         finally
         {
-            semaphore.Dispose();
-        }
-    }
-
-    private async Task<TOutput> ProcessItemAsync(
-        TInput item, 
-        SemaphoreSlim semaphore, 
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            // Yield to ensure we don't block the thread if _taskSelector is synchronous
-            await Task.Yield();
-            return await _taskSelector(item).ConfigureAwait(false);
-        }
-        finally
-        {
-            semaphore.Release();
+            // Ensure all tasks complete before the using block disposes the semaphore
+            // This handles cancellation or exception scenarios
+            if (tasks.Count > 0)
+            {
+                try
+                {
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Ignore exceptions here as they've already been handled
+                }
+            }
         }
     }
 }

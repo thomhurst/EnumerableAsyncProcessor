@@ -16,39 +16,31 @@ public class ResultParallelAsyncProcessor<TOutput> : ResultAbstractAsyncProcesso
         // If no concurrency limit, process all tasks in parallel
         if (_maxConcurrency == null)
         {
+            // Use Task.Run to ensure all tasks start immediately on thread pool threads
+            // This prevents synchronous code in user delegates from blocking other tasks
             await Task.WhenAll(TaskWrappers.Select(taskWrapper => 
-            {
-                var task = taskWrapper.Process(CancellationToken);
-                // Fast-path for already completed tasks
-                if (task.IsCompleted)
-                {
-                }
-                return task;
-            })).ConfigureAwait(false);
+                Task.Run(() => taskWrapper.Process(CancellationToken), CancellationToken)
+            )).ConfigureAwait(false);
             return;
         }
 
         // Use semaphore for concurrency throttling
         using var semaphore = new SemaphoreSlim(_maxConcurrency.Value, _maxConcurrency.Value);
         
-        var tasks = TaskWrappers.Select(async taskWrapper =>
+        // Materialize tasks immediately to ensure they all start in parallel (up to concurrency limit)
+        // Use Task.Run to prevent synchronous code from blocking thread pool threads
+        var tasks = TaskWrappers.Select(taskWrapper => Task.Run(async () =>
         {
             await semaphore.WaitAsync(CancellationToken).ConfigureAwait(false);
             try
             {
-                var task = taskWrapper.Process(CancellationToken);
-                // Fast-path for already completed tasks
-                if (task.IsCompleted)
-                {
-                    return;
-                }
-                await task.ConfigureAwait(false);
+                await taskWrapper.Process(CancellationToken).ConfigureAwait(false);
             }
             finally
             {
                 semaphore.Release();
             }
-        });
+        }, CancellationToken)).ToList(); // Force immediate task creation
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }

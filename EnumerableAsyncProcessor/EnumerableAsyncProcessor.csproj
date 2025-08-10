@@ -23,11 +23,6 @@
 
     <ItemGroup Condition="'$(TargetFrameworkIdentifier)'!='.NETCoreApp'">
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
-        <PackageReference Include="System.Threading.Channels" Version="6.0.0" />
-    </ItemGroup>
-    
-    <ItemGroup Condition="'$(TargetFrameworkIdentifier)'=='.NETCoreApp' AND '$(TargetFramework)'=='net6.0'">
-        <PackageReference Include="System.Threading.Channels" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>

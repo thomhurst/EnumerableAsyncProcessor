@@ -14,11 +14,11 @@ public class ResultRateLimitedParallelAsyncProcessor<TInput, TOutput> : ResultAb
 
     internal override Task Process()
     {
-        // For rate-limited processing, we want strict parallelism control, so use CPU-bound processing
+        // For rate-limited processing, we want strict parallelism control
         return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
             async taskWrapper =>
             {
                 await Task.Run(() => taskWrapper.Process(CancellationToken)).ConfigureAwait(false);
-            }, CancellationToken.None, false); // false = CPU-bound
+            }, CancellationToken.None);
     }
 }

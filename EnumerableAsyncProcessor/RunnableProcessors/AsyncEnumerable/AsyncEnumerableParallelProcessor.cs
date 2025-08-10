@@ -1,5 +1,4 @@
 #if NET6_0_OR_GREATER
-using System.Threading.Channels;
 using EnumerableAsyncProcessor.Extensions;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable;
@@ -25,48 +24,40 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
 
     public async Task ExecuteAsync()
     {
-        var channel = Channel.CreateUnbounded<TInput>();
         var cancellationToken = _cancellationTokenSource.Token;
+        var semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
+        var tasks = new List<Task>();
 
-        // Producer task - enumerate the async enumerable and write to channel
-        var producerTask = Task.Run(async () =>
+        try
         {
-            try
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                
+                var capturedItem = item;
+                var task = Task.Run(async () =>
                 {
-                    await channel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
-                }
-                channel.Writer.Complete();
+                    try
+                    {
+                        // Yield to ensure we don't block the thread if _taskSelector is synchronous
+                        await Task.Yield();
+                        await _taskSelector(capturedItem).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }, cancellationToken);
+                
+                tasks.Add(task);
             }
-            catch (OperationCanceledException)
-            {
-                channel.Writer.TryComplete();
-                throw;
-            }
-            catch (Exception ex)
-            {
-                channel.Writer.TryComplete(ex);
-                throw;
-            }
-        }, cancellationToken);
 
-        // Consumer tasks - process items from the channel in parallel
-        var consumerTasks = Enumerable.Range(0, _maxConcurrency)
-            .Select(_ => Task.Run(async () =>
-            {
-                await foreach (var item in channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    // Yield to ensure we don't block the thread if _taskSelector is synchronous
-                    await Task.Yield();
-                    await _taskSelector(item).ConfigureAwait(false);
-                }
-            }, cancellationToken))
-            .ToArray();
-
-        // Wait for producer and all consumers to complete
-        await producerTask.ConfigureAwait(false);
-        await Task.WhenAll(consumerTasks).ConfigureAwait(false);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+        finally
+        {
+            semaphore.Dispose();
+        }
     }
 }
 #endif

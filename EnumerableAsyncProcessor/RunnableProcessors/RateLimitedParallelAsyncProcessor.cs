@@ -17,11 +17,11 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal override Task Process()
     {
-        // For rate-limited processing, we want strict parallelism control, so use CPU-bound processing
+        // For rate-limited processing, we want strict parallelism control
         return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
             async taskWrapper =>
             {
                 await Task.Run(() => taskWrapper.Process(CancellationToken), CancellationToken).ConfigureAwait(false);
-            }, CancellationToken, false); // false = CPU-bound
+            }, CancellationToken);
     }
 }

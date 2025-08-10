@@ -35,7 +35,12 @@ public class AsyncEnumerableUnboundedParallelProcessor<TInput> : IAsyncEnumerabl
         await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             // Start task immediately without waiting
-            var task = _taskSelector(item);
+            // Use Task.Run to ensure we don't block if _taskSelector is synchronous
+            var task = Task.Run(async () =>
+            {
+                await Task.Yield();
+                await _taskSelector(item).ConfigureAwait(false);
+            }, cancellationToken);
             tasks.Add(task);
         }
 

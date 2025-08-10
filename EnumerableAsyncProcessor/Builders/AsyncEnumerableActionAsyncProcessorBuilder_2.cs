@@ -57,14 +57,5 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
             _items, _taskSelector, _cancellationTokenSource);
     }
 
-    /// <summary>
-    /// Process items using a channel-based approach and return results.
-    /// </summary>
-    public IAsyncEnumerableProcessor<TOutput> ProcessWithChannel(AsyncEnumerableChannelOptions? options = null)
-    {
-        options ??= new AsyncEnumerableChannelOptions();
-        return new ResultAsyncEnumerableChannelBasedProcessor<TInput, TOutput>(
-            _items, _taskSelector, _cancellationTokenSource, options);
-    }
 }
 #endif

@@ -57,14 +57,5 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput>
             _items, _taskSelector, _cancellationTokenSource);
     }
 
-    /// <summary>
-    /// Process items using a channel-based approach with producer-consumer pattern.
-    /// </summary>
-    public IAsyncEnumerableProcessor ProcessWithChannel(AsyncEnumerableChannelOptions? options = null)
-    {
-        options ??= new AsyncEnumerableChannelOptions();
-        return new AsyncEnumerableChannelBasedProcessor<TInput>(
-            _items, _taskSelector, _cancellationTokenSource, options);
-    }
 }
 #endif

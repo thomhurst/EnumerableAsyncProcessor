@@ -67,15 +67,4 @@ public class ItemActionAsyncProcessorBuilder<TInput, TOutput>
         return new ResultUnboundedParallelAsyncProcessor<TInput, TOutput>(_items, _taskSelector, _cancellationTokenSource).StartProcessing();
     }
 
-#if NET6_0_OR_GREATER
-    /// <summary>
-    /// Process items using a channel-based approach with producer-consumer pattern and return results.
-    /// </summary>
-    /// <param name="options">Channel configuration options. If null, uses unbounded channel with single consumer.</param>
-    /// <returns>An async processor that processes items through a channel and returns results.</returns>
-    public IAsyncProcessor<TOutput> ProcessWithChannel(ChannelProcessorOptions? options = null)
-    {
-        return new ResultChannelBasedBatchAsyncProcessor<TInput, TOutput>(_items, _taskSelector, _cancellationTokenSource, options).StartProcessing();
-    }
-#endif
 }

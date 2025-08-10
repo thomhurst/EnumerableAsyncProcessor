@@ -67,9 +67,6 @@ async Task CountAsyncProcessor()
 }
 
 #if NET6_0_OR_GREATER
-// Run channel processing examples
-await ChannelProcessingExamples.RunAllExamples();
-
 // Run IAsyncEnumerable examples
 Console.WriteLine("\n\n=== Running IAsyncEnumerable Examples ===\n");
 await AsyncEnumerableExample.RunExamples();

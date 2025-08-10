@@ -67,15 +67,4 @@ public class ActionAsyncProcessorBuilder
         return new UnboundedParallelAsyncProcessor(_count, _taskSelector, _cancellationTokenSource).StartProcessing();
     }
 
-#if NET6_0_OR_GREATER
-    /// <summary>
-    /// Process tasks using a channel-based approach with producer-consumer pattern.
-    /// </summary>
-    /// <param name="options">Channel configuration options. If null, uses unbounded channel with single consumer.</param>
-    /// <returns>An async processor that processes tasks through a channel.</returns>
-    public IAsyncProcessor ProcessWithChannel(ChannelProcessorOptions? options = null)
-    {
-        return new ChannelBasedBatchAsyncProcessor(_count, _taskSelector, _cancellationTokenSource, options).StartProcessing();
-    }
-#endif
 }

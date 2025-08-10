@@ -25,7 +25,7 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
     public async Task ExecuteAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
-        var semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
+        using var semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
         var tasks = new List<Task>();
 
         try
@@ -39,8 +39,7 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
                 {
                     try
                     {
-                        // Yield to ensure we don't block the thread if _taskSelector is synchronous
-                        await Task.Yield();
+                        // Removed Task.Yield - parallelism is now handled at the processor level
                         await _taskSelector(capturedItem).ConfigureAwait(false);
                     }
                     finally
@@ -51,12 +50,15 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
                 
                 tasks.Add(task);
             }
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
         finally
         {
-            semaphore.Dispose();
+            // Always wait for all tasks to complete before the using block disposes the semaphore
+            // This ensures the semaphore is not disposed while tasks are still running
+            if (tasks.Count > 0)
+            {
+                await Task.WhenAll(tasks).ConfigureAwait(false);
+            }
         }
     }
 }

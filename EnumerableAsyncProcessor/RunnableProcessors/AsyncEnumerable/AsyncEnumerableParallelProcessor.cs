@@ -57,6 +57,8 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
             {
                 await foreach (var item in channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
                 {
+                    // Yield to ensure we don't block the thread if _taskSelector is synchronous
+                    await Task.Yield();
                     await _taskSelector(item).ConfigureAwait(false);
                 }
             }, cancellationToken))

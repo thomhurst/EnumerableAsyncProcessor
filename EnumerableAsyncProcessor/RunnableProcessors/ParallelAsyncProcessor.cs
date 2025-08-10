@@ -4,33 +4,46 @@ namespace EnumerableAsyncProcessor.RunnableProcessors;
 
 public class ParallelAsyncProcessor : AbstractAsyncProcessor
 {
-    private readonly bool _isIOBound;
+    private readonly int? _maxConcurrency;
     
-    internal ParallelAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource, bool isIOBound = true) : base(count, taskSelector, cancellationTokenSource)
+    internal ParallelAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource, int? maxConcurrency = null) : base(count, taskSelector, cancellationTokenSource)
     {
-        _isIOBound = isIOBound;
+        _maxConcurrency = maxConcurrency;
     }
 
     internal override async Task Process()
     {
-        // For I/O-bound tasks, don't use Task.Run wrapper as it adds unnecessary overhead
-        // The tasks are already async and won't block threads
-        if (_isIOBound)
+        // If no concurrency limit, process all tasks in parallel
+        if (_maxConcurrency == null)
         {
-            await Task.WhenAll(TaskWrappers.Select(taskWrapper => 
-            {
-                var task = taskWrapper.Process(CancellationToken);
-                // Fast-path for already completed tasks
-                if (task.IsCompleted)
-                {
-                    return task;
-                }
-                return task;
-            })).ConfigureAwait(false);
+            await Task.WhenAll(TaskWrappers.Select(taskWrapper => taskWrapper.Process(CancellationToken))).ConfigureAwait(false);
             return;
         }
 
-        // For CPU-bound tasks, use Task.Run to offload to ThreadPool
-        await Task.WhenAll(TaskWrappers.Select(taskWrapper => Task.Run(() => taskWrapper.Process(CancellationToken)))).ConfigureAwait(false);
+        // Use semaphore for concurrency throttling
+        using var semaphore = new SemaphoreSlim(_maxConcurrency.Value, _maxConcurrency.Value);
+        
+        var tasks = TaskWrappers.Select(async taskWrapper =>
+        {
+            await semaphore.WaitAsync(CancellationToken).ConfigureAwait(false);
+            try
+            {
+                var task = taskWrapper.Process(CancellationToken);
+                
+                // Fast-path for already completed tasks
+                if (task.IsCompleted)
+                {
+                    return;
+                }
+                
+                await task.ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 }

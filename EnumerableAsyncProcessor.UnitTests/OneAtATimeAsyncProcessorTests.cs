@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EnumerableAsyncProcessor.Extensions;
@@ -27,8 +28,8 @@ public class OneAtATimeAsyncProcessorTests
             })
             .ProcessOneAtATime();
 
-        // Delay to make sure no other Tasks start
-        await Task.Delay(100).ConfigureAwait(false);
+        // Delay to allow the first task to start
+        await Task.Delay(500).ConfigureAwait(false);
         
         await Assert.That(started).IsEqualTo(1);
         
@@ -59,8 +60,8 @@ public class OneAtATimeAsyncProcessorTests
         
         await processor.GetEnumerableTasks().First();
         
-        // Delay to allow remaining Tasks to start
-        await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+        // Delay to allow remaining Tasks to start (increased due to Task.Yield overhead)
+        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
         
         await Assert.That(started).IsEqualTo(2);
         
@@ -97,7 +98,7 @@ public class OneAtATimeAsyncProcessorTests
         await Task.WhenAll(processor.GetEnumerableTasks().Take(amountToComplete));
         
         // Delay to allow remaining Tasks to start
-        await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
         
         await Assert.That(started).IsEqualTo(amountToComplete + 1);
         

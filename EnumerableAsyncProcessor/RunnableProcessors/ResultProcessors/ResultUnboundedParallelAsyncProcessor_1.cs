@@ -23,7 +23,6 @@ public class ResultUnboundedParallelAsyncProcessor<TOutput> : ResultAbstractAsyn
             // Fast-path for already completed tasks
             if (task.IsCompleted)
             {
-                return task;
             }
             return task;
         });

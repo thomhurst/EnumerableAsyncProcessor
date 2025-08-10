@@ -21,7 +21,10 @@
       "Bash(dotnet test:*)",
       "Bash(rg:*)",
       "Bash(find:*)",
-      "Bash(timeout 30 dotnet test --no-build --verbosity minimal)"
+      "Bash(timeout 30 dotnet test --no-build --verbosity minimal)",
+      "Bash(git log:*)",
+      "Bash(git log:*)",
+      "Bash(dotnet clean:*)"
     ],
     "deny": []
   }

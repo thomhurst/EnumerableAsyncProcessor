@@ -27,6 +27,8 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
         
         try
         {
+            // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
+            await Task.Yield();
             var task = TaskFactory.Invoke();
             
             // Fast-path for already completed tasks
@@ -121,6 +123,8 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
         
         try
         {
+            // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
+            await Task.Yield();
             var task = TaskFactory.Invoke(Input);
             
             // Fast-path for already completed tasks
@@ -218,6 +222,8 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
         
         try
         {
+            // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
+            await Task.Yield();
             var task = TaskFactory.Invoke(Input);
             
             // Fast-path for already completed tasks
@@ -312,6 +318,8 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
         
         try
         {
+            // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
+            await Task.Yield();
             var task = TaskFactory.Invoke();
             
             // Fast-path for already completed tasks
@@ -401,6 +409,8 @@ public readonly struct ChannelItemTaskWrapper<TInput> : IEquatable<ChannelItemTa
             return;
         }
         
+        // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
+        await Task.Yield();
         await TaskFactory.Invoke(Input).ConfigureAwait(false);
     }
 
@@ -450,6 +460,8 @@ public readonly struct ChannelItemTaskWrapper<TInput, TOutput> : IEquatable<Chan
             cancellationToken.ThrowIfCancellationRequested();
         }
         
+        // Yield to ensure we don't block the calling thread if TaskFactory is synchronous
+        await Task.Yield();
         return await TaskFactory.Invoke(Input).ConfigureAwait(false);
     }
 

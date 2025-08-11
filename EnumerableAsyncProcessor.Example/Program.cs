@@ -70,4 +70,8 @@ async Task CountAsyncProcessor()
 // Run IAsyncEnumerable examples
 Console.WriteLine("\n\n=== Running IAsyncEnumerable Examples ===\n");
 await AsyncEnumerableExample.RunExamples();
+
+// Run ProcessInParallel examples
+Console.WriteLine("\n\n=== Running ProcessInParallel Extension Examples ===\n");
+await ProcessInParallelExample.RunExample();
 #endif

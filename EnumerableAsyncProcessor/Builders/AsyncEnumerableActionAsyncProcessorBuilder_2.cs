@@ -21,20 +21,54 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
     }
 
     /// <summary>
-    /// Process items in parallel with a specified level of parallelism and return results.
+    /// Process items in parallel without concurrency limits and return results.
     /// </summary>
-    public IAsyncEnumerableProcessor<TOutput> ProcessInParallel(int maxConcurrency)
+    /// <returns>An async processor configured for parallel execution.</returns>
+    public IAsyncEnumerableProcessor<TOutput> ProcessInParallel()
     {
-        return new ResultAsyncEnumerableParallelProcessor<TInput, TOutput>(
-            _items, _taskSelector, maxConcurrency, _cancellationTokenSource);
+        return ProcessInParallel(null, false);
     }
     
     /// <summary>
-    /// Process items in parallel with default concurrency and return results.
+    /// Process items in parallel without concurrency limits and return results.
     /// </summary>
-    public IAsyncEnumerableProcessor<TOutput> ProcessInParallel()
+    /// <param name="scheduleOnThreadPool">If true, schedules tasks on thread pool to prevent blocking. Default is false for maximum performance.</param>
+    /// <returns>An async processor configured for parallel execution.</returns>
+    public IAsyncEnumerableProcessor<TOutput> ProcessInParallel(bool scheduleOnThreadPool)
     {
-        return ProcessInParallel(Environment.ProcessorCount);
+        return ProcessInParallel(null, scheduleOnThreadPool);
+    }
+    
+    /// <summary>
+    /// Process items in parallel with specified concurrency limit and return results.
+    /// </summary>
+    /// <param name="maxConcurrency">Maximum concurrent operations.</param>
+    /// <returns>An async processor configured for parallel execution.</returns>
+    public IAsyncEnumerableProcessor<TOutput> ProcessInParallel(int maxConcurrency)
+    {
+        return ProcessInParallel((int?)maxConcurrency, false);
+    }
+    
+    /// <summary>
+    /// Process items in parallel with specified concurrency limit and return results.
+    /// </summary>
+    /// <param name="maxConcurrency">Maximum concurrent operations.</param>
+    /// <returns>An async processor configured for parallel execution.</returns>
+    public IAsyncEnumerableProcessor<TOutput> ProcessInParallel(int? maxConcurrency)
+    {
+        return ProcessInParallel(maxConcurrency, false);
+    }
+    
+    /// <summary>
+    /// Process items in parallel with specified concurrency limit and return results.
+    /// </summary>
+    /// <param name="maxConcurrency">Maximum concurrent operations.</param>
+    /// <param name="scheduleOnThreadPool">If true, schedules tasks on thread pool to prevent blocking.</param>
+    /// <returns>An async processor configured for parallel execution.</returns>
+    public IAsyncEnumerableProcessor<TOutput> ProcessInParallel(int? maxConcurrency, bool scheduleOnThreadPool)
+    {
+        return new ResultAsyncEnumerableParallelProcessor<TInput, TOutput>(
+            _items, _taskSelector, maxConcurrency, scheduleOnThreadPool, _cancellationTokenSource);
     }
     
     
@@ -45,6 +79,17 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
     {
         return new ResultAsyncEnumerableOneAtATimeProcessor<TInput, TOutput>(
             _items, _taskSelector, _cancellationTokenSource);
+    }
+    
+    /// <summary>
+    /// Process items in batches and return results.
+    /// </summary>
+    /// <param name="batchSize">The size of each batch.</param>
+    /// <returns>An async processor configured for batch execution.</returns>
+    public IAsyncEnumerableProcessor<TOutput> ProcessInBatches(int batchSize)
+    {
+        return new ResultAsyncEnumerableBatchProcessor<TInput, TOutput>(
+            _items, _taskSelector, batchSize, _cancellationTokenSource);
     }
 
 }

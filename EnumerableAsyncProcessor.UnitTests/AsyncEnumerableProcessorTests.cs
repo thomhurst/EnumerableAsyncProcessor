@@ -215,6 +215,145 @@ public class AsyncEnumerableProcessorTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await task);
         await Assert.That(exception!.Message).IsEqualTo("Test exception");
     }
+    
+    [Test]
+    public async Task ForEachAsync_ProcessInParallel_UnboundedConcurrency_ProcessesAllItems()
+    {
+        var processedItems = new List<int>();
+        var asyncEnumerable = GenerateAsyncEnumerable(50);
+
+        await asyncEnumerable
+            .ForEachAsync(async item =>
+            {
+                await Task.Delay(5);
+                lock (processedItems)
+                {
+                    processedItems.Add(item);
+                }
+            })
+            .ProcessInParallel() // Unbounded concurrency
+            .ExecuteAsync();
+
+        await Assert.That(processedItems.Count).IsEqualTo(50);
+        await Assert.That(processedItems.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 50));
+    }
+    
+    [Test]
+    public async Task SelectAsync_ProcessInParallel_UnboundedConcurrency_ReturnsAllResults()
+    {
+        var asyncEnumerable = GenerateAsyncEnumerable(30);
+
+        var results = await asyncEnumerable
+            .SelectAsync(async item =>
+            {
+                await Task.Delay(5);
+                return item * 2;
+            })
+            .ProcessInParallel() // Unbounded concurrency
+            .ExecuteAsync()
+            .ToListAsync();
+
+        await Assert.That(results.Count).IsEqualTo(30);
+        await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 30).Select(x => x * 2));
+    }
+    
+    [Test]
+    public async Task ForEachAsync_ProcessInParallel_WithThreadPoolScheduling_ProcessesAllItems()
+    {
+        var processedItems = new List<int>();
+        var asyncEnumerable = GenerateAsyncEnumerable(20);
+
+        await asyncEnumerable
+            .ForEachAsync(async item =>
+            {
+                await Task.Delay(5);
+                lock (processedItems)
+                {
+                    processedItems.Add(item);
+                }
+            })
+            .ProcessInParallel(scheduleOnThreadPool: true)
+            .ExecuteAsync();
+
+        await Assert.That(processedItems.Count).IsEqualTo(20);
+        await Assert.That(processedItems.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 20));
+    }
+    
+    [Test]
+    public async Task ForEachAsync_ProcessInBatches_ProcessesAllItemsInBatches()
+    {
+        var processedBatches = new List<int>();
+        var asyncEnumerable = GenerateAsyncEnumerable(25);
+
+        await asyncEnumerable
+            .ForEachAsync(async item =>
+            {
+                await Task.Delay(5);
+                lock (processedBatches)
+                {
+                    processedBatches.Add(item);
+                }
+            })
+            .ProcessInBatches(5)
+            .ExecuteAsync();
+
+        await Assert.That(processedBatches.Count).IsEqualTo(25);
+        await Assert.That(processedBatches.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 25));
+    }
+    
+    [Test]
+    public async Task SelectAsync_ProcessInBatches_ReturnsAllResultsInBatches()
+    {
+        var asyncEnumerable = GenerateAsyncEnumerable(23);
+
+        var results = await asyncEnumerable
+            .SelectAsync(async item =>
+            {
+                await Task.Delay(5);
+                return item * 3;
+            })
+            .ProcessInBatches(5)
+            .ExecuteAsync()
+            .ToListAsync();
+
+        await Assert.That(results.Count).IsEqualTo(23);
+        // Batches maintain order within batch, so results should be in order
+        await Assert.That(results).IsEquivalentTo(Enumerable.Range(1, 23).Select(x => x * 3));
+    }
+    
+    [Test]
+    public async Task ProcessInParallel_NullableConcurrency_WorksCorrectly()
+    {
+        var asyncEnumerable = GenerateAsyncEnumerable(15);
+        var processedCount = 0;
+
+        // Test with null concurrency (unbounded)
+        await asyncEnumerable
+            .ForEachAsync(async item =>
+            {
+                await Task.Delay(5);
+                Interlocked.Increment(ref processedCount);
+            })
+            .ProcessInParallel((int?)null)
+            .ExecuteAsync();
+
+        await Assert.That(processedCount).IsEqualTo(15);
+        
+        // Reset and test with specified concurrency
+        processedCount = 0;
+        asyncEnumerable = GenerateAsyncEnumerable(15);
+        
+        await asyncEnumerable
+            .ForEachAsync(async item =>
+            {
+                await Task.Delay(5);
+                Interlocked.Increment(ref processedCount);
+            })
+            .ProcessInParallel((int?)5)
+            .ExecuteAsync();
+
+        await Assert.That(processedCount).IsEqualTo(15);
+    }
 }
 
 internal static class AsyncEnumerableExtensionsForTests

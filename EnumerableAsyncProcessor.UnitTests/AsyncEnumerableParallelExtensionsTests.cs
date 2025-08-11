@@ -104,6 +104,7 @@ public class AsyncEnumerableParallelExtensionsTests
     }
 
     [Test]
+    [NotInParallel]
     public async Task ProcessInParallel_ActuallyRunsInParallel()
     {
         var asyncEnumerable = GenerateAsyncEnumerable(5);

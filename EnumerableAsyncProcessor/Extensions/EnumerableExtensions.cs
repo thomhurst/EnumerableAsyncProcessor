@@ -20,6 +20,92 @@ public static class EnumerableExtensions
         return items.ToAsyncProcessorBuilder()
             .ForEachAsync(taskSelector, cancellationToken);
     }
+    
+    /// <summary>
+    /// Projects each element to an IAsyncEnumerable and flattens the resulting sequences into one sequence.
+    /// </summary>
+    public static async IAsyncEnumerable<TOutput> SelectManyAsync<T, TOutput>(
+        this IEnumerable<T> items,
+        Func<T, IAsyncEnumerable<TOutput>> selector,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var item in items)
+        {
+            await foreach (var result in selector(item).WithCancellation(cancellationToken))
+            {
+                yield return result;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Projects each element to an array asynchronously and flattens the resulting sequences into one sequence.
+    /// </summary>
+    public static async IAsyncEnumerable<TOutput> SelectManyAsync<T, TOutput>(
+        this IEnumerable<T> items,
+        Func<T, Task<TOutput[]>> selector,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var results = await selector(item).ConfigureAwait(false);
+            foreach (var result in results)
+            {
+                yield return result;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Projects each element to an IEnumerable asynchronously and flattens the resulting sequences into one sequence.
+    /// </summary>
+    public static async IAsyncEnumerable<TOutput> SelectManyAsync<T, TOutput>(
+        this IEnumerable<T> items,
+        Func<T, Task<IEnumerable<TOutput>>> selector,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var results = await selector(item).ConfigureAwait(false);
+            foreach (var result in results)
+            {
+                yield return result;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Projects each element to an IAsyncEnumerable asynchronously and flattens the resulting sequences into one sequence.
+    /// </summary>
+    public static async IAsyncEnumerable<TOutput> SelectManyAsync<T, TOutput>(
+        this IEnumerable<T> items,
+        Func<T, Task<IAsyncEnumerable<TOutput>>> selector,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var asyncEnum = await selector(item).ConfigureAwait(false);
+            await foreach (var result in asyncEnum.WithCancellation(cancellationToken))
+            {
+                yield return result;
+            }
+        }
+    }
+    
+    private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
+        this IEnumerable<T> items,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return item;
+        }
+        await Task.CompletedTask; // Suppress CS1998 warning
+    }
 
     internal static async IAsyncEnumerable<T> ToIAsyncEnumerable<T>(this IEnumerable<Task<T>> tasks, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

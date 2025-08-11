@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 using EnumerableAsyncProcessor.Extensions;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable;
@@ -95,4 +94,3 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
         }
     }
 }
-#endif

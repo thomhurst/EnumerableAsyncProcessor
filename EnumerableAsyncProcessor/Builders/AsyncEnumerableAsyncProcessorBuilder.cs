@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 namespace EnumerableAsyncProcessor.Builders;
 
 public class AsyncEnumerableAsyncProcessorBuilder<TInput>
@@ -36,4 +35,3 @@ public class AsyncEnumerableAsyncProcessorBuilder<TInput>
         return new AsyncEnumerableActionAsyncProcessorBuilder<TInput>(_items, taskSelector, cancellationToken);
     }
 }
-#endif

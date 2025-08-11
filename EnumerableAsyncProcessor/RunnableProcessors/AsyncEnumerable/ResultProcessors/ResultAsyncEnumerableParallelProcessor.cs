@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 using System.Collections.Concurrent;
 using EnumerableAsyncProcessor.Extensions;
 
@@ -117,4 +116,3 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
         }
     }
 }
-#endif

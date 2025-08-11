@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 using EnumerableAsyncProcessor.Extensions;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors;
@@ -62,4 +61,3 @@ public class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyncEnumer
         }
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 using EnumerableAsyncProcessor.Builders;
 
 namespace EnumerableAsyncProcessor.Extensions;
@@ -223,4 +222,3 @@ public static class AsyncEnumerableExtensions
         return results;
     }
 }
-#endif

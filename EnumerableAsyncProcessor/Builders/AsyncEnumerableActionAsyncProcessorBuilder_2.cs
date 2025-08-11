@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors;
 
@@ -93,4 +92,3 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
     }
 
 }
-#endif

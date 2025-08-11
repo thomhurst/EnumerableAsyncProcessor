@@ -41,7 +41,17 @@ public class ItemActionAsyncProcessorBuilder<TInput>
     /// <returns>An async processor configured for parallel execution.</returns>
     public IAsyncProcessor ProcessInParallel()
     {
-        return ProcessInParallel(null);
+        return ProcessInParallel(null, false);
+    }
+    
+    /// <summary>
+    /// Process items in parallel without concurrency limits.
+    /// </summary>
+    /// <param name="scheduleOnThreadPool">If true, schedules tasks on thread pool to prevent blocking. Default is false for maximum performance.</param>
+    /// <returns>An async processor configured for parallel execution.</returns>
+    public IAsyncProcessor ProcessInParallel(bool scheduleOnThreadPool)
+    {
+        return ProcessInParallel(null, scheduleOnThreadPool);
     }
     
     /// <summary>
@@ -51,25 +61,24 @@ public class ItemActionAsyncProcessorBuilder<TInput>
     /// <returns>An async processor configured for parallel execution.</returns>
     public IAsyncProcessor ProcessInParallel(int? maxConcurrency)
     {
-        return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource, maxConcurrency)
+        return ProcessInParallel(maxConcurrency, false);
+    }
+    
+    /// <summary>
+    /// Process items in parallel with specified concurrency limit.
+    /// </summary>
+    /// <param name="maxConcurrency">Maximum concurrent operations.</param>
+    /// <param name="scheduleOnThreadPool">If true, schedules tasks on thread pool to prevent blocking.</param>
+    /// <returns>An async processor configured for parallel execution.</returns>
+    public IAsyncProcessor ProcessInParallel(int? maxConcurrency, bool scheduleOnThreadPool)
+    {
+        return new ParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource, maxConcurrency, scheduleOnThreadPool)
             .StartProcessing();
     }
     
     public IAsyncProcessor ProcessOneAtATime()
     {
         return new OneAtATimeAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource)
-            .StartProcessing();
-    }
-    
-    /// <summary>
-    /// Process ALL items in parallel without any concurrency limits.
-    /// WARNING: Use with caution - can overwhelm system resources with large item counts.
-    /// Ideal for scenarios requiring maximum parallelism like running thousands of unit tests.
-    /// </summary>
-    /// <returns>An async processor with unbounded parallelism.</returns>
-    public IAsyncProcessor ProcessInParallelUnbounded()
-    {
-        return new UnboundedParallelAsyncProcessor<TInput>(_items, _taskSelector, _cancellationTokenSource)
             .StartProcessing();
     }
 

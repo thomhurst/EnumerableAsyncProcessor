@@ -122,7 +122,7 @@ public class ParallelPerformanceTests
                 Thread.Sleep(sleepMilliseconds);
                 return Task.CompletedTask;
             })
-            .ProcessInParallel();
+            .ProcessInParallel(scheduleOnThreadPool: true);
 
         await processor;
         

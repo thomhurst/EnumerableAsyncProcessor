@@ -5,10 +5,12 @@ namespace EnumerableAsyncProcessor.RunnableProcessors;
 public class ParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
 {
     private readonly int? _maxConcurrency;
+    private readonly bool _scheduleOnThreadPool;
     
-    internal ParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource, int? maxConcurrency = null) : base(items, taskSelector, cancellationTokenSource)
+    internal ParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource, int? maxConcurrency = null, bool scheduleOnThreadPool = false) : base(items, taskSelector, cancellationTokenSource)
     {
         _maxConcurrency = maxConcurrency;
+        _scheduleOnThreadPool = scheduleOnThreadPool;
     }
 
     internal override async Task Process()
@@ -16,11 +18,23 @@ public class ParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
         // If no concurrency limit, process all tasks in parallel
         if (_maxConcurrency == null)
         {
-            // Use Task.Run to ensure all tasks start immediately on thread pool threads
-            // This prevents synchronous code in user delegates from blocking other tasks
-            await Task.WhenAll(TaskWrappers.Select(taskWrapper => 
-                Task.Run(() => taskWrapper.Process(CancellationToken), CancellationToken)
-            )).ConfigureAwait(false);
+            if (_scheduleOnThreadPool)
+            {
+                // Use Task.Run to ensure all tasks start immediately on thread pool threads
+                // This prevents synchronous code in user delegates from blocking other tasks
+                // Small overhead (~1-2μs per task) but necessary for safety with unknown delegates
+                await Task.WhenAll(TaskWrappers.Select(taskWrapper => 
+                    Task.Run(() => taskWrapper.Process(CancellationToken), CancellationToken)
+                )).ConfigureAwait(false);
+            }
+            else
+            {
+                // Direct execution for maximum performance when delegates are known to be async
+                // WARNING: May cause thread pool starvation if delegates contain blocking code
+                await Task.WhenAll(TaskWrappers.Select(taskWrapper => 
+                    taskWrapper.Process(CancellationToken)
+                )).ConfigureAwait(false);
+            }
             return;
         }
 
@@ -28,8 +42,9 @@ public class ParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
         using var semaphore = new SemaphoreSlim(_maxConcurrency.Value, _maxConcurrency.Value);
         
         // Materialize tasks immediately to ensure they all start in parallel (up to concurrency limit)
-        // Use Task.Run to prevent synchronous code from blocking thread pool threads
-        var tasks = TaskWrappers.Select(taskWrapper => Task.Run(async () =>
+        var tasks = _scheduleOnThreadPool
+            ? // Use Task.Run to prevent synchronous code from blocking thread pool threads
+              TaskWrappers.Select(taskWrapper => Task.Run(async () =>
         {
             await semaphore.WaitAsync(CancellationToken).ConfigureAwait(false);
             try
@@ -40,7 +55,20 @@ public class ParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<TInput>
             {
                 semaphore.Release();
             }
-        }, CancellationToken)).ToList(); // Force immediate task creation
+              }, CancellationToken)).ToList()
+            : // Direct execution for maximum performance
+              TaskWrappers.Select(async taskWrapper =>
+              {
+                  await semaphore.WaitAsync(CancellationToken).ConfigureAwait(false);
+                  try
+                  {
+                      await taskWrapper.Process(CancellationToken).ConfigureAwait(false);
+                  }
+                  finally
+                  {
+                      semaphore.Release();
+                  }
+              }).ToList(); // Force immediate task creation
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }

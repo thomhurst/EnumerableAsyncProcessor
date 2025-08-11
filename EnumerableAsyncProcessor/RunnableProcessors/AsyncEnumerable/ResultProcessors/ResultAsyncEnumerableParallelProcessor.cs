@@ -8,77 +8,111 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
 {
     private readonly IAsyncEnumerable<TInput> _items;
     private readonly Func<TInput, Task<TOutput>> _taskSelector;
-    private readonly int _maxConcurrency;
+    private readonly int? _maxConcurrency;
+    private readonly bool _scheduleOnThreadPool;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
     internal ResultAsyncEnumerableParallelProcessor(
         IAsyncEnumerable<TInput> items,
         Func<TInput, Task<TOutput>> taskSelector,
-        int maxConcurrency,
+        int? maxConcurrency,
+        bool scheduleOnThreadPool,
         CancellationTokenSource cancellationTokenSource)
     {
         _items = items;
         _taskSelector = taskSelector;
         _maxConcurrency = maxConcurrency;
+        _scheduleOnThreadPool = scheduleOnThreadPool;
         _cancellationTokenSource = cancellationTokenSource;
     }
 
     public async IAsyncEnumerable<TOutput> ExecuteAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
-        using var semaphore = new SemaphoreSlim(_maxConcurrency, _maxConcurrency);
         var tasks = new List<Task<TOutput>>();
 
-        try
+        if (_maxConcurrency.HasValue)
         {
-            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+            // Rate-limited parallel processing
+            using var semaphore = new SemaphoreSlim(_maxConcurrency.Value, _maxConcurrency.Value);
+
+            try
             {
-                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                
-                var capturedItem = item;
-                // Use Task.Run to ensure parallelism and prevent blocking
-                var task = Task.Run(async () => 
+                await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+                {
+                    await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    
+                    var capturedItem = item;
+                    // Use Task.Run to ensure parallelism and prevent blocking
+                    var task = Task.Run(async () => 
+                    {
+                        try
+                        {
+                            return await _taskSelector(capturedItem).ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                        }
+                    }, cancellationToken);
+                    tasks.Add(task);
+                    
+                    // Yield completed results
+                    while (tasks.Count > 0 && tasks[0].IsCompleted)
+                    {
+                        var completedTask = tasks[0];
+                        tasks.RemoveAt(0);
+                        yield return await completedTask.ConfigureAwait(false);
+                    }
+                }
+
+                // Yield remaining results
+                foreach (var task in tasks)
+                {
+                    yield return await task.ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                // Ensure all tasks complete before the using block disposes the semaphore
+                // This handles cancellation or exception scenarios
+                if (tasks.Count > 0)
                 {
                     try
                     {
-                        return await _taskSelector(capturedItem).ConfigureAwait(false);
+                        await Task.WhenAll(tasks).ConfigureAwait(false);
                     }
-                    finally
+                    catch
                     {
-                        semaphore.Release();
+                        // Ignore exceptions here as they've already been handled
                     }
-                }, cancellationToken);
-                tasks.Add(task);
-                
-                // Yield completed results
-                while (tasks.Count > 0 && tasks[0].IsCompleted)
-                {
-                    var completedTask = tasks[0];
-                    tasks.RemoveAt(0);
-                    yield return await completedTask.ConfigureAwait(false);
                 }
-            }
-
-            // Yield remaining results
-            foreach (var task in tasks)
-            {
-                yield return await task.ConfigureAwait(false);
             }
         }
-        finally
+        else
         {
-            // Ensure all tasks complete before the using block disposes the semaphore
-            // This handles cancellation or exception scenarios
-            if (tasks.Count > 0)
+            // Unbounded parallel processing
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                try
+                var capturedItem = item;
+                
+                Task<TOutput> task;
+                if (_scheduleOnThreadPool)
                 {
-                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                    task = Task.Run(async () => await _taskSelector(capturedItem).ConfigureAwait(false), cancellationToken);
                 }
-                catch
+                else
                 {
-                    // Ignore exceptions here as they've already been handled
+                    task = _taskSelector(capturedItem);
                 }
+                
+                tasks.Add(task);
+            }
+            
+            // Yield all results as they complete
+            await foreach (var result in tasks.ToIAsyncEnumerable(cancellationToken).ConfigureAwait(false))
+            {
+                yield return result;
             }
         }
     }

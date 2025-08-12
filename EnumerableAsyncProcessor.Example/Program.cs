@@ -74,4 +74,8 @@ await AsyncEnumerableExample.RunExamples();
 // Run ProcessInParallel examples
 Console.WriteLine("\n\n=== Running ProcessInParallel Extension Examples ===\n");
 await ProcessInParallelExample.RunExample();
+
+// Run disposal pattern examples
+Console.WriteLine("\n\n=== Running Disposal Pattern Examples ===\n");
+await DisposalExample.RunExamples();
 #endif

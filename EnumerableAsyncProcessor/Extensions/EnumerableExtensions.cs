@@ -9,12 +9,37 @@ public static class EnumerableExtensions
         return new ItemAsyncProcessorBuilder<T>(items);
     }
     
+    /// <summary>
+    /// Creates an async processor builder that can transform items and return results.
+    /// </summary>
+    /// <typeparam name="T">The input item type.</typeparam>
+    /// <typeparam name="TOutput">The output result type.</typeparam>
+    /// <param name="items">The items to process.</param>
+    /// <param name="taskSelector">The async transformation function.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A builder that can be configured with processing options like ProcessInParallel().</returns>
+    /// <remarks>
+    /// The processors created by this builder implement IDisposable/IAsyncDisposable and should be properly disposed.
+    /// Use 'await using var processor = items.SelectAsync(...).ProcessInParallel();' for automatic disposal.
+    /// </remarks>
     public static ItemActionAsyncProcessorBuilder<T, TOutput> SelectAsync<T, TOutput>(this IEnumerable<T> items, Func<T, Task<TOutput>> taskSelector, CancellationToken cancellationToken = default)
     {
         return items.ToAsyncProcessorBuilder()
             .SelectAsync(taskSelector, cancellationToken);
     }
     
+    /// <summary>
+    /// Creates an async processor builder for operations that don't return results.
+    /// </summary>
+    /// <typeparam name="T">The input item type.</typeparam>
+    /// <param name="items">The items to process.</param>
+    /// <param name="taskSelector">The async operation to perform on each item.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A builder that can be configured with processing options like ProcessInParallel().</returns>
+    /// <remarks>
+    /// The processors created by this builder implement IDisposable/IAsyncDisposable and should be properly disposed.
+    /// Use 'await using var processor = items.ForEachAsync(...).ProcessInParallel();' for automatic disposal.
+    /// </remarks>
     public static ItemActionAsyncProcessorBuilder<T> ForEachAsync<T>(this IEnumerable<T> items, Func<T, Task> taskSelector, CancellationToken cancellationToken = default)
     {
         return items.ToAsyncProcessorBuilder()

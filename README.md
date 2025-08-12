@@ -43,15 +43,17 @@ This is a hybrid between Parallel Processor and Batch Processor (see below) - Tr
 ```csharp
 var ids = Enumerable.Range(0, 5000).ToList();
 
-// SelectAsync for if you want to return something
-var results = await ids
+// SelectAsync for if you want to return something - using proper disposal
+await using var processor = ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInParallel(levelOfParallelism: 100);
+var results = await processor.GetResultsAsync();
 
-// ForEachAsync for when you have nothing to return
-await ids
+// ForEachAsync for when you have nothing to return - using proper disposal  
+await using var voidProcessor = ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInParallel(levelOfParallelism: 100);
+await voidProcessor.WaitAsync();
 ```
 
 ### Timed Rate Limited Parallel Processor (e.g. Limit RPS)
@@ -77,15 +79,17 @@ This is useful in scenarios where, for example, you have an API but it has a req
 ```csharp
 var ids = Enumerable.Range(0, 5000).ToList();
 
-// SelectAsync for if you want to return something
-var results = await ids
+// SelectAsync for if you want to return something - using proper disposal
+await using var processor = ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
         .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
+var results = await processor.GetResultsAsync();
 
-// ForEachAsync for when you have nothing to return
-await ids
+// ForEachAsync for when you have nothing to return - using proper disposal
+await using var voidProcessor = ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
         .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
+await voidProcessor.WaitAsync();
 ```
 
 **Caveats**  
@@ -264,3 +268,125 @@ This is for when you need to don't need any objects - But just want to do someth
         return httpClient.GetAsync("https://localhost:8080/ping");
     }
 ```
+
+## Proper Disposal of Processor Objects
+
+**Important:** All processor objects implement `IDisposable` and `IAsyncDisposable` and should be properly disposed to ensure clean resource cleanup and task cancellation.
+
+### Why Disposal Matters
+
+When you create a processor (e.g., using `ProcessInParallel()`, `ProcessOneAtATime()`, etc.), the processor:
+- Manages a `CancellationTokenSource` internally
+- Tracks running tasks that may continue executing
+- May hold resources that need cleanup
+
+Proper disposal ensures:
+- Running tasks are cancelled gracefully
+- Internal resources are cleaned up
+- No resource leaks occur
+
+### Disposal Patterns
+
+#### 1. Using `await using` for Async Disposal (Recommended)
+
+```csharp
+private static async IAsyncEnumerable<int> ProcessDataAsync(int[] input, CancellationToken token)
+{
+    await using var processor = input
+        .SelectAsync(async x => await TransformAsync(x), token)
+        .ProcessInParallel();
+        
+    await foreach (var result in processor.GetResultsAsyncEnumerable())
+    {
+        yield return result;
+    }
+    // Processor automatically disposed here
+}
+```
+
+#### 2. Using `using` for Synchronous Disposal
+
+```csharp
+private static async Task<int[]> ProcessDataAsync(int[] input, CancellationToken token)
+{
+    using var processor = input
+        .SelectAsync(async x => await TransformAsync(x), token)
+        .ProcessInParallel();
+        
+    return await processor.GetResultsAsync();
+    // Processor automatically disposed here
+}
+```
+
+#### 3. Manual Disposal with Try-Finally
+
+```csharp
+private static async Task<int[]> ProcessDataAsync(int[] input, CancellationToken token)
+{
+    var processor = input
+        .SelectAsync(async x => await TransformAsync(x), token)
+        .ProcessInParallel();
+        
+    try
+    {
+        return await processor.GetResultsAsync();
+    }
+    finally
+    {
+        await processor.DisposeAsync();
+    }
+}
+```
+
+#### 4. Fire-and-Forget with Disposal
+
+```csharp
+private static void StartProcessing(int[] input, CancellationToken token)
+{
+    var processor = input
+        .SelectAsync(async x => await TransformAsync(x), token)
+        .ProcessInParallel();
+        
+    // Don't wait for completion but ensure disposal
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            await processor.GetResultsAsync();
+        }
+        finally
+        {
+            await processor.DisposeAsync();
+        }
+    }, token);
+}
+```
+
+### What Happens During Disposal
+
+When a processor is disposed:
+
+1. **Cancellation**: Internal `CancellationTokenSource` is cancelled
+2. **Task Waiting**: Waits up to 30 seconds for running tasks to complete
+3. **Resource Cleanup**: Disposes internal resources like `CancellationTokenSource`
+4. **Thread Safety**: All disposal operations are thread-safe
+
+### Best Practices
+
+- **Always dispose processors** when you're done with them
+- **Use `await using`** when possible for cleaner async disposal
+- **Don't worry about double disposal** - it's safe and handled internally
+- **Disposal is thread-safe** - multiple threads can safely dispose the same processor
+- **Early disposal is safe** - you can dispose while tasks are still running, they'll be cancelled gracefully
+
+### Extension Method Disposal
+
+Note that the convenience extension methods like `IAsyncEnumerable<T>.ProcessInParallel()` handle disposal automatically and return the final results directly:
+
+```csharp
+// These extension methods handle disposal internally
+var results = await asyncEnumerable.ProcessInParallel();
+var transformedResults = await asyncEnumerable.ProcessInParallel(async x => await TransformAsync(x));
+```
+
+The disposal guidance above applies when you're working with the processor objects directly (using the builder pattern).

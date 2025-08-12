@@ -73,6 +73,30 @@ public static class ProcessInParallelExample
         Console.WriteLine($"Sequential processing time: {sequentialTime.TotalMilliseconds:F0}ms");
         Console.WriteLine($"Parallel processing time: {parallelTime.TotalMilliseconds:F0}ms");
         Console.WriteLine($"Speedup: {sequentialTime.TotalMilliseconds / parallelTime.TotalMilliseconds:F1}x");
+        
+        // Example 5: Proper disposal with builder pattern
+        Console.WriteLine("\nExample 5: Proper disposal when using builder pattern");
+        var data = Enumerable.Range(1, 10).ToArray();
+        
+        // Using await using for automatic disposal
+        await using var processor = data
+            .SelectAsync(async item =>
+            {
+                await Task.Delay(50);
+                return item * 3;
+            }, CancellationToken.None)
+            .ProcessInParallel(maxConcurrency: 3);
+            
+        // Process results as they become available
+        var processedCount = 0;
+        await foreach (var result in processor.GetResultsAsyncEnumerable())
+        {
+            processedCount++;
+            Console.WriteLine($"Processed item {processedCount}: {result}");
+        }
+        
+        Console.WriteLine($"All {processedCount} items processed with proper disposal");
+        // Processor is automatically disposed here due to 'await using'
     }
     
     private static async IAsyncEnumerable<int> GenerateAsyncEnumerable(

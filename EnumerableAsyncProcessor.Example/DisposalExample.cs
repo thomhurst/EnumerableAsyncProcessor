@@ -12,6 +12,12 @@ namespace EnumerableAsyncProcessor.Example;
 /// <summary>
 /// Examples demonstrating proper disposal patterns for EnumerableAsyncProcessor objects.
 /// This addresses the common question: "How/when to correctly dispose the resulting processor objects?"
+/// 
+/// QUICK ANSWER: Always dispose processor objects using 'await using' or manual disposal!
+/// 
+/// The key pattern is:
+/// ❌ BAD:  var processor = items.SelectAsync(...).ProcessInParallel(); // Never disposed!
+/// ✅ GOOD: await using var processor = items.SelectAsync(...).ProcessInParallel(); // Auto-disposed!
 /// </summary>
 public static class DisposalExample
 {

@@ -390,3 +390,36 @@ var transformedResults = await asyncEnumerable.ProcessInParallel(async x => awai
 ```
 
 The disposal guidance above applies when you're working with the processor objects directly (using the builder pattern).
+
+## Quick Reference: Disposal Patterns
+
+### ❌ INCORRECT (Resource Leak)
+```csharp
+// DON'T DO THIS - Never disposed!
+var processor = input.SelectAsync(transform, token).ProcessInParallel();
+return processor.GetResultsAsyncEnumerable();
+```
+
+### ✅ CORRECT Patterns
+
+#### Option 1: Await Using (Recommended)
+```csharp
+await using var processor = input.SelectAsync(transform, token).ProcessInParallel();
+return await processor.GetResultsAsync();
+```
+
+#### Option 2: Manual Disposal
+```csharp
+var processor = input.SelectAsync(transform, token).ProcessInParallel();
+try {
+    return await processor.GetResultsAsync();
+} finally {
+    await processor.DisposeAsync();
+}
+```
+
+#### Option 3: Extension Methods (Auto-Disposal)
+```csharp
+// These handle disposal internally
+var results = await asyncEnumerable.ProcessInParallel(transform);
+```

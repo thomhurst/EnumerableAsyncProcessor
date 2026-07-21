@@ -13,6 +13,7 @@ namespace EnumerableAsyncProcessor.Pipeline.Modules;
 [DependsOn<PackageFilesRemovalModule>]
 [DependsOn<NugetVersionGeneratorModule>]
 [DependsOn<RunUnitTestsModule>]
+[DependsOn<BuildExampleProjectsModule>]
 public class PackProjectsModule : Module<List<CommandResult>>
 {
     protected override async Task<List<CommandResult>?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)

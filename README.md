@@ -12,6 +12,10 @@ Process Multiple Asynchronous Tasks in Various Ways - One at a time / Batched / 
 Install via Nuget
 `Install-Package EnumerableAsyncProcessor`
 
+## Performance benchmarks
+
+See the [benchmark guide](benchmarks/README.md) to run the BenchmarkDotNet suite, filter scenarios, and compare revisions.
+
 ### Supported frameworks
 
 Version 4 requires .NET 8 or later. The package targets and tests `net8.0`, `net9.0`, and `net10.0`.

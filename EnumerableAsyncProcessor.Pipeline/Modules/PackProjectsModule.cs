@@ -13,6 +13,7 @@ namespace EnumerableAsyncProcessor.Pipeline.Modules;
 [DependsOn<PackageFilesRemovalModule>]
 [DependsOn<NugetVersionGeneratorModule>]
 [DependsOn<RunUnitTestsModule>]
+[DependsOn<BuildBenchmarkProjectsModule>]
 [DependsOn<BuildExampleProjectsModule>]
 public class PackProjectsModule : Module<List<CommandResult>>
 {
@@ -49,6 +50,7 @@ public class PackProjectsModule : Module<List<CommandResult>>
         }
 
         if (path.Contains("Tests", StringComparison.OrdinalIgnoreCase)
+            || path.Contains("Benchmarks", StringComparison.OrdinalIgnoreCase)
             || path.Contains("Pipeline", StringComparison.OrdinalIgnoreCase)
             || path.Contains("Example", StringComparison.OrdinalIgnoreCase))
         {

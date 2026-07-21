@@ -6,6 +6,9 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <Version>99.99.99</Version>
+        <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017</WarningsAsErrors>
+        <!-- Existing overload families intentionally retain optional parameters. -->
+        <NoWarn>$(NoWarn);RS0026</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -30,7 +33,13 @@
         
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.301" PrivateAssets="All"/>
         <PackageReference Include="System.Threading.RateLimiting" Version="10.0.10" />
+        <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="All" />
 
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+        <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
     </ItemGroup>
 
     <PropertyGroup>

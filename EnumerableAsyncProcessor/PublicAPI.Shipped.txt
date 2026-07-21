@@ -1,0 +1,214 @@
+#nullable enable
+abstract EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.EnumerableTaskCompletionSources.get -> System.Collections.Generic.IReadOnlyList<System.Threading.Tasks.TaskCompletionSource!>!
+abstract EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.EnumerableTaskCompletionSources.get -> System.Collections.Generic.IReadOnlyList<System.Threading.Tasks.TaskCompletionSource<TOutput>!>!
+EnumerableAsyncProcessor.ActionTaskWrapper
+EnumerableAsyncProcessor.ActionTaskWrapper.ActionTaskWrapper() -> void
+EnumerableAsyncProcessor.ActionTaskWrapper.ActionTaskWrapper(System.Func<System.Threading.Tasks.Task!>! taskFactory, System.Threading.Tasks.TaskCompletionSource! taskCompletionSource) -> void
+EnumerableAsyncProcessor.ActionTaskWrapper.Process(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.ActionTaskWrapper<TOutput>
+EnumerableAsyncProcessor.ActionTaskWrapper<TOutput>.ActionTaskWrapper() -> void
+EnumerableAsyncProcessor.ActionTaskWrapper<TOutput>.ActionTaskWrapper(System.Func<System.Threading.Tasks.Task<TOutput>!>! taskFactory, System.Threading.Tasks.TaskCompletionSource<TOutput>! taskCompletionSource) -> void
+EnumerableAsyncProcessor.ActionTaskWrapper<TOutput>.Process(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder.ActionAsyncProcessorBuilder(int count, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> void
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder.ActionAsyncProcessorBuilder(int count, System.Func<System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> void
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder.ProcessInBatches(int batchSize) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder.ProcessInParallel(int maxConcurrency, System.TimeSpan timeSpan) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder.ProcessInParallel(int permitsPerWindow, System.TimeSpan window, int maxConcurrency) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder.ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder.ProcessOneAtATime() -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>.ProcessInBatches(int batchSize) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>.ProcessInParallel(int maxConcurrency, System.TimeSpan timeSpan) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>.ProcessInParallel(int permitsPerWindow, System.TimeSpan window, int maxConcurrency) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>.ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>.ProcessOneAtATime() -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>.AsyncEnumerableActionAsyncProcessorBuilder(System.Collections.Generic.IAsyncEnumerable<TInput>! items, System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> void
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>.AsyncEnumerableActionAsyncProcessorBuilder(System.Collections.Generic.IAsyncEnumerable<TInput>! items, System.Func<TInput, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> void
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>.ProcessInBatches(int batchSize) -> EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>.ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false) -> EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>.ProcessOneAtATime() -> EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>.AsyncEnumerableActionAsyncProcessorBuilder(System.Collections.Generic.IAsyncEnumerable<TInput>! items, System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> void
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>.AsyncEnumerableActionAsyncProcessorBuilder(System.Collections.Generic.IAsyncEnumerable<TInput>! items, System.Func<TInput, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> void
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>.ProcessInBatches(int batchSize) -> EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>.ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false) -> EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>.ProcessOneAtATime() -> EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>.ForEachAsync(System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>.ForEachAsync(System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>.ForEachAsync(System.Func<TInput, System.Threading.Tasks.Task!>! taskSelector) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>.ForEachAsync(System.Func<TInput, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>.SelectAsync<TOutput>(System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>.SelectAsync<TOutput>(System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>.SelectAsync<TOutput>(System.Func<TInput, System.Threading.Tasks.Task<TOutput>!>! taskSelector) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>!
+EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<TInput>.SelectAsync<TOutput>(System.Func<TInput, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>!
+EnumerableAsyncProcessor.Builders.AsyncProcessorBuilder
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder.ForEachAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector) -> EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder!
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder.ForEachAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder!
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder.ForEachAsync(System.Func<System.Threading.Tasks.Task!>! taskSelector) -> EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder!
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder.ForEachAsync(System.Func<System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder!
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder.SelectAsync<TOutput>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector) -> EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>!
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder.SelectAsync<TOutput>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>!
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder.SelectAsync<TOutput>(System.Func<System.Threading.Tasks.Task<TOutput>!>! taskSelector) -> EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>!
+EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder.SelectAsync<TOutput>(System.Func<System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.ActionAsyncProcessorBuilder<TOutput>!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>.ProcessInBatches(int batchSize) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>.ProcessInParallel(int maxConcurrency, System.TimeSpan timeSpan) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>.ProcessInParallel(int permitsPerWindow, System.TimeSpan window, int maxConcurrency) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>.ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>.ProcessOneAtATime() -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>.ItemActionAsyncProcessorBuilder(System.Collections.Generic.IEnumerable<TInput>! items, System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> void
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>.ItemActionAsyncProcessorBuilder(System.Collections.Generic.IEnumerable<TInput>! items, System.Func<TInput, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> void
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>.ProcessInBatches(int batchSize) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>.ProcessInParallel(int maxConcurrency, System.TimeSpan timeSpan) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>.ProcessInParallel(int permitsPerWindow, System.TimeSpan window, int maxConcurrency) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>.ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false) -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>.ProcessOneAtATime() -> EnumerableAsyncProcessor.Interfaces.IAsyncProcessor!
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>.ForEachAsync(System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>!
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>.ForEachAsync(System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>!
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>.ForEachAsync(System.Func<TInput, System.Threading.Tasks.Task!>! taskSelector) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>!
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>.ForEachAsync(System.Func<TInput, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput>!
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>.SelectAsync<TOutput>(System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>!
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>.SelectAsync<TOutput>(System.Func<TInput, System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>!
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>.SelectAsync<TOutput>(System.Func<TInput, System.Threading.Tasks.Task<TOutput>!>! taskSelector) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>!
+EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<TInput>.SelectAsync<TOutput>(System.Func<TInput, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<TInput, TOutput>!
+EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions
+EnumerableAsyncProcessor.Extensions.EnumerableExtensions
+EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor
+EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor.ExecuteAsync() -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor<TOutput>
+EnumerableAsyncProcessor.Extensions.IAsyncEnumerableProcessor<TOutput>.ExecuteAsync() -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+EnumerableAsyncProcessor.Extensions.ParallelExtensions
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor.CancelAll() -> void
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor.GetEnumerableTasks() -> System.Collections.Generic.IEnumerable<System.Threading.Tasks.Task!>!
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor.WaitAsync() -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>.CancelAll() -> void
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<TOutput[]!>
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>.GetEnumerableTasks() -> System.Collections.Generic.IEnumerable<System.Threading.Tasks.Task<TOutput>!>!
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>.GetResultsAsync() -> System.Threading.Tasks.Task<TOutput[]!>!
+EnumerableAsyncProcessor.Interfaces.IAsyncProcessor<TOutput>.GetResultsAsyncEnumerable() -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+EnumerableAsyncProcessor.ItemTaskWrapper<TInput, TOutput>
+EnumerableAsyncProcessor.ItemTaskWrapper<TInput, TOutput>.ItemTaskWrapper() -> void
+EnumerableAsyncProcessor.ItemTaskWrapper<TInput, TOutput>.ItemTaskWrapper(TInput input, System.Func<TInput, System.Threading.Tasks.Task<TOutput>!>! taskFactory, System.Threading.Tasks.TaskCompletionSource<TOutput>! taskCompletionSource) -> void
+EnumerableAsyncProcessor.ItemTaskWrapper<TInput, TOutput>.Process(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.ItemTaskWrapper<TInput>
+EnumerableAsyncProcessor.ItemTaskWrapper<TInput>.ItemTaskWrapper() -> void
+EnumerableAsyncProcessor.ItemTaskWrapper<TInput>.ItemTaskWrapper(TInput input, System.Func<TInput, System.Threading.Tasks.Task!>! taskFactory, System.Threading.Tasks.TaskCompletionSource! taskCompletionSource) -> void
+EnumerableAsyncProcessor.ItemTaskWrapper<TInput>.Process(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessor
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessor.AbstractAsyncProcessor(int count, System.Func<System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationTokenSource! cancellationTokenSource) -> void
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessor<TInput>
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessor<TInput>.AbstractAsyncProcessor(System.Collections.Generic.IEnumerable<TInput>! items, System.Func<TInput, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationTokenSource! cancellationTokenSource) -> void
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.AbstractAsyncProcessorBase(System.Threading.CancellationTokenSource! cancellationTokenSource) -> void
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.CancelAll() -> void
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.Dispose() -> void
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.DisposeAsync() -> System.Threading.Tasks.ValueTask
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.GetEnumerableTasks() -> System.Collections.Generic.IEnumerable<System.Threading.Tasks.Task!>!
+EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.WaitAsync() -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.AsyncEnumerableBatchProcessor<TInput>
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.AsyncEnumerableBatchProcessor<TInput>.ExecuteAsync() -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.AsyncEnumerableOneAtATimeProcessor<TInput>
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.AsyncEnumerableOneAtATimeProcessor<TInput>.ExecuteAsync() -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.AsyncEnumerableParallelProcessor<TInput>
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.AsyncEnumerableParallelProcessor<TInput>.ExecuteAsync() -> System.Threading.Tasks.Task!
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors.ResultAsyncEnumerableBatchProcessor<TInput, TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors.ResultAsyncEnumerableBatchProcessor<TInput, TOutput>.ExecuteAsync() -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors.ResultAsyncEnumerableOneAtATimeProcessor<TInput, TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors.ResultAsyncEnumerableOneAtATimeProcessor<TInput, TOutput>.ExecuteAsync() -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors.ResultAsyncEnumerableParallelProcessor<TInput, TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors.ResultAsyncEnumerableParallelProcessor<TInput, TOutput>.ExecuteAsync() -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+EnumerableAsyncProcessor.RunnableProcessors.BatchAsyncProcessor
+EnumerableAsyncProcessor.RunnableProcessors.BatchAsyncProcessor<TInput>
+EnumerableAsyncProcessor.RunnableProcessors.OneAtATimeAsyncProcessor
+EnumerableAsyncProcessor.RunnableProcessors.OneAtATimeAsyncProcessor<TInput>
+EnumerableAsyncProcessor.RunnableProcessors.ParallelAsyncProcessor
+EnumerableAsyncProcessor.RunnableProcessors.ParallelAsyncProcessor<TInput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessor<TInput, TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessor<TInput, TOutput>.ResultAbstractAsyncProcessor(System.Collections.Generic.IEnumerable<TInput>! items, System.Func<TInput, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationTokenSource! cancellationTokenSource) -> void
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessor<TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessor<TOutput>.ResultAbstractAsyncProcessor(int count, System.Func<System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationTokenSource! cancellationTokenSource) -> void
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.CancelAll() -> void
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.Dispose() -> void
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.DisposeAsync() -> System.Threading.Tasks.ValueTask
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.GetAwaiter() -> System.Runtime.CompilerServices.TaskAwaiter<TOutput[]!>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.GetEnumerableTasks() -> System.Collections.Generic.IEnumerable<System.Threading.Tasks.Task<TOutput>!>!
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.GetResultsAsync() -> System.Threading.Tasks.Task<TOutput[]!>!
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.GetResultsAsyncEnumerable() -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.ResultAbstractAsyncProcessorBase(System.Threading.CancellationTokenSource! cancellationTokenSource) -> void
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.ResultBatchAsyncProcessor<TInput, TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.ResultBatchAsyncProcessor<TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.ResultOneAtATimeAsyncProcessor<TInput, TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.ResultOneAtATimeAsyncProcessor<TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.ResultParallelAsyncProcessor<TInput, TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.ResultParallelAsyncProcessor<TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.ResultTimedRateLimitedParallelAsyncProcessor<TOutput>
+EnumerableAsyncProcessor.RunnableProcessors.TimedRateLimitedParallelAsyncProcessor
+EnumerableAsyncProcessor.RunnableProcessors.TimedRateLimitedParallelAsyncProcessor<TInput>
+override EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessor.EnumerableTaskCompletionSources.get -> System.Collections.Generic.IReadOnlyList<System.Threading.Tasks.TaskCompletionSource!>!
+override EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessor<TInput>.EnumerableTaskCompletionSources.get -> System.Collections.Generic.IReadOnlyList<System.Threading.Tasks.TaskCompletionSource!>!
+override EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessor<TInput, TOutput>.EnumerableTaskCompletionSources.get -> System.Collections.Generic.IReadOnlyList<System.Threading.Tasks.TaskCompletionSource<TOutput>!>!
+override EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessor<TOutput>.EnumerableTaskCompletionSources.get -> System.Collections.Generic.IReadOnlyList<System.Threading.Tasks.TaskCompletionSource<TOutput>!>!
+readonly EnumerableAsyncProcessor.ActionTaskWrapper.TaskCompletionSource -> System.Threading.Tasks.TaskCompletionSource!
+readonly EnumerableAsyncProcessor.ActionTaskWrapper.TaskFactory -> System.Func<System.Threading.Tasks.Task!>!
+readonly EnumerableAsyncProcessor.ActionTaskWrapper<TOutput>.TaskCompletionSource -> System.Threading.Tasks.TaskCompletionSource<TOutput>!
+readonly EnumerableAsyncProcessor.ActionTaskWrapper<TOutput>.TaskFactory -> System.Func<System.Threading.Tasks.Task<TOutput>!>!
+readonly EnumerableAsyncProcessor.ItemTaskWrapper<TInput, TOutput>.Input -> TInput
+readonly EnumerableAsyncProcessor.ItemTaskWrapper<TInput, TOutput>.TaskCompletionSource -> System.Threading.Tasks.TaskCompletionSource<TOutput>!
+readonly EnumerableAsyncProcessor.ItemTaskWrapper<TInput, TOutput>.TaskFactory -> System.Func<TInput, System.Threading.Tasks.Task<TOutput>!>!
+readonly EnumerableAsyncProcessor.ItemTaskWrapper<TInput>.Input -> TInput
+readonly EnumerableAsyncProcessor.ItemTaskWrapper<TInput>.TaskCompletionSource -> System.Threading.Tasks.TaskCompletionSource!
+readonly EnumerableAsyncProcessor.ItemTaskWrapper<TInput>.TaskFactory -> System.Func<TInput, System.Threading.Tasks.Task!>!
+readonly EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessor.TaskWrappers -> EnumerableAsyncProcessor.ActionTaskWrapper[]!
+readonly EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessor<TInput>.TaskWrappers -> EnumerableAsyncProcessor.ItemTaskWrapper<TInput>[]!
+readonly EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.CancellationToken -> System.Threading.CancellationToken
+readonly EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessor<TInput, TOutput>.TaskWrappers -> EnumerableAsyncProcessor.ItemTaskWrapper<TInput, TOutput>[]!
+readonly EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessor<TOutput>.TaskWrappers -> EnumerableAsyncProcessor.ActionTaskWrapper<TOutput>[]!
+readonly EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.CancellationToken -> System.Threading.CancellationToken
+static EnumerableAsyncProcessor.Builders.AsyncProcessorBuilder.WithExecutionCount(int count) -> EnumerableAsyncProcessor.Builders.ExecutionCountAsyncProcessorBuilder!
+static EnumerableAsyncProcessor.Builders.AsyncProcessorBuilder.WithItems<T>(System.Collections.Generic.IEnumerable<T>! items) -> EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<T>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ForEachAsync<T>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<T>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ForEachAsync<T>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<T>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ProcessInParallel<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<TOutput>!>! taskSelector, int maxConcurrency, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<TOutput>!>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ProcessInParallel<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<TOutput>!>! taskSelector, int? maxConcurrency, bool scheduleOnThreadPool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<TOutput>!>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ProcessInParallel<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<TOutput>!>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ProcessInParallel<T>(this System.Collections.Generic.IAsyncEnumerable<T>! items, int maxConcurrency, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<T>!>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ProcessInParallel<T>(this System.Collections.Generic.IAsyncEnumerable<T>! items, int? maxConcurrency, bool scheduleOnThreadPool, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<T>!>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ProcessInParallel<T>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<T>!>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.SelectAsync<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<T, TOutput>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.SelectAsync<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableActionAsyncProcessorBuilder<T, TOutput>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.SelectMany<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Collections.Generic.IAsyncEnumerable<TOutput>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.SelectMany<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Collections.Generic.IEnumerable<TOutput>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.SelectMany<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, TOutput[]!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.SelectManyAsync<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<System.Collections.Generic.IAsyncEnumerable<TOutput>!>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.SelectManyAsync<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<TOutput>!>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.SelectManyAsync<T, TOutput>(this System.Collections.Generic.IAsyncEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<TOutput[]!>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.AsyncEnumerableExtensions.ToAsyncProcessorBuilder<T>(this System.Collections.Generic.IAsyncEnumerable<T>! items) -> EnumerableAsyncProcessor.Builders.AsyncEnumerableAsyncProcessorBuilder<T>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.ForEachAsync<T>(this System.Collections.Generic.IEnumerable<T>! items, System.Func<T, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<T>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.ForEachAsync<T>(this System.Collections.Generic.IEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<T>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.SelectAsync<T, TOutput>(this System.Collections.Generic.IEnumerable<T>! items, System.Func<T, System.Threading.CancellationToken, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<T, TOutput>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.SelectAsync<T, TOutput>(this System.Collections.Generic.IEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<TOutput>!>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> EnumerableAsyncProcessor.Builders.ItemActionAsyncProcessorBuilder<T, TOutput>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.SelectManyAsync<T, TOutput>(this System.Collections.Generic.IEnumerable<T>! items, System.Func<T, System.Collections.Generic.IAsyncEnumerable<TOutput>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.SelectManyAsync<T, TOutput>(this System.Collections.Generic.IEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<System.Collections.Generic.IAsyncEnumerable<TOutput>!>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.SelectManyAsync<T, TOutput>(this System.Collections.Generic.IEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<TOutput>!>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.SelectManyAsync<T, TOutput>(this System.Collections.Generic.IEnumerable<T>! items, System.Func<T, System.Threading.Tasks.Task<TOutput[]!>!>! selector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<TOutput>!
+static EnumerableAsyncProcessor.Extensions.EnumerableExtensions.ToAsyncProcessorBuilder<T>(this System.Collections.Generic.IEnumerable<T>! items) -> EnumerableAsyncProcessor.Builders.ItemAsyncProcessorBuilder<T>!
+static EnumerableAsyncProcessor.Extensions.ParallelExtensions.InParallelAsync<TSource, TResult>(this System.Collections.Generic.IEnumerable<TSource>! source, int levelOfParallelism, System.Func<TSource, System.Threading.Tasks.Task<TResult>!>! taskSelector) -> System.Threading.Tasks.Task!
+static EnumerableAsyncProcessor.Extensions.ParallelExtensions.InParallelAsync<TSource, TResult>(this System.Collections.Generic.IEnumerable<TSource>! source, int levelOfParallelism, System.Func<TSource, System.Threading.Tasks.Task<TResult>!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+static EnumerableAsyncProcessor.Extensions.ParallelExtensions.InParallelAsync<TSource, TResult>(this System.Collections.Generic.IEnumerable<TSource>! source, int levelOfParallelism, System.Func<TSource, TResult>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static EnumerableAsyncProcessor.Extensions.ParallelExtensions.InParallelAsync<TSource>(this System.Collections.Generic.IEnumerable<TSource>! source, int levelOfParallelism, System.Action<TSource>! taskSelector, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static EnumerableAsyncProcessor.Extensions.ParallelExtensions.InParallelAsync<TSource>(this System.Collections.Generic.IEnumerable<TSource>! source, int levelOfParallelism, System.Func<TSource, System.Threading.Tasks.Task!>! taskSelector) -> System.Threading.Tasks.Task!
+static EnumerableAsyncProcessor.Extensions.ParallelExtensions.InParallelAsync<TSource>(this System.Collections.Generic.IEnumerable<TSource>! source, int levelOfParallelism, System.Func<TSource, System.Threading.Tasks.Task!>! taskSelector, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+virtual EnumerableAsyncProcessor.RunnableProcessors.Abstract.AbstractAsyncProcessorBase.DisposeAsyncCore() -> System.Threading.Tasks.ValueTask
+virtual EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract.ResultAbstractAsyncProcessorBase<TOutput>.DisposeAsyncCore() -> System.Threading.Tasks.ValueTask

@@ -28,7 +28,11 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          # 10.0.x runs the pipeline; 8.0.x and 9.0.x provide runtimes for the multi-targeted test project
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
       - name: Run Pipeline
         run: dotnet run -c Release
         working-directory: "EnumerableAsyncProcessor.Pipeline"

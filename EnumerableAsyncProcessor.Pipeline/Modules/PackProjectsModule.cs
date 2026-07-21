@@ -15,29 +15,31 @@ namespace EnumerableAsyncProcessor.Pipeline.Modules;
 [DependsOn<RunUnitTestsModule>]
 public class PackProjectsModule : Module<List<CommandResult>>
 {
-    protected override async Task<List<CommandResult>?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
+    protected override async Task<List<CommandResult>?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         var results = new List<CommandResult>();
-        var packageVersion = await GetModule<NugetVersionGeneratorModule>();
-        var projectFiles = context.Git().RootDirectory!.GetFiles(f => GetProjectsPredicate(f, context));
+        var packageVersion = await context.GetModule<NugetVersionGeneratorModule>();
+        var projectFiles = context.Git().RootDirectory.GetFiles(f => GetProjectsPredicate(f, context));
+
         foreach (var projectFile in projectFiles)
         {
-            results.Add(await context.DotNet().Pack(new DotNetPackOptions { 
-                ProjectSolution = projectFile.Path, 
-                Configuration = Configuration.Release, 
+            results.Add(await context.DotNet().Pack(new DotNetPackOptions
+            {
+                ProjectSolution = projectFile.Path,
+                Configuration = "Release",
                 Properties =
                 [
-                    ("PackageVersion", packageVersion.Value)!, 
-                    ("Version", packageVersion.Value)!
+                    ("PackageVersion", packageVersion.ValueOrDefault)!,
+                    ("Version", packageVersion.ValueOrDefault)!
                 ],
                 IncludeSource = true
-            }, cancellationToken));
+            }, cancellationToken: cancellationToken));
         }
 
         return results;
     }
 
-    private bool GetProjectsPredicate(File file, IPipelineContext context)
+    private bool GetProjectsPredicate(File file, IModuleContext context)
     {
         var path = file.Path;
         if (!path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))

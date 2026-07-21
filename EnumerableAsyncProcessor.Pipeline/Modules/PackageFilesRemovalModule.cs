@@ -6,15 +6,15 @@ namespace EnumerableAsyncProcessor.Pipeline.Modules;
 
 public class PackageFilesRemovalModule : Module
 {
-    protected override async Task<IDictionary<string, object>?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
+    protected override Task ExecuteModuleAsync(IModuleContext context, CancellationToken cancellationToken)
     {
-        var packageFiles = context.Git().RootDirectory.GetFiles(path => path.Extension is ".nupkg");
+        var packageFiles = context.Git().RootDirectory.GetFiles(file => file.Extension is ".nupkg");
 
         foreach (var packageFile in packageFiles)
         {
             packageFile.Delete();
         }
 
-        return await NothingAsync();
+        return Task.CompletedTask;
     }
 }

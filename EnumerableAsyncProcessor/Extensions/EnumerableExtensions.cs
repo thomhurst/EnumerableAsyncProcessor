@@ -155,7 +155,10 @@ public static class EnumerableExtensions
 #if NET9_0_OR_GREATER
         await foreach (var task in Task.WhenEach(tasks).ConfigureAwait(false).WithCancellation(cancellationToken))
         {
-            yield return task.Result;
+            // Await rather than .Result: the task is already complete, but .Result wraps
+            // failures in AggregateException while the net8 fallback path rethrows the
+            // original exception. Both paths must surface identical exceptions.
+            yield return await task.ConfigureAwait(false);
         }
 #else
         // Interleaving via completion-order buckets: each task's continuation claims the next

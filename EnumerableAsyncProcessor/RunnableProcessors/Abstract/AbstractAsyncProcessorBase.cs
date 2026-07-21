@@ -71,11 +71,7 @@ public abstract class AbstractAsyncProcessorBase : IAsyncProcessor, IAsyncDispos
 
     protected virtual ValueTask DisposeAsyncCore()
     {
-#if NET6_0_OR_GREATER
         return ValueTask.CompletedTask;
-#else
-        return new ValueTask(Task.CompletedTask);
-#endif
     }
 
     public void Dispose()

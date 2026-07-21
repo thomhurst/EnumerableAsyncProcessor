@@ -9,7 +9,7 @@ namespace EnumerableAsyncProcessor.Validation;
 internal static class ValidationHelper
 {
     /// <summary>
-    /// Validates that an object is not null using modern or fallback methods.
+    /// Validates that an object is not null.
     /// </summary>
     /// <typeparam name="T">The type of the object to validate.</typeparam>
     /// <param name="value">The value to validate.</param>
@@ -17,14 +17,7 @@ internal static class ValidationHelper
     /// <exception cref="ArgumentNullException">Thrown when the value is null.</exception>
     public static void ThrowIfNull<T>([NotNull] T? value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
-#if NET6_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(value, paramName);
-#else
-        if (value is null)
-        {
-            throw new ArgumentNullException(paramName);
-        }
-#endif
     }
 
     /// <summary>
@@ -35,14 +28,7 @@ internal static class ValidationHelper
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
     public static void ThrowIfNegative(int value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
-#if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfNegative(value, paramName);
-#else
-        if (value < 0)
-        {
-            throw new ArgumentOutOfRangeException(paramName, value, $"'{paramName}' must be a non-negative value.");
-        }
-#endif
     }
 
     /// <summary>
@@ -53,14 +39,7 @@ internal static class ValidationHelper
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative or zero.</exception>
     public static void ThrowIfNegativeOrZero(int value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
-#if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value, paramName);
-#else
-        if (value <= 0)
-        {
-            throw new ArgumentOutOfRangeException(paramName, value, $"'{paramName}' must be a positive value.");
-        }
-#endif
     }
 
     /// <summary>

@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <!-- net8.0 also exercises the pre-net9 completion-order streaming path in ToIAsyncEnumerable -->
-        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <!-- Do not warn about non-strong named dependencies, as we target .NET (not .NET Framework).

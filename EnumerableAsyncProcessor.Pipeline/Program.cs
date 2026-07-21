@@ -26,7 +26,8 @@ else
     builder.AddModule<UploadPackagesToNugetModule>();
 }
 
-builder.AddModule<RunUnitTestsModule>()
+builder.AddModule<BuildExampleProjectsModule>()
+    .AddModule<RunUnitTestsModule>()
     .AddModule<NugetVersionGeneratorModule>()
     .AddModule<PackProjectsModule>()
     .AddModule<PackageFilesRemovalModule>()

@@ -8,7 +8,7 @@ namespace EnumerableAsyncProcessor;
 /// </summary>
 internal sealed class ProcessorLifecycle
 {
-    private static readonly TimeSpan DisposalTimeout = TimeSpan.FromSeconds(30);
+    internal static readonly TimeSpan DisposalTimeout = TimeSpan.FromSeconds(30);
 
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly Action _trySetCanceledAll;

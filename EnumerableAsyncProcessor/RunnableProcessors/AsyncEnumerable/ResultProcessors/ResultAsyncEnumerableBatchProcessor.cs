@@ -10,6 +10,7 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
     private readonly int _batchSize;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private int _disposed;
+    private TaskCompletionSource? _executionCompleted;
 
     internal ResultAsyncEnumerableBatchProcessor(
         IAsyncEnumerable<TInput> items,
@@ -25,6 +26,8 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
 
     public async IAsyncEnumerable<TOutput> ExecuteAsync()
     {
+        var executionCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _executionCompleted = executionCompleted;
         var cancellationToken = _cancellationTokenSource.Token;
 
         try
@@ -57,6 +60,7 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
         finally
         {
             DisposeCancellationSource(cancelFirst: false);
+            executionCompleted.TrySetResult();
         }
     }
 
@@ -92,9 +96,38 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
         _cancellationTokenSource.Dispose();
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        Dispose();
-        return ValueTask.CompletedTask;
+        CancelForDisposal();
+
+        // Mirror ProcessorLifecycle: give an in-flight enumeration a bounded window to observe cancellation.
+        if (_executionCompleted is { Task.IsCompleted: false } executionCompleted)
+        {
+            try
+            {
+                await executionCompleted.Task.WaitAsync(ProcessorLifecycle.DisposalTimeout).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Timeout of the in-flight enumeration; disposal must not throw.
+            }
+        }
+
+        DisposeCancellationSource(cancelFirst: false);
+    }
+
+    private void CancelForDisposal()
+    {
+        try
+        {
+            if (Volatile.Read(ref _disposed) == 0)
+            {
+                _cancellationTokenSource.Cancel();
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // The run completed and disposed the source concurrently - nothing left to cancel.
+        }
     }
 }

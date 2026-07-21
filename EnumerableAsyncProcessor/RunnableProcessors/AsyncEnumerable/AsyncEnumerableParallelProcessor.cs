@@ -10,6 +10,7 @@ public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableP
     private readonly bool _scheduleOnThreadPool;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private int _disposed;
+    private Task? _executionTask;
 
     internal AsyncEnumerableParallelProcessor(
         IAsyncEnumerable<TInput> items,
@@ -25,7 +26,14 @@ public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableP
         _cancellationTokenSource = cancellationTokenSource;
     }
 
-    public async Task ExecuteAsync()
+    public Task ExecuteAsync()
+    {
+        var executionTask = ExecuteCoreAsync();
+        _executionTask = executionTask;
+        return executionTask;
+    }
+
+    private async Task ExecuteCoreAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
 
@@ -103,9 +111,38 @@ public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableP
         _cancellationTokenSource.Dispose();
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        Dispose();
-        return ValueTask.CompletedTask;
+        CancelForDisposal();
+
+        // Mirror ProcessorLifecycle: give the in-flight run a bounded window to observe cancellation.
+        if (_executionTask is { IsCompleted: false } executionTask)
+        {
+            try
+            {
+                await executionTask.WaitAsync(ProcessorLifecycle.DisposalTimeout).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Cancellation, failure, or timeout of the in-flight run; disposal must not throw.
+            }
+        }
+
+        DisposeCancellationSource(cancelFirst: false);
+    }
+
+    private void CancelForDisposal()
+    {
+        try
+        {
+            if (Volatile.Read(ref _disposed) == 0)
+            {
+                _cancellationTokenSource.Cancel();
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // The run completed and disposed the source concurrently - nothing left to cancel.
+        }
     }
 }

@@ -193,6 +193,50 @@ public class DisposalRegressionTests
         await Assert.That(caught is OperationCanceledException).IsTrue();
     }
 
+    [Test, Timeout(30_000)]
+    public async Task AsyncEnumerable_Processor_DisposeAsync_Waits_For_InFlight_Selector(CancellationToken cancellationToken)
+    {
+        var firstItemStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseItem = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var itemsCompleted = 0;
+
+        var processor = InfiniteAsyncEnumerable()
+            .ForEachAsync(async _ =>
+            {
+                firstItemStarted.TrySetResult();
+                await releaseItem.Task;
+                Interlocked.Increment(ref itemsCompleted);
+            })
+            .ProcessInParallel(maxConcurrency: 1);
+
+        var executeTask = processor.ExecuteAsync();
+        await firstItemStarted.Task;
+
+        var disposeTask = processor.DisposeAsync().AsTask();
+
+        // The selector ignores cancellation and is still blocked, so disposal must still be waiting.
+        await Assert.That(disposeTask.IsCompleted).IsFalse();
+
+        releaseItem.TrySetResult();
+        await disposeTask.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+
+        // At least the in-flight item finished before disposal returned; the worker may also
+        // drain one already-buffered item before it observes cancellation.
+        await Assert.That(itemsCompleted).IsGreaterThanOrEqualTo(1);
+
+        Exception? caught = null;
+        try
+        {
+            await executeTask.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            caught = exception;
+        }
+
+        await Assert.That(caught is OperationCanceledException).IsTrue();
+    }
+
     private static async IAsyncEnumerable<int> InfiniteAsyncEnumerable(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

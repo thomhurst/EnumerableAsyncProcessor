@@ -181,68 +181,12 @@ public static class AsyncEnumerableExtensions
         CancellationToken cancellationToken = default)
     {
         var results = new List<T>();
-        
-        if (maxConcurrency.HasValue)
-        {
-            // Rate-limited parallel processing
-            using var semaphore = new SemaphoreSlim(maxConcurrency.Value, maxConcurrency.Value);
-            var tasks = new List<Task<T>>();
 
-            await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
-            {
-                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                
-                var capturedItem = item;
-                var task = Task.Run(() =>
-                {
-                    try
-                    {
-                        return capturedItem;
-                    }
-                    finally
-                    {
-                        semaphore.Release();
-                    }
-                }, cancellationToken);
-                
-                tasks.Add(task);
-            }
-            
-            if (tasks.Count > 0)
-            {
-                var taskResults = await Task.WhenAll(tasks).ConfigureAwait(false);
-                results.AddRange(taskResults);
-            }
-        }
-        else
+        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
-            // Unbounded parallel processing
-            var tasks = new List<Task<T>>();
-            
-            await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
-            {
-                var capturedItem = item;
-                
-                Task<T> task;
-                if (scheduleOnThreadPool)
-                {
-                    task = Task.Run(() => Task.FromResult(capturedItem), cancellationToken);
-                }
-                else
-                {
-                    task = Task.FromResult(capturedItem);
-                }
-                
-                tasks.Add(task);
-            }
-            
-            if (tasks.Count > 0)
-            {
-                var taskResults = await Task.WhenAll(tasks).ConfigureAwait(false);
-                results.AddRange(taskResults);
-            }
+            results.Add(item);
         }
-        
+
         return results;
     }
     
@@ -283,34 +227,13 @@ public static class AsyncEnumerableExtensions
         
         if (maxConcurrency.HasValue)
         {
-            // Rate-limited parallel processing
-            using var semaphore = new SemaphoreSlim(maxConcurrency.Value, maxConcurrency.Value);
-            var tasks = new List<Task<TOutput>>();
-
-            await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
+            await foreach (var result in AsyncEnumerableWorkerPool.ProcessResultsAsync(
+                               items,
+                               taskSelector,
+                               maxConcurrency.Value,
+                               cancellationToken).ConfigureAwait(false))
             {
-                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                
-                var capturedItem = item;
-                var task = Task.Run(async () =>
-                {
-                    try
-                    {
-                        return await taskSelector(capturedItem).ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        semaphore.Release();
-                    }
-                }, cancellationToken);
-                
-                tasks.Add(task);
-            }
-            
-            if (tasks.Count > 0)
-            {
-                var taskResults = await Task.WhenAll(tasks).ConfigureAwait(false);
-                results.AddRange(taskResults);
+                results.Add(result);
             }
         }
         else
@@ -325,7 +248,7 @@ public static class AsyncEnumerableExtensions
                 Task<TOutput> task;
                 if (scheduleOnThreadPool)
                 {
-                    task = Task.Run(async () => await taskSelector(capturedItem).ConfigureAwait(false), cancellationToken);
+                    task = Task.Run(() => taskSelector(capturedItem), cancellationToken);
                 }
                 else
                 {

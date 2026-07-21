@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EnumerableAsyncProcessor.Builders;
@@ -83,10 +84,15 @@ public class CancellationAwareSelectorTests
         using var cancellationTokenSource = new CancellationTokenSource();
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var interrupted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allowCleanupToFinish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var processor = GetItemsAsync()
             .ForEachAsync(
-                (_, processorToken) => WaitUntilCanceledAsync(processorToken, started, interrupted),
+                (_, processorToken) => WaitUntilCanceledAfterCleanupAsync(
+                    processorToken,
+                    started,
+                    interrupted,
+                    allowCleanupToFinish),
                 cancellationTokenSource.Token)
             .ProcessInParallel();
 
@@ -94,8 +100,41 @@ public class CancellationAwareSelectorTests
         await started.Task.WaitAsync(cancellationToken);
         await cancellationTokenSource.CancelAsync();
 
-        await interrupted.Task.WaitAsync(cancellationToken);
-        await Assert.ThrowsAsync<OperationCanceledException>(() => executeTask);
+        await AssertExecutionWaitsForCleanupAsync(
+            executeTask,
+            interrupted,
+            allowCleanupToFinish,
+            cancellationToken);
+    }
+
+    [Test]
+    public async Task ExternalCancellation_Waits_For_AsyncEnumerable_Result_Selector_Cleanup(CancellationToken cancellationToken)
+    {
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var interrupted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allowCleanupToFinish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var processor = GetItemsAsync()
+            .SelectAsync(
+                (item, processorToken) => WaitUntilCanceledAfterCleanupAsync(
+                    item,
+                    processorToken,
+                    started,
+                    interrupted,
+                    allowCleanupToFinish),
+                cancellationTokenSource.Token)
+            .ProcessInParallel();
+
+        var executeTask = processor.ExecuteAsync().ToListAsync();
+        await started.Task.WaitAsync(cancellationToken);
+        await cancellationTokenSource.CancelAsync();
+
+        await AssertExecutionWaitsForCleanupAsync(
+            executeTask,
+            interrupted,
+            allowCleanupToFinish,
+            cancellationToken);
     }
 
     private static async Task WaitUntilCanceledAsync(
@@ -125,9 +164,66 @@ public class CancellationAwareSelectorTests
         return result;
     }
 
-    private static async IAsyncEnumerable<int> GetItemsAsync()
+    private static async Task WaitUntilCanceledAfterCleanupAsync(
+        CancellationToken cancellationToken,
+        TaskCompletionSource started,
+        TaskCompletionSource interrupted,
+        TaskCompletionSource allowCleanupToFinish)
+    {
+        started.TrySetResult();
+        try
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            interrupted.TrySetResult();
+            await allowCleanupToFinish.Task;
+            throw;
+        }
+    }
+
+    private static async Task<T> WaitUntilCanceledAfterCleanupAsync<T>(
+        T result,
+        CancellationToken cancellationToken,
+        TaskCompletionSource started,
+        TaskCompletionSource interrupted,
+        TaskCompletionSource allowCleanupToFinish)
+    {
+        await WaitUntilCanceledAfterCleanupAsync(
+            cancellationToken,
+            started,
+            interrupted,
+            allowCleanupToFinish);
+
+        return result;
+    }
+
+    private static async Task AssertExecutionWaitsForCleanupAsync(
+        Task executeTask,
+        TaskCompletionSource interrupted,
+        TaskCompletionSource allowCleanupToFinish,
+        CancellationToken cancellationToken)
+    {
+        await interrupted.Task.WaitAsync(cancellationToken);
+        await Task.Delay(100, cancellationToken);
+
+        try
+        {
+            await Assert.That(executeTask.IsCompleted).IsFalse();
+        }
+        finally
+        {
+            allowCleanupToFinish.TrySetResult();
+        }
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => executeTask);
+    }
+
+    private static async IAsyncEnumerable<int> GetItemsAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         yield return 1;
-        await Task.CompletedTask;
+        await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
     }
 }

@@ -20,6 +20,39 @@ See the [benchmark guide](benchmarks/README.md) to run the BenchmarkDotNet suite
 
 Version 4 requires .NET 8 or later. The package targets and tests `net8.0`, `net9.0`, and `net10.0`.
 
+## Migrating from v3 to v4
+
+Version 4 is a major release. Review these source and behaviour changes before upgrading:
+
+- **.NET 8 is the minimum runtime.** The `net6.0` and `netstandard2.0` targets, the Polyfill dependency, and the `TaskCompletionSource` compatibility shim were removed. The package targets and tests `net8.0`, `net9.0`, and `net10.0`.
+- **Parallel processing has one API.** Use `ProcessInParallel(maxConcurrency: 100)` for bounded concurrency and `ProcessInParallel()` for unbounded concurrency. The old non-timed `RateLimitedParallelAsyncProcessor*` types and duplicate overload family were removed. Rename named `levelOfParallelism` arguments to `maxConcurrency`; replace positional `ProcessInParallel(true)` calls with `ProcessInParallel(scheduleOnThreadPool: true)`.
+- **Timed processing is a real start-rate limit.** It now uses a shared token bucket instead of holding each worker slot for at least one window. `ProcessInParallel(permitsPerWindow, window, maxConcurrency)` controls start rate and in-flight concurrency independently. The existing two-argument overload remains and uses its first value for both limits.
+- **`IEnumerable<T>` input is materialized once when the processor is built.** One-shot enumerables are now supported and side effects run once. Iterator exceptions surface from the terminal builder call, such as `ProcessInParallel(...)`, instead of later from an awaiter.
+- **Synchronous disposal no longer waits.** `Dispose()` cancels pending work and releases resources without blocking. Use `await DisposeAsync()` or `await using` when shutdown must wait for in-flight work; the async wait is bounded to 30 seconds.
+- **Arbitrary upper limits were removed.** Task counts and batch sizes may exceed 10,000, and time windows may exceed 24 hours. Validity checks remain: counts, batch sizes, concurrency, and permit counts must be positive; time windows cannot be negative.
+- **Validation is consistent and eager.** Invalid `maxConcurrency`, parallelism, batch, and timed-rate arguments now throw while the processor is built for both action and result variants.
+- **Incidental `TaskWrapper` API was removed.** `IEquatable<T>`, equality operators, `Deconstruct`, and custom `GetHashCode` members were implementation details and are no longer public. Recompile consumers that referenced those members.
+- **Synchronous `InParallelAsync` delegates now run concurrently.** The `Func<TSource, TResult>` and `Action<TSource>` overloads use thread-pool workers instead of executing delegates sequentially on the caller. Do not depend on their previous thread affinity or execution order.
+
+Version 4 also adds cancellation-aware selectors. Use `(item, cancellationToken) => ...` when in-flight work must observe external cancellation, `CancelAll()`, or disposal:
+
+```csharp
+await using var processor = ids
+    .ForEachAsync(
+        async (id, cancellationToken) =>
+            await DoSomethingAsync(id, cancellationToken),
+        cancellationToken)
+    .ProcessInParallel(maxConcurrency: 100);
+
+await processor.WaitAsync();
+```
+
+## Execution model
+
+Bounded parallel processors use a fixed set of workers, so coordination work scales with `maxConcurrency` instead of item count. Bounded `IAsyncEnumerable<T>` processing uses a bounded channel to apply source backpressure while preserving result order. Unbounded processing starts work as input is consumed and can place substantial pressure on memory, CPU, network connections, or downstream services.
+
+Timed processors acquire a shared token-bucket permit before starting each operation. The permit rate and maximum in-flight concurrency are separate controls; long-running operations therefore do not reduce permit replenishment. A zero-length window disables start-rate throttling but retains the concurrency limit.
+
 ## Why I built this
 
 Because I've come across situations where you need to fine tune the rate at which you do things.
@@ -40,7 +73,7 @@ Maybe you just don't want to write all the boilerplate code that comes with mana
 | `ResultParallelAsyncProcessor<TInput, TOutput>`  | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
-Processes asynchronous tasks in parallel. Pass `maxConcurrency` to bound the number of operations running at once, or omit it for unbounded concurrency.
+Processes asynchronous tasks in parallel. Pass `maxConcurrency` to use a fixed worker pool and bound the number of operations running at once, or omit it for unbounded concurrency.
 
 **Usage**  
 
@@ -80,11 +113,9 @@ Choose a concurrency limit that protects downstream resources. Unbounded process
 | `ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
-Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set over the timespan that you set. As one finishes, another will start, unless you've hit the maximum allowed for the current timespan duration.
+Uses a shared token bucket to limit how many operations may start in each window. This is useful when a downstream API has a requests-per-second limit.
 
-E.g. If you set a limit of 100, and a timespan of 1 second, only 100 operation should ever run at any one time over the course of a second. If the operation finishes sooner than a second (or your provided timespan), it'll wait and then start the next operation once that timespan has elapsed.
-
-This is useful in scenarios where, for example, you have an API but it has a request per second limit
+The two-argument overload uses the same value for permits per window and maximum in-flight concurrency. Use the three-argument overload when those limits should differ.
 
 **Usage**  
 
@@ -94,19 +125,20 @@ var ids = Enumerable.Range(0, 5000).ToList();
 // SelectAsync for if you want to return something - using proper disposal
 await using var processor = ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
-        .ProcessInParallel(maxConcurrency: 100, TimeSpan.FromSeconds(1));
+        .ProcessInParallel(
+                permitsPerWindow: 100,
+                window: TimeSpan.FromSeconds(1),
+                maxConcurrency: 200);
 var results = await processor.GetResultsAsync();
 
 // ForEachAsync for when you have nothing to return - using proper disposal
 await using var voidProcessor = ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
-        .ProcessInParallel(maxConcurrency: 100, TimeSpan.FromSeconds(1));
+        .ProcessInParallel(maxConcurrency: 100, timeSpan: TimeSpan.FromSeconds(1));
 await voidProcessor.WaitAsync();
 ```
 
-**Caveats**  
-
-- If your operations take longer than your provided TimeSpan, you probably won't get your desired throughput. This processor ensures you don't go over your rate limit, but will not increase parallel execution if you're below it.
+The first example allows up to 100 starts per second and 200 in-flight operations. The second preserves the source-compatible two-argument shape and applies 100 to both limits.
 
 ### One At A Time
 
@@ -182,7 +214,7 @@ await ids
 As above, you can see that you can just `await` on the processor to get the results.
 Below shows examples of using the processor object and the various methods available.
 
-This is for when you need to Enumerate through some objects and use them in your operations. E.g. Sending notifications to certain ids
+Use an item processor when each operation needs an input value, such as sending notifications to a set of IDs.
 
 ```csharp
     var httpClient = new HttpClient();
@@ -219,7 +251,7 @@ This is for when you need to Enumerate through some objects and use them in your
     }
 ```
 
-This is for when you need to don't need any objects - But just want to do something a certain amount of times. E.g. Pinging a site to warm up multiple instances
+Use an execution-count processor when an operation should run a fixed number of times without input values, such as warming multiple site instances.
 
 ```csharp
     var httpClient = new HttpClient();
@@ -344,8 +376,8 @@ private static void StartProcessing(int[] input, CancellationToken token)
 
 When a processor is disposed:
 
-1. **Cancellation**: Internal `CancellationTokenSource` is cancelled and any unstarted tasks complete as cancelled
-2. **Task Waiting**: `await DisposeAsync()` waits up to 30 seconds for in-flight tasks to finish; synchronous `Dispose()` cancels and releases without blocking
+1. **Cancellation**: The internal `CancellationTokenSource` is cancelled and unstarted tasks complete as cancelled. Token-aware selectors can cancel in-flight work.
+2. **Task Waiting**: `await DisposeAsync()` waits up to 30 seconds for in-flight tasks to finish; synchronous `Dispose()` cancels and releases without blocking.
 3. **Resource Cleanup**: Disposes internal resources like `CancellationTokenSource`
 4. **Thread Safety**: All disposal operations are thread-safe
 

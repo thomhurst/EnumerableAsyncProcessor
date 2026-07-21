@@ -161,6 +161,50 @@ public class DisposalRegressionTests
         }
     }
 
+    [Test, Timeout(30_000)]
+    public async Task AsyncEnumerable_Processor_Dispose_During_Execution_Cancels_Processing(CancellationToken cancellationToken)
+    {
+        var firstItemStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var processor = InfiniteAsyncEnumerable()
+            .ForEachAsync(async _ =>
+            {
+                firstItemStarted.TrySetResult();
+                await Task.Yield();
+            })
+            .ProcessInParallel(maxConcurrency: 1);
+
+        var executeTask = processor.ExecuteAsync();
+        await firstItemStarted.Task;
+
+        processor.Dispose();
+
+        Exception? caught = null;
+        try
+        {
+            await executeTask.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            caught = exception;
+        }
+
+        // A TimeoutException here means disposal did not cancel the in-flight run.
+        await Assert.That(caught is OperationCanceledException).IsTrue();
+    }
+
+    private static async IAsyncEnumerable<int> InfiniteAsyncEnumerable(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var i = 0;
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return i++;
+            await Task.Yield();
+        }
+    }
+
     private static async IAsyncEnumerable<int> GenerateAsyncEnumerable(int count)
     {
         for (var i = 0; i < count; i++)

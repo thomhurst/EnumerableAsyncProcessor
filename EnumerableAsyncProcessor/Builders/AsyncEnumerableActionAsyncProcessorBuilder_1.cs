@@ -26,7 +26,9 @@ public sealed class AsyncEnumerableActionAsyncProcessorBuilder<TInput>
     {
         _items = items;
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _taskSelector = item => taskSelector(item, _cancellationTokenSource.Token);
+        // Capture the token now: the source may be disposed by the time a late item runs the selector.
+        var processorToken = _cancellationTokenSource.Token;
+        _taskSelector = item => taskSelector(item, processorToken);
     }
 
     /// <summary>

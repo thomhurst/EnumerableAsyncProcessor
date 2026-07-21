@@ -9,6 +9,7 @@ public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableP
     private readonly int? _maxConcurrency;
     private readonly bool _scheduleOnThreadPool;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private int _disposed;
 
     internal AsyncEnumerableParallelProcessor(
         IAsyncEnumerable<TInput> items,
@@ -77,12 +78,28 @@ public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableP
         }
         finally
         {
-            _cancellationTokenSource.Dispose();
+            DisposeCancellationSource(cancelFirst: false);
         }
     }
 
     public void Dispose()
     {
+        DisposeCancellationSource(cancelFirst: true);
+    }
+
+    // Explicit disposal cancels in-flight work first; the completion path has nothing left to cancel.
+    private void DisposeCancellationSource(bool cancelFirst)
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        if (cancelFirst)
+        {
+            _cancellationTokenSource.Cancel();
+        }
+
         _cancellationTokenSource.Dispose();
     }
 

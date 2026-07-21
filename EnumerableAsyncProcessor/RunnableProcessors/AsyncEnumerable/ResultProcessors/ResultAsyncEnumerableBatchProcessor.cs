@@ -9,6 +9,7 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
     private readonly Func<TInput, Task<TOutput>> _taskSelector;
     private readonly int _batchSize;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private int _disposed;
 
     internal ResultAsyncEnumerableBatchProcessor(
         IAsyncEnumerable<TInput> items,
@@ -55,7 +56,7 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
         }
         finally
         {
-            _cancellationTokenSource.Dispose();
+            DisposeCancellationSource(cancelFirst: false);
         }
     }
 
@@ -72,6 +73,22 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
 
     public void Dispose()
     {
+        DisposeCancellationSource(cancelFirst: true);
+    }
+
+    // Explicit disposal cancels in-flight work first; the completion path has nothing left to cancel.
+    private void DisposeCancellationSource(bool cancelFirst)
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        if (cancelFirst)
+        {
+            _cancellationTokenSource.Cancel();
+        }
+
         _cancellationTokenSource.Dispose();
     }
 

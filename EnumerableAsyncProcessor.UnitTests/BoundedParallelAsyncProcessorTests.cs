@@ -8,7 +8,7 @@ using EnumerableAsyncProcessor.UnitTests.Extensions;
 
 namespace EnumerableAsyncProcessor.UnitTests;
 
-public class RateLimitedParallelAsyncProcessorTests
+public class BoundedParallelAsyncProcessorTests
 {
     [MatrixDataSource]
     [Test, Repeat(5)]

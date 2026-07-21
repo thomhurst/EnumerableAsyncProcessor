@@ -98,24 +98,23 @@ public class TaskWrapperStructValidationTests
     {
         // This test demonstrates that structs don't allocate on the heap for the wrapper itself
         // Only the TaskCompletionSource instances are heap-allocated
-        
+
         // Arrange & Act
-        GC.Collect();
-        var initialMemory = GC.GetTotalMemory(false);
-        
+        Func<Task> taskFactory = static () => Task.CompletedTask;
+        var initialAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+
         var wrappers = new ActionTaskWrapper[1000];
         for (int i = 0; i < wrappers.Length; i++)
         {
             // Only the TaskCompletionSource allocates on the heap, not the wrapper struct
-            wrappers[i] = new ActionTaskWrapper(() => Task.CompletedTask, new TaskCompletionSource());
+            wrappers[i] = new ActionTaskWrapper(taskFactory, new TaskCompletionSource());
         }
-        
-        var finalMemory = GC.GetTotalMemory(false);
-        var allocatedMemory = finalMemory - initialMemory;
-        
+
+        var allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - initialAllocatedBytes;
+
         // Assert - Memory allocation should be only for TaskCompletionSource instances
         // Each struct itself doesn't allocate heap memory
-        await Assert.That(allocatedMemory).IsLessThan(wrappers.Length * 200); // Conservative estimate
+        await Assert.That(allocatedBytes).IsLessThan(wrappers.Length * 200); // Conservative estimate
         var hasNonNullFactory = wrappers[0].TaskFactory != null; // Prevent optimization
         await Assert.That(hasNonNullFactory).IsTrue();
     }

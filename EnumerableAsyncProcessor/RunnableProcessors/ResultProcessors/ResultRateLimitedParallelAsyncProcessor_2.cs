@@ -10,7 +10,7 @@ public class ResultRateLimitedParallelAsyncProcessor<TInput, TOutput> : ResultAb
     
     internal ResultRateLimitedParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task<TOutput>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
-        ValidationHelper.ValidateParallelism(levelsOfParallelism);
+        ValidationHelper.ThrowIfNegativeOrZero(levelsOfParallelism);
 
         _levelsOfParallelism = levelsOfParallelism;
     }

@@ -1,6 +1,47 @@
 namespace EnumerableAsyncProcessor;
 
 /// <summary>
+/// Completes a completion source from a failed task-factory invocation, classifying the failure
+/// by the state of the task rather than the caught exception.
+/// </summary>
+internal static class TaskCompletionSourceExtensions
+{
+    internal static void TrySetFromFault(this TaskCompletionSource taskCompletionSource, Task? task, Exception exception, CancellationToken cancellationToken)
+    {
+        if (task is { IsCanceled: true })
+        {
+            taskCompletionSource.TrySetCanceled(cancellationToken);
+        }
+        else if (task is { IsFaulted: true })
+        {
+            // Preserve every failure from the task, not just the first
+            taskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
+        }
+        else
+        {
+            taskCompletionSource.TrySetException(exception);
+        }
+    }
+
+    internal static void TrySetFromFault<TOutput>(this TaskCompletionSource<TOutput> taskCompletionSource, Task? task, Exception exception, CancellationToken cancellationToken)
+    {
+        if (task is { IsCanceled: true })
+        {
+            taskCompletionSource.TrySetCanceled(cancellationToken);
+        }
+        else if (task is { IsFaulted: true })
+        {
+            // Preserve every failure from the task, not just the first
+            taskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
+        }
+        else
+        {
+            taskCompletionSource.TrySetException(exception);
+        }
+    }
+}
+
+/// <summary>
 /// A struct wrapper pairing an action task factory with its completion source.
 /// </summary>
 public readonly struct ActionTaskWrapper
@@ -31,19 +72,7 @@ public readonly struct ActionTaskWrapper
         }
         catch (Exception e)
         {
-            if (task is { IsCanceled: true })
-            {
-                TaskCompletionSource.TrySetCanceled(cancellationToken);
-            }
-            else if (task is { IsFaulted: true })
-            {
-                // Preserve every failure from the task, not just the first
-                TaskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
-            }
-            else
-            {
-                TaskCompletionSource.TrySetException(e);
-            }
+            TaskCompletionSource.TrySetFromFault(task, e, cancellationToken);
         }
     }
 }
@@ -81,19 +110,7 @@ public readonly struct ItemTaskWrapper<TInput>
         }
         catch (Exception e)
         {
-            if (task is { IsCanceled: true })
-            {
-                TaskCompletionSource.TrySetCanceled(cancellationToken);
-            }
-            else if (task is { IsFaulted: true })
-            {
-                // Preserve every failure from the task, not just the first
-                TaskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
-            }
-            else
-            {
-                TaskCompletionSource.TrySetException(e);
-            }
+            TaskCompletionSource.TrySetFromFault(task, e, cancellationToken);
         }
     }
 }
@@ -130,19 +147,7 @@ public readonly struct ItemTaskWrapper<TInput, TOutput>
         }
         catch (Exception e)
         {
-            if (task is { IsCanceled: true })
-            {
-                TaskCompletionSource.TrySetCanceled(cancellationToken);
-            }
-            else if (task is { IsFaulted: true })
-            {
-                // Preserve every failure from the task, not just the first
-                TaskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
-            }
-            else
-            {
-                TaskCompletionSource.TrySetException(e);
-            }
+            TaskCompletionSource.TrySetFromFault(task, e, cancellationToken);
         }
     }
 }
@@ -177,19 +182,7 @@ public readonly struct ActionTaskWrapper<TOutput>
         }
         catch (Exception e)
         {
-            if (task is { IsCanceled: true })
-            {
-                TaskCompletionSource.TrySetCanceled(cancellationToken);
-            }
-            else if (task is { IsFaulted: true })
-            {
-                // Preserve every failure from the task, not just the first
-                TaskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
-            }
-            else
-            {
-                TaskCompletionSource.TrySetException(e);
-            }
+            TaskCompletionSource.TrySetFromFault(task, e, cancellationToken);
         }
     }
 }

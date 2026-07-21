@@ -78,50 +78,6 @@ internal static class ValidationHelper
     }
 
     /// <summary>
-    /// Validates that a count of executions is valid.
-    /// </summary>
-    /// <param name="count">The count value to validate.</param>
-    /// <param name="paramName">The parameter name for the exception.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the count is negative.</exception>
-    public static void ValidateCount(int count, [CallerArgumentExpression(nameof(count))] string? paramName = null)
-    {
-        ThrowIfNegative(count, paramName);
-    }
-
-    /// <summary>
-    /// Validates that a batch size is positive.
-    /// </summary>
-    /// <param name="batchSize">The batch size to validate.</param>
-    /// <param name="paramName">The parameter name for the exception.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the batch size is negative or zero.</exception>
-    public static void ValidateBatchSize(int batchSize, [CallerArgumentExpression(nameof(batchSize))] string? paramName = null)
-    {
-        ThrowIfNegativeOrZero(batchSize, paramName);
-    }
-
-    /// <summary>
-    /// Validates that a parallelism level is positive.
-    /// </summary>
-    /// <param name="levelsOfParallelism">The parallelism level to validate.</param>
-    /// <param name="paramName">The parameter name for the exception.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the parallelism level is negative or zero.</exception>
-    public static void ValidateParallelism(int levelsOfParallelism, [CallerArgumentExpression(nameof(levelsOfParallelism))] string? paramName = null)
-    {
-        ThrowIfNegativeOrZero(levelsOfParallelism, paramName);
-    }
-
-    /// <summary>
-    /// Validates that a TimeSpan is valid for timed operations.
-    /// </summary>
-    /// <param name="timeSpan">The TimeSpan to validate.</param>
-    /// <param name="paramName">The parameter name for the exception.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the TimeSpan is negative.</exception>
-    public static void ValidateTimeSpan(TimeSpan timeSpan, [CallerArgumentExpression(nameof(timeSpan))] string? paramName = null)
-    {
-        ThrowIfNegative(timeSpan, paramName);
-    }
-
-    /// <summary>
     /// Validates that a CancellationTokenSource is not null and not already cancelled.
     /// </summary>
     /// <param name="cancellationTokenSource">The CancellationTokenSource to validate.</param>

@@ -1,4 +1,4 @@
-﻿using EnumerableAsyncProcessor.Extensions;
+using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 using EnumerableAsyncProcessor.Validation;
 
@@ -10,7 +10,7 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal RateLimitedParallelAsyncProcessor(int count, Func<Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
-        ValidationHelper.ValidateParallelism(levelsOfParallelism);
+        ValidationHelper.ThrowIfNegativeOrZero(levelsOfParallelism);
 
         _levelsOfParallelism = levelsOfParallelism;
     }

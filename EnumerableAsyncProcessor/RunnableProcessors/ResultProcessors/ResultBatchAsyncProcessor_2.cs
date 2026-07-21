@@ -10,7 +10,7 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
     internal ResultBatchAsyncProcessor(int batchSize, IEnumerable<TInput> items, Func<TInput, Task<TOutput>> taskSelector,
         CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
-        ValidationHelper.ValidateBatchSize(batchSize);
+        ValidationHelper.ThrowIfNegativeOrZero(batchSize);
 
         _batchSize = batchSize;
     }

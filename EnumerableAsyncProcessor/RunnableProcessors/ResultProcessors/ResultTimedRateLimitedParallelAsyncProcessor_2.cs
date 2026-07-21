@@ -11,8 +11,8 @@ public class ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput> : Res
 
     internal ResultTimedRateLimitedParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task<TOutput>> taskSelector, int levelsOfParallelism, TimeSpan timeSpan, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
-        ValidationHelper.ValidateParallelism(levelsOfParallelism);
-        ValidationHelper.ValidateTimeSpan(timeSpan);
+        ValidationHelper.ThrowIfNegativeOrZero(levelsOfParallelism);
+        ValidationHelper.ThrowIfNegative(timeSpan);
 
         _levelsOfParallelism = levelsOfParallelism;
         _timeSpan = timeSpan;

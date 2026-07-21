@@ -10,7 +10,7 @@ public class RateLimitedParallelAsyncProcessor<TInput> : AbstractAsyncProcessor<
     
     internal RateLimitedParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
-        ValidationHelper.ValidateParallelism(levelsOfParallelism);
+        ValidationHelper.ThrowIfNegativeOrZero(levelsOfParallelism);
 
         _levelsOfParallelism = levelsOfParallelism;
     }

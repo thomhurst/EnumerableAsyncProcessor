@@ -12,19 +12,13 @@ public abstract class AbstractAsyncProcessor : AbstractAsyncProcessorBase
 
     protected AbstractAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
-        ValidationHelper.ValidateCount(count);
+        ValidationHelper.ThrowIfNegative(count);
         ValidationHelper.ThrowIfNull(taskSelector);
 
-        var taskWrappers = new ActionTaskWrapper[count];
-        _taskCompletionSources = new TaskCompletionSource[count];
+        TaskWrappers = Enumerable.Range(0, count)
+            .Select(_ => new ActionTaskWrapper(taskSelector, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)))
+            .ToArray();
 
-        for (var i = 0; i < count; i++)
-        {
-            var taskCompletionSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            _taskCompletionSources[i] = taskCompletionSource;
-            taskWrappers[i] = new ActionTaskWrapper(taskSelector, taskCompletionSource);
-        }
-
-        TaskWrappers = taskWrappers;
+        _taskCompletionSources = TaskWrappers.Select(x => x.TaskCompletionSource).ToArray();
     }
 }

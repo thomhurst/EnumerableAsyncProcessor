@@ -1,4 +1,4 @@
-﻿using EnumerableAsyncProcessor.Extensions;
+using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 using EnumerableAsyncProcessor.Validation;
 
@@ -11,8 +11,8 @@ public class TimedRateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal TimedRateLimitedParallelAsyncProcessor(int count, Func<Task> taskSelector, int levelsOfParallelism, TimeSpan timeSpan, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
-        ValidationHelper.ValidateParallelism(levelsOfParallelism);
-        ValidationHelper.ValidateTimeSpan(timeSpan);
+        ValidationHelper.ThrowIfNegativeOrZero(levelsOfParallelism);
+        ValidationHelper.ThrowIfNegative(timeSpan);
 
         _levelsOfParallelism = levelsOfParallelism;
         _timeSpan = timeSpan;

@@ -17,8 +17,9 @@
     <PropertyGroup>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>icon.png</PackageIcon>
         <Authors>Tom Longhurst</Authors>
-        <Description>Various Enumerable Async Processors - Batch / Parallel / Rate Limited / One at a time</Description>
+        <Description>Process async tasks over IEnumerable and IAsyncEnumerable sources with controlled concurrency: one at a time, batched, bounded parallel, timed rate limited (e.g. requests per second), or fully parallel. Fluent API with streaming results, exception fidelity, cancellation and disposal support.</Description>
         <RepositoryType>git</RepositoryType>
         <PackageProjectUrl>https://github.com/thomhurst/EnumerableAsyncProcessor</PackageProjectUrl>
         <RepositoryUrl>https://github.com/thomhurst/EnumerableAsyncProcessor</RepositoryUrl>
@@ -38,6 +39,7 @@
         </AssemblyAttribute>
 
         <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" />
+        <None Include="$(MSBuildThisFileDirectory)..\icon.png" Pack="true" PackagePath="\" />
         
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.301" PrivateAssets="All"/>
         <PackageReference Include="System.Threading.RateLimiting" Version="10.0.10" />

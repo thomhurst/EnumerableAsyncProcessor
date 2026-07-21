@@ -2,25 +2,23 @@ using System.Collections.Concurrent;
 
 namespace EnumerableAsyncProcessor.Extensions;
 
+/// <summary>
+/// Fire-and-await parallel processing over an <see cref="IEnumerable{T}"/> without building a processor object.
+/// To collect results, use <c>SelectAsync(...).ProcessInParallel(...)</c> instead.
+/// </summary>
 public static class ParallelExtensions
 {
-    public static Task InParallelAsync<TSource, TResult>(
-        this IEnumerable<TSource> source,
-        int levelOfParallelism,
-        Func<TSource, Task<TResult>> taskSelector)
-    {
-        return InParallelAsync(source, levelOfParallelism, taskSelector, CancellationToken.None);
-    }
-
-    public static Task InParallelAsync<TSource, TResult>(
-        this IEnumerable<TSource> source,
-        int levelOfParallelism,
-        Func<TSource, Task<TResult>> taskSelector,
-        CancellationToken cancellationToken)
-    {
-        return StartWorkers(source, levelOfParallelism, taskSelector, cancellationToken);
-    }
-
+    /// <summary>
+    /// Runs <paramref name="taskSelector"/> for every item on a fixed pool of workers.
+    /// </summary>
+    /// <typeparam name="TSource">The input item type.</typeparam>
+    /// <param name="source">The items to process. The sequence is materialized once before workers start.</param>
+    /// <param name="levelOfParallelism">Maximum concurrent operations. Zero or negative uses <see cref="Environment.ProcessorCount"/>.</param>
+    /// <param name="taskSelector">The async operation to perform on each item. Any result carried by a returned <c>Task&lt;T&gt;</c> is not collected.</param>
+    /// <returns>
+    /// A task that completes when every item has been processed. When multiple items fail, awaiting it
+    /// throws the first failure while <c>Task.Exception.InnerExceptions</c> carries every failure.
+    /// </returns>
     public static Task InParallelAsync<TSource>(
         this IEnumerable<TSource> source,
         int levelOfParallelism,
@@ -29,6 +27,18 @@ public static class ParallelExtensions
         return InParallelAsync(source, levelOfParallelism, taskSelector, CancellationToken.None);
     }
 
+    /// <summary>
+    /// Runs <paramref name="taskSelector"/> for every item on a fixed pool of workers.
+    /// </summary>
+    /// <typeparam name="TSource">The input item type.</typeparam>
+    /// <param name="source">The items to process. The sequence is materialized once before workers start.</param>
+    /// <param name="levelOfParallelism">Maximum concurrent operations. Zero or negative uses <see cref="Environment.ProcessorCount"/>.</param>
+    /// <param name="taskSelector">The async operation to perform on each item. Any result carried by a returned <c>Task&lt;T&gt;</c> is not collected.</param>
+    /// <param name="cancellationToken">Stops claiming new items when cancelled; the returned task then completes as canceled.</param>
+    /// <returns>
+    /// A task that completes when every item has been processed. When multiple items fail, awaiting it
+    /// throws the first failure while <c>Task.Exception.InnerExceptions</c> carries every failure.
+    /// </returns>
     public static Task InParallelAsync<TSource>(
         this IEnumerable<TSource> source,
         int levelOfParallelism,
@@ -38,24 +48,18 @@ public static class ParallelExtensions
         return StartWorkers(source, levelOfParallelism, taskSelector, cancellationToken);
     }
 
-    // Overloads for CPU-bound processing
-    public static Task InParallelAsync<TSource, TResult>(
-        this IEnumerable<TSource> source,
-        int levelOfParallelism,
-        Func<TSource, TResult> taskSelector,
-        CancellationToken cancellationToken = default)
-    {
-        return StartWorkers(
-            source,
-            levelOfParallelism,
-            item =>
-            {
-                _ = taskSelector(item);
-                return Task.CompletedTask;
-            },
-            cancellationToken);
-    }
-
+    /// <summary>
+    /// Runs a synchronous, CPU-bound <paramref name="taskSelector"/> for every item on a fixed pool of thread-pool workers.
+    /// </summary>
+    /// <typeparam name="TSource">The input item type.</typeparam>
+    /// <param name="source">The items to process. The sequence is materialized once before workers start.</param>
+    /// <param name="levelOfParallelism">Maximum concurrent operations. Zero or negative uses <see cref="Environment.ProcessorCount"/>.</param>
+    /// <param name="taskSelector">The synchronous operation to perform on each item.</param>
+    /// <param name="cancellationToken">Stops claiming new items when cancelled; the returned task then completes as canceled.</param>
+    /// <returns>
+    /// A task that completes when every item has been processed. When multiple items fail, awaiting it
+    /// throws the first failure while <c>Task.Exception.InnerExceptions</c> carries every failure.
+    /// </returns>
     public static Task InParallelAsync<TSource>(
         this IEnumerable<TSource> source,
         int levelOfParallelism,

@@ -87,6 +87,7 @@ public sealed class ItemActionAsyncProcessorBuilder<TInput, TOutput>
     /// Processes items in parallel with bounded concurrency. Binary-compatible with assemblies
     /// compiled against v3 (equivalent to <c>ProcessInParallel(maxConcurrency: n)</c>).
     /// </summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public IAsyncProcessor<TOutput> ProcessInParallel(int maxConcurrency)
     {
         return ProcessInParallel((int?)maxConcurrency);

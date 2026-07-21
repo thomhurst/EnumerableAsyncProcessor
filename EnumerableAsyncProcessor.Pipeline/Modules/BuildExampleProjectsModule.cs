@@ -4,6 +4,7 @@ using ModularPipelines.DotNet.Options;
 using ModularPipelines.Git.Extensions;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
+using ModularPipelines.Options;
 
 namespace EnumerableAsyncProcessor.Pipeline.Modules;
 
@@ -14,6 +15,10 @@ public class BuildExampleProjectsModule : Module<List<CommandResult>>
         CancellationToken cancellationToken)
     {
         var results = new List<CommandResult>();
+        var executionOptions = new CommandExecutionOptions
+        {
+            ThrowOnNonZeroExitCode = true,
+        };
 
         foreach (var exampleProjectFile in context
                      .Git().RootDirectory
@@ -24,7 +29,7 @@ public class BuildExampleProjectsModule : Module<List<CommandResult>>
             {
                 ProjectSolution = exampleProjectFile.Path,
                 Configuration = "Release",
-            }, cancellationToken: cancellationToken));
+            }, executionOptions: executionOptions, cancellationToken: cancellationToken));
         }
 
         return results;

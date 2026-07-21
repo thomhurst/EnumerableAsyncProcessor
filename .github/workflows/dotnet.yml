@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           # 10.0.x runs the pipeline; 8.0.x and 9.0.x provide runtimes for the multi-targeted test project
           dotnet-version: |

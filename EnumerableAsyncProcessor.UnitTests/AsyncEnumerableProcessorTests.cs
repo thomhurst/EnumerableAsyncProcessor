@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -141,7 +140,6 @@ public class AsyncEnumerableProcessorTests
         await Assert.That(results.Count).IsEqualTo(50);
         await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 50).Select(x => x * 3));
     }
-
 
     [Test]
     public async Task ForEachAsync_WithCancellation_StopsProcessing()
@@ -368,4 +366,3 @@ internal static class AsyncEnumerableExtensionsForTests
         return list;
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -219,4 +218,3 @@ public class AsyncEnumerableParallelExtensionsTests
         await Assert.That(exception.Message).IsEqualTo("Test exception");
     }
 }
-#endif

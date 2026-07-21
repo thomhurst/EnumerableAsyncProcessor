@@ -66,7 +66,6 @@ async Task CountAsyncProcessor()
     }
 }
 
-#if NET6_0_OR_GREATER
 // Run IAsyncEnumerable examples
 Console.WriteLine("\n\n=== Running IAsyncEnumerable Examples ===\n");
 await AsyncEnumerableExample.RunExamples();
@@ -78,4 +77,3 @@ await ProcessInParallelExample.RunExample();
 // Run disposal pattern examples
 Console.WriteLine("\n\n=== Running Disposal Pattern Examples ===\n");
 await DisposalExample.RunExamples();
-#endif

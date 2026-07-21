@@ -13,6 +13,7 @@ namespace EnumerableAsyncProcessor.Pipeline.Modules;
 [DependsOn<PackageFilesRemovalModule>]
 [DependsOn<NugetVersionGeneratorModule>]
 [DependsOn<RunUnitTestsModule>]
+[DependsOn<BuildBenchmarkProjectsModule>]
 [DependsOn<BuildExampleProjectsModule>]
 public class PackProjectsModule : Module<List<CommandResult>>
 {

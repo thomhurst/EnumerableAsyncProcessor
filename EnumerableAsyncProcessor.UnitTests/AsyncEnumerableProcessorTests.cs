@@ -105,6 +105,71 @@ public class AsyncEnumerableProcessorTests
     }
 
     [Test]
+    public async Task SelectAsync_BoundedParallelism_PreservesInputOrder()
+    {
+        var results = await GenerateAsyncEnumerable(20)
+            .SelectAsync(async item =>
+            {
+                await Task.Delay((21 - item) * 2);
+                return item;
+            })
+            .ProcessInParallel(4)
+            .ExecuteAsync()
+            .ToListAsync();
+
+        await Assert.That(results.SequenceEqual(Enumerable.Range(1, 20))).IsTrue();
+    }
+
+    [Test, Timeout(10_000)]
+    public async Task BoundedParallelism_AppliesBackpressureToSource(CancellationToken cancellationToken)
+    {
+        const int maxConcurrency = 2;
+
+        var producedCount = 0;
+        var startedCount = 0;
+        var workersStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseWorkers = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        async IAsyncEnumerable<int> Source([EnumeratorCancellation] CancellationToken token = default)
+        {
+            for (var i = 0; i < 100; i++)
+            {
+                token.ThrowIfCancellationRequested();
+                Interlocked.Increment(ref producedCount);
+                yield return i;
+                await Task.Yield();
+            }
+        }
+
+        var processingTask = Source(cancellationToken)
+            .ForEachAsync(async _ =>
+            {
+                if (Interlocked.Increment(ref startedCount) == maxConcurrency)
+                {
+                    workersStarted.TrySetResult();
+                }
+
+                await releaseWorkers.Task;
+            }, cancellationToken)
+            .ProcessInParallel(maxConcurrency)
+            .ExecuteAsync();
+
+        try
+        {
+            await workersStarted.Task.WaitAsync(TimeSpan.FromSeconds(3), cancellationToken);
+            await Task.Delay(100, cancellationToken);
+
+            await Assert.That(producedCount).IsLessThanOrEqualTo((maxConcurrency * 2) + 1);
+        }
+        finally
+        {
+            releaseWorkers.TrySetResult();
+        }
+
+        await processingTask;
+    }
+
+    [Test]
     public async Task ForEachAsync_ProcessInParallel_WithHighConcurrency_HandlesCorrectly()
     {
         var processedCount = 0;

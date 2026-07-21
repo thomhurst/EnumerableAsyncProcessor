@@ -30,40 +30,13 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
         
         if (_maxConcurrency.HasValue)
         {
-            // Rate-limited parallel processing
-            using var semaphore = new SemaphoreSlim(_maxConcurrency.Value, _maxConcurrency.Value);
-            var tasks = new List<Task>();
+            await AsyncEnumerableWorkerPool.ProcessAsync(
+                _items,
+                _taskSelector,
+                _maxConcurrency.Value,
+                cancellationToken).ConfigureAwait(false);
 
-            try
-            {
-                await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
-                {
-                    await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    
-                    var capturedItem = item;
-                    var task = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await _taskSelector(capturedItem).ConfigureAwait(false);
-                        }
-                        finally
-                        {
-                            semaphore.Release();
-                        }
-                    }, cancellationToken);
-                    
-                    tasks.Add(task);
-                }
-            }
-            finally
-            {
-                // Always wait for all tasks to complete before the using block disposes the semaphore
-                if (tasks.Count > 0)
-                {
-                    await Task.WhenAll(tasks).ConfigureAwait(false);
-                }
-            }
+            return;
         }
         else
         {

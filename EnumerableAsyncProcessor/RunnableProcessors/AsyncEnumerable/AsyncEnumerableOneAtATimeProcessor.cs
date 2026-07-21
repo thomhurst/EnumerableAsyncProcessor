@@ -11,6 +11,7 @@ public sealed class AsyncEnumerableOneAtATimeProcessor<TInput> : IAsyncEnumerabl
     private readonly Func<TInput, Task> _taskSelector;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private int _disposed;
+    private int _executionState;
     private Task? _executionTask;
 
     internal AsyncEnumerableOneAtATimeProcessor(
@@ -25,25 +26,53 @@ public sealed class AsyncEnumerableOneAtATimeProcessor<TInput> : IAsyncEnumerabl
 
     public Task ExecuteAsync()
     {
-        var executionTask = ExecuteCoreAsync();
-        _executionTask = executionTask;
-        return executionTask;
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
+
+        // A TaskCompletionSource rather than the async method's own task, so a multi-fault
+        // item task surfaces every inner exception instead of only the first one awaited.
+        var completionSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _executionTask = completionSource.Task;
+        _ = ExecuteCoreAsync(completionSource);
+        return completionSource.Task;
     }
 
-    private async Task ExecuteCoreAsync()
+    private async Task ExecuteCoreAsync(TaskCompletionSource completionSource)
     {
-        var cancellationToken = _cancellationTokenSource.Token;
+        var exceptions = new List<Exception>();
+        var wasCanceled = false;
+        var cancellationToken = CancellationToken.None;
 
         try
         {
+            cancellationToken = _cancellationTokenSource.Token;
+
             await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await _taskSelector(item).ConfigureAwait(false);
+                var task = _taskSelector(item);
+
+                try
+                {
+                    await task.ConfigureAwait(false);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException || task.IsFaulted)
+                {
+                    StreamingExecution.CollectFailures(task, exception, exceptions, ref wasCanceled);
+                    break;
+                }
             }
+        }
+        catch (OperationCanceledException)
+        {
+            wasCanceled = true;
+        }
+        catch (Exception exception)
+        {
+            exceptions.Add(exception);
         }
         finally
         {
             DisposeCancellationSource(cancelFirst: false);
+            StreamingExecution.Complete(completionSource, exceptions, wasCanceled, cancellationToken);
         }
     }
 

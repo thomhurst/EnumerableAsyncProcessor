@@ -22,7 +22,7 @@ internal sealed class ProcessorLifecycle
 
     public ProcessorLifecycle(CancellationTokenSource cancellationTokenSource, Action trySetCanceledAll, Action<Exception> trySetExceptionAll)
     {
-        ValidationHelper.ValidateCancellationTokenSource(cancellationTokenSource);
+        ValidationHelper.ThrowIfNull(cancellationTokenSource);
 
         _cancellationTokenSource = cancellationTokenSource;
         _trySetCanceledAll = trySetCanceledAll;
@@ -32,6 +32,8 @@ internal sealed class ProcessorLifecycle
 
     // Cancellation is registered here rather than at construction so that a token cancelled
     // while the processor is still being constructed can never fire on a partially built instance.
+    // An already-cancelled token invokes CancelAll synchronously on this line, so every per-item
+    // completion source is canceled before the caller ever observes the processor.
     public void Start(Func<Task> process)
     {
         _cancellationTokenRegistration = Token.Register(CancelAll);
@@ -66,9 +68,17 @@ internal sealed class ProcessorLifecycle
 
     private void CancelAllCore()
     {
-        if (!_cancellationTokenSource.IsCancellationRequested)
+        try
         {
-            _cancellationTokenSource.Cancel();
+            if (!_cancellationTokenSource.IsCancellationRequested)
+            {
+                _cancellationTokenSource.Cancel();
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // A concurrent Dispose won the race and disposed the source; the per-item
+            // completion sources below are still canceled.
         }
 
         _trySetCanceledAll();

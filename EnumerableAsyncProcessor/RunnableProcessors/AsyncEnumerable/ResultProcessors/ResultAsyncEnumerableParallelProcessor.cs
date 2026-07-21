@@ -3,6 +3,12 @@ using EnumerableAsyncProcessor.Interfaces;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors;
 
+/// <summary>
+/// Streams one result per item from an <see cref="IAsyncEnumerable{T}"/> source, processing in
+/// parallel. Bounded (<c>maxConcurrency</c> set) runs yield results in source order with source
+/// backpressure; unbounded runs yield results in completion order. Abandoning the stream early
+/// cancels remaining work.
+/// </summary>
 public sealed class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnumerableProcessor<TOutput>
 {
     private readonly IAsyncEnumerable<TInput> _items;
@@ -11,6 +17,7 @@ public sealed class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IA
     private readonly bool _scheduleOnThreadPool;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private int _disposed;
+    private int _executionState;
     private TaskCompletionSource? _executionCompleted;
 
     internal ResultAsyncEnumerableParallelProcessor(
@@ -27,11 +34,18 @@ public sealed class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IA
         _cancellationTokenSource = cancellationTokenSource;
     }
 
-    public async IAsyncEnumerable<TOutput> ExecuteAsync()
+    public IAsyncEnumerable<TOutput> ExecuteAsync()
+    {
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
+        return ExecuteCoreAsync();
+    }
+
+    private async IAsyncEnumerable<TOutput> ExecuteCoreAsync()
     {
         var executionCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _executionCompleted = executionCompleted;
         var cancellationToken = _cancellationTokenSource.Token;
+        var completedNormally = false;
 
         try
         {
@@ -41,57 +55,79 @@ public sealed class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IA
                     ? item => Task.Run(() => _taskSelector(item), cancellationToken)
                     : _taskSelector;
 
-                await foreach (var result in AsyncEnumerableWorkerPool.ProcessResultsAsync(
-                                   _items,
-                                   taskSelector,
-                                   _maxConcurrency.Value,
-                                   cancellationToken).ConfigureAwait(false))
+                // Enumerated manually so that on abandonment or failure the processor's token is
+                // cancelled BEFORE the pool enumerator's disposal drains its in-flight work -
+                // token-aware selectors then abort instead of being waited on to natural completion.
+                var enumerator = AsyncEnumerableWorkerPool.ProcessResultsAsync(
+                        _items,
+                        taskSelector,
+                        _maxConcurrency.Value,
+                        cancellationToken)
+                    .GetAsyncEnumerator(CancellationToken.None);
+
+                try
                 {
-                    yield return result;
-                }
-
-                yield break;
-            }
-
-            var tasks = new List<Task<TOutput>>();
-
-            // Unbounded parallel processing
-            try
-            {
-                await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
-                {
-                    var capturedItem = item;
-
-                    Task<TOutput> task;
-                    if (_scheduleOnThreadPool)
+                    while (await enumerator.MoveNextAsync().ConfigureAwait(false))
                     {
-                        task = Task.Run(() => _taskSelector(capturedItem), cancellationToken);
-                    }
-                    else
-                    {
-                        task = _taskSelector(capturedItem);
+                        yield return enumerator.Current;
                     }
 
-                    tasks.Add(task);
+                    completedNormally = true;
                 }
-
-                // Yield all results as they complete
-                await foreach (var result in tasks.ToIAsyncEnumerable(cancellationToken).ConfigureAwait(false))
+                finally
                 {
-                    yield return result;
+                    if (!completedNormally)
+                    {
+                        CancelForDisposal();
+                    }
+
+                    await enumerator.DisposeAsync().ConfigureAwait(false);
                 }
             }
-            finally
+            else
             {
-                if (tasks.Count > 0)
+                // Unbounded parallel processing
+                var tasks = new List<Task<TOutput>>();
+
+                try
                 {
-                    try
+                    await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
                     {
-                        await Task.WhenAll(tasks).ConfigureAwait(false);
+                        var capturedItem = item;
+
+                        tasks.Add(_scheduleOnThreadPool
+                            ? Task.Run(() => _taskSelector(capturedItem), cancellationToken)
+                            : _taskSelector(capturedItem));
                     }
-                    catch
+
+                    // Yield all results as they complete
+                    await foreach (var result in tasks.ToIAsyncEnumerable(cancellationToken).ConfigureAwait(false))
                     {
-                        // Preserve the exception already propagating from enumeration or result consumption.
+                        yield return result;
+                    }
+
+                    completedNormally = true;
+                }
+                finally
+                {
+                    if (!completedNormally && tasks.Count > 0)
+                    {
+                        // Abandonment (early break) or a propagating failure: cancel in-flight
+                        // work, drain it within the disposal window rather than for as long as it
+                        // takes, and observe its failures so they can neither mask the propagating
+                        // exception nor surface as UnobservedTaskException.
+                        CancelForDisposal();
+
+                        try
+                        {
+                            await Task.WhenAll(tasks).WaitAsync(ProcessorLifecycle.DisposalTimeout).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            // Failures are observed below; the propagating exception stays primary.
+                        }
+
+                        StreamingExecution.ObserveFailures(tasks);
                     }
                 }
             }

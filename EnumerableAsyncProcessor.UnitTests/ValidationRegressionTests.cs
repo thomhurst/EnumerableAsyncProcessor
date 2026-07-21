@@ -13,7 +13,9 @@ namespace EnumerableAsyncProcessor.UnitTests;
 ///   (the result variants previously skipped validation, and maxConcurrency: 0 previously surfaced
 ///   as a semaphore error mid-processing),
 /// - the old arbitrary caps (10,000 tasks / 10,000 batch size) must stay removed,
-/// - an already-cancelled token must fail cleanly at build time.
+/// - an already-cancelled token must build a processor with cancelled tasks - never throw
+///   ArgumentException for an internal parameter, and never NullReferenceException from a
+///   cancellation callback firing on a partially constructed processor (see PreCancelledTokenTests).
 /// </summary>
 public class ValidationRegressionTests
 {
@@ -99,15 +101,18 @@ public class ValidationRegressionTests
     }
 
     [Test]
-    public async Task Already_Cancelled_Token_Fails_Cleanly_At_Build_Time()
+    public async Task Already_Cancelled_Token_Builds_A_Cancelled_Processor()
     {
         using var cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Cancel();
 
-        // Must throw a clear ArgumentException - never a NullReferenceException from a
-        // cancellation callback firing on a partially constructed processor
-        await AssertThrows<ArgumentException>(() =>
-            new[] { 1 }.ForEachAsync(_ => Task.CompletedTask, cancellationTokenSource.Token).ProcessInParallel());
+        // Building must not throw; the cancellation registration fires on the fully built
+        // instance and cancels every per-item task before the processor is returned.
+        await using var processor = new[] { 1 }
+            .ForEachAsync(_ => Task.CompletedTask, cancellationTokenSource.Token)
+            .ProcessInParallel();
+
+        await Assert.That(processor.GetEnumerableTasks().All(t => t.IsCanceled)).IsTrue();
     }
 
     private static async Task AssertThrows<TException>(Func<object> action) where TException : Exception

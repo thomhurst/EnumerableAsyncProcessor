@@ -37,6 +37,10 @@ public sealed class AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
     /// <param name="maxConcurrency">Maximum concurrent operations, or null for unbounded concurrency.</param>
     /// <param name="scheduleOnThreadPool">For unbounded processing, schedules tasks on the thread pool when true.</param>
     /// <returns>An async processor configured for parallel execution.</returns>
+    /// <remarks>
+    /// Bounded processing (<paramref name="maxConcurrency"/> set) streams results in source order
+    /// with source backpressure; unbounded processing streams results in completion order.
+    /// </remarks>
     public IAsyncEnumerableProcessor<TOutput> ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false)
     {
         return new ResultAsyncEnumerableParallelProcessor<TInput, TOutput>(

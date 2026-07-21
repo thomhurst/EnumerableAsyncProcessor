@@ -15,22 +15,27 @@ public interface IAsyncProcessor<TOutput> : IAsyncDisposable, IDisposable
 {
     /// <summary>
     /// Gets a collection of all the asynchronous Tasks, which could be pending or complete.
+    /// Tasks appear in source order.
     /// </summary>
     /// <returns>An enumerable of tasks that may be running, completed, or faulted.</returns>
     IEnumerable<Task<TOutput>> GetEnumerableTasks();
-    
+
     /// <summary>
     /// Gets a task that will contain all mapped results when complete.
+    /// Results appear in source order.
     /// </summary>
     /// <returns>A task that completes when all processing is done, containing an array of results.</returns>
     Task<TOutput[]> GetResultsAsync();
 
     /// <summary>
     /// Gets results as an async enumerable that yields items as they complete.
+    /// Results are yielded in completion order, not source order.
     /// </summary>
     /// <returns>An async enumerable that yields results as they become available.</returns>
     /// <remarks>
     /// This method allows you to process results as they complete rather than waiting for all tasks to finish.
+    /// Because items are yielded as they finish, the order differs from <see cref="GetResultsAsync"/>,
+    /// which preserves source order.
     /// The processor should still be disposed after consuming the async enumerable.
     /// </remarks>
     IAsyncEnumerable<TOutput> GetResultsAsyncEnumerable();

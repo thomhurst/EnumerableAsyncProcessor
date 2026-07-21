@@ -36,6 +36,10 @@ Version 4 is a major release. Review these source and behaviour changes before u
 - **Validation is consistent and eager.** Invalid `maxConcurrency`, parallelism, batch, and timed-rate arguments now throw while the processor is built for both action and result variants.
 - **`TaskWrapper` types and processor plumbing are internal.** The `ActionTaskWrapper`/`ItemTaskWrapper` structs and the previously `protected` members of the abstract processor base classes (`TaskWrappers`, `EnumerableTaskCompletionSources`, `CancellationToken`, constructors) were implementation details that could not be meaningfully used outside the library, and are no longer public.
 - **Synchronous `InParallelAsync` delegates now run concurrently.** The `Func<TSource, TResult>` and `Action<TSource>` overloads use thread-pool workers instead of executing delegates sequentially on the caller. Do not depend on their previous thread affinity or execution order.
+- **An already-cancelled token yields cancelled tasks, not `ArgumentException`.** Building a processor with a token that is already cancelled (or that cancels between building and the terminal call) now produces a processor whose per-item tasks are cancelled; `WaitAsync`/`GetResultsAsync` throw `OperationCanceledException`. Previously this threw `ArgumentException` from an internal constructor.
+- **`IAsyncEnumerable<T>` processors preserve every failure.** The `Task` returned by `ExecuteAsync()` now carries all failures via `Task.Exception.InnerExceptions` (awaiting still throws the first), matching the `IEnumerable<T>` processors. Previously only the first failure was observable and the rest were lost.
+- **`ExecuteAsync()` enforces single use.** Calling it a second time throws `InvalidOperationException`; calling it after disposal throws `ObjectDisposedException`. Previously a second call failed with a confusing `ObjectDisposedException` from internal plumbing.
+- **Abandoning a result stream cancels remaining work.** Breaking out of `await foreach` over `ExecuteAsync()` now cancels the processor's in-flight work and bounds the drain to the 30-second disposal window, instead of silently blocking until every started task finished naturally.
 
 Version 4 also adds cancellation-aware selectors. Use `(item, cancellationToken) => ...` when in-flight work must observe external cancellation, `CancelAll()`, or disposal:
 
@@ -55,6 +59,13 @@ await processor.WaitAsync();
 Bounded parallel processors use a fixed set of workers, so coordination work scales with `maxConcurrency` instead of item count. Bounded `IAsyncEnumerable<T>` processing uses a bounded channel to apply source backpressure while preserving result order. Unbounded processing starts work as input is consumed and can place substantial pressure on memory, CPU, network connections, or downstream services.
 
 Timed processors acquire a shared token-bucket permit before starting each operation. The permit rate and maximum in-flight concurrency are separate controls; long-running operations therefore do not reduce permit replenishment. A zero-length window disables start-rate throttling but retains the concurrency limit.
+
+### Result ordering
+
+- `GetResultsAsync()` and `GetEnumerableTasks()` preserve source order.
+- `GetResultsAsyncEnumerable()` yields results in completion order.
+- `IAsyncEnumerable<T>` streaming (`ExecuteAsync()`): one-at-a-time, batch, and bounded parallel (`maxConcurrency` set) processors yield in source order; unbounded parallel yields in completion order.
+- The awaitable `IAsyncEnumerable<T>.ProcessInParallel(selector, ...)` extension returns results in source order.
 
 ## Why I built this
 

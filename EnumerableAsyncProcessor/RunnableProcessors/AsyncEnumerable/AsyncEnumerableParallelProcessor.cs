@@ -10,6 +10,7 @@ public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableP
     private readonly bool _scheduleOnThreadPool;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private int _disposed;
+    private int _executionState;
     private Task? _executionTask;
 
     internal AsyncEnumerableParallelProcessor(
@@ -28,65 +29,97 @@ public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableP
 
     public Task ExecuteAsync()
     {
-        var executionTask = ExecuteCoreAsync();
-        _executionTask = executionTask;
-        return executionTask;
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
+
+        // A TaskCompletionSource rather than the async method's own task, so the returned task
+        // carries every failure (Task.WhenAll fidelity) instead of only the first one awaited.
+        var completionSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _executionTask = completionSource.Task;
+        _ = ExecuteCoreAsync(completionSource);
+        return completionSource.Task;
     }
 
-    private async Task ExecuteCoreAsync()
+    private async Task ExecuteCoreAsync(TaskCompletionSource completionSource)
     {
-        var cancellationToken = _cancellationTokenSource.Token;
+        var exceptions = new List<Exception>();
+        var wasCanceled = false;
+        var cancellationToken = CancellationToken.None;
 
         try
         {
+            cancellationToken = _cancellationTokenSource.Token;
+
             if (_maxConcurrency.HasValue)
             {
                 Func<TInput, Task> taskSelector = _scheduleOnThreadPool
                     ? item => Task.Run(() => _taskSelector(item), cancellationToken)
                     : _taskSelector;
 
-                await AsyncEnumerableWorkerPool.ProcessAsync(
+                var poolTask = AsyncEnumerableWorkerPool.ProcessAsync(
                     _items,
                     taskSelector,
                     _maxConcurrency.Value,
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken);
 
-                return;
-            }
-
-            // Unbounded parallel processing
-            var tasks = new List<Task>();
-
-            try
-            {
-                await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+                try
                 {
-                    var capturedItem = item;
-
-                    Task task;
-                    if (_scheduleOnThreadPool)
-                    {
-                        task = Task.Run(() => _taskSelector(capturedItem), cancellationToken);
-                    }
-                    else
-                    {
-                        task = _taskSelector(capturedItem);
-                    }
-
-                    tasks.Add(task);
+                    await poolTask.ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    StreamingExecution.CollectFailures(poolTask, exception, exceptions, ref wasCanceled);
                 }
             }
-            finally
+            else
             {
+                // Unbounded parallel processing
+                var tasks = new List<Task>();
+
+                try
+                {
+                    await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+                    {
+                        var capturedItem = item;
+
+                        tasks.Add(_scheduleOnThreadPool
+                            ? Task.Run(() => _taskSelector(capturedItem), cancellationToken)
+                            : _taskSelector(capturedItem));
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    wasCanceled = true;
+                }
+                catch (Exception exception)
+                {
+                    // Recorded before the drain below so a mid-enumeration source failure stays
+                    // the primary exception; started-task failures append rather than replace it.
+                    exceptions.Add(exception);
+                }
+
                 if (tasks.Count > 0)
                 {
-                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                    var whenAll = Task.WhenAll(tasks);
+
+                    try
+                    {
+                        await whenAll.ConfigureAwait(false);
+                    }
+                    catch (Exception exception)
+                    {
+                        StreamingExecution.CollectFailures(whenAll, exception, exceptions, ref wasCanceled);
+                    }
                 }
             }
+        }
+        catch (Exception exception)
+        {
+            exceptions.Add(exception);
         }
         finally
         {
             DisposeCancellationSource(cancelFirst: false);
+            StreamingExecution.Complete(completionSource, exceptions, wasCanceled, cancellationToken);
         }
     }
 

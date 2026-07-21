@@ -53,7 +53,7 @@ public static class AsyncEnumerableExtensions
         Func<T, TOutput[]> selector,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var item in items.WithCancellation(cancellationToken))
+        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             foreach (var result in selector(item))
             {
@@ -70,7 +70,7 @@ public static class AsyncEnumerableExtensions
         Func<T, IEnumerable<TOutput>> selector,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var item in items.WithCancellation(cancellationToken))
+        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             foreach (var result in selector(item))
             {
@@ -87,9 +87,9 @@ public static class AsyncEnumerableExtensions
         Func<T, IAsyncEnumerable<TOutput>> selector,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var item in items.WithCancellation(cancellationToken))
+        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
-            await foreach (var result in selector(item).WithCancellation(cancellationToken))
+            await foreach (var result in selector(item).WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 yield return result;
             }
@@ -104,7 +104,7 @@ public static class AsyncEnumerableExtensions
         Func<T, Task<TOutput[]>> selector,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var item in items.WithCancellation(cancellationToken))
+        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             var results = await selector(item).ConfigureAwait(false);
             foreach (var result in results)
@@ -122,7 +122,7 @@ public static class AsyncEnumerableExtensions
         Func<T, Task<IEnumerable<TOutput>>> selector,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var item in items.WithCancellation(cancellationToken))
+        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             var results = await selector(item).ConfigureAwait(false);
             foreach (var result in results)
@@ -140,10 +140,10 @@ public static class AsyncEnumerableExtensions
         Func<T, Task<IAsyncEnumerable<TOutput>>> selector,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var item in items.WithCancellation(cancellationToken))
+        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             var asyncEnum = await selector(item).ConfigureAwait(false);
-            await foreach (var result in asyncEnum.WithCancellation(cancellationToken))
+            await foreach (var result in asyncEnum.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 yield return result;
             }
@@ -195,6 +195,7 @@ public static class AsyncEnumerableExtensions
     
     /// <summary>
     /// Process items in parallel with transformation, optional concurrency and thread pool scheduling, return all results as IEnumerable when awaited.
+    /// Results are returned in source order.
     /// </summary>
     public static async Task<IEnumerable<TOutput>> ProcessInParallel<T, TOutput>(
         this IAsyncEnumerable<T> items,
@@ -224,24 +225,48 @@ public static class AsyncEnumerableExtensions
         {
             // Unbounded parallel processing
             var tasks = new List<Task<TOutput>>();
-            
-            await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
+
+            try
             {
-                var capturedItem = item;
-                
-                Task<TOutput> task;
-                if (scheduleOnThreadPool)
+                await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
                 {
-                    task = Task.Run(() => taskSelector(capturedItem), cancellationToken);
+                    var capturedItem = item;
+
+                    Task<TOutput> task;
+                    if (scheduleOnThreadPool)
+                    {
+                        task = Task.Run(() => taskSelector(capturedItem), cancellationToken);
+                    }
+                    else
+                    {
+                        task = taskSelector(capturedItem);
+                    }
+
+                    tasks.Add(task);
                 }
-                else
-                {
-                    task = taskSelector(capturedItem);
-                }
-                
-                tasks.Add(task);
             }
-            
+            catch
+            {
+                // Mid-enumeration failure or cancellation: drain started work within the
+                // disposal window and observe its failures so nothing runs on fire-and-forget
+                // or surfaces as UnobservedTaskException; the enumeration failure stays primary.
+                if (tasks.Count > 0)
+                {
+                    try
+                    {
+                        await Task.WhenAll(tasks).WaitAsync(ProcessorLifecycle.DisposalTimeout).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // Observed below.
+                    }
+
+                    StreamingExecution.ObserveFailures(tasks);
+                }
+
+                throw;
+            }
+
             if (tasks.Count > 0)
             {
                 var taskResults = await Task.WhenAll(tasks).ConfigureAwait(false);

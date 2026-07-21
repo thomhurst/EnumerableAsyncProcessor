@@ -9,6 +9,7 @@ public sealed class AsyncEnumerableBatchProcessor<TInput> : IAsyncEnumerableProc
     private readonly int _batchSize;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private int _disposed;
+    private int _executionState;
     private Task? _executionTask;
 
     internal AsyncEnumerableBatchProcessor(
@@ -25,17 +26,26 @@ public sealed class AsyncEnumerableBatchProcessor<TInput> : IAsyncEnumerableProc
 
     public Task ExecuteAsync()
     {
-        var executionTask = ExecuteCoreAsync();
-        _executionTask = executionTask;
-        return executionTask;
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
+
+        // A TaskCompletionSource rather than the async method's own task, so the returned task
+        // carries every failure from a failing batch (Task.WhenAll fidelity) instead of only
+        // the first one awaited.
+        var completionSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _executionTask = completionSource.Task;
+        _ = ExecuteCoreAsync(completionSource);
+        return completionSource.Task;
     }
 
-    private async Task ExecuteCoreAsync()
+    private async Task ExecuteCoreAsync(TaskCompletionSource completionSource)
     {
-        var cancellationToken = _cancellationTokenSource.Token;
+        var exceptions = new List<Exception>();
+        var wasCanceled = false;
+        var cancellationToken = CancellationToken.None;
 
         try
         {
+            cancellationToken = _cancellationTokenSource.Token;
             var batch = new List<TInput>(_batchSize);
 
             await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
@@ -44,27 +54,63 @@ public sealed class AsyncEnumerableBatchProcessor<TInput> : IAsyncEnumerableProc
 
                 if (batch.Count >= _batchSize)
                 {
-                    await ProcessBatch(batch).ConfigureAwait(false);
+                    if (!await ProcessBatch(batch, exceptions).ConfigureAwait(false))
+                    {
+                        break;
+                    }
+
                     batch = new List<TInput>(_batchSize);
                 }
             }
 
             // Process any remaining items in the final batch
-            if (batch.Count > 0)
+            if (exceptions.Count == 0 && batch.Count > 0)
             {
-                await ProcessBatch(batch).ConfigureAwait(false);
+                await ProcessBatch(batch, exceptions).ConfigureAwait(false);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            wasCanceled = true;
+        }
+        catch (Exception exception)
+        {
+            exceptions.Add(exception);
         }
         finally
         {
             DisposeCancellationSource(cancelFirst: false);
+            StreamingExecution.Complete(completionSource, exceptions, wasCanceled, cancellationToken);
         }
     }
 
-    private async Task ProcessBatch(List<TInput> batch)
+    // Returns false when the batch failed, which stops subsequent batches (a failing batch has
+    // always halted the run); every failure in the batch is collected, not just the first.
+    // Pure cancellation (no fault) is excluded by the filter and propagates to the caller's
+    // OperationCanceledException handler, which completes the execution task as canceled.
+    private async Task<bool> ProcessBatch(List<TInput> batch, List<Exception> exceptions)
     {
         var tasks = batch.Select(item => _taskSelector(item)).ToArray();
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        var whenAll = Task.WhenAll(tasks);
+
+        try
+        {
+            await whenAll.ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || whenAll.IsFaulted)
+        {
+            if (whenAll.IsFaulted)
+            {
+                exceptions.AddRange(whenAll.Exception!.InnerExceptions);
+            }
+            else
+            {
+                exceptions.Add(exception);
+            }
+
+            return false;
+        }
     }
 
     public void Dispose()

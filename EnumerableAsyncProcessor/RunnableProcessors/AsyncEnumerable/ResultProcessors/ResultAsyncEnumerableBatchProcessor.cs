@@ -10,6 +10,7 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
     private readonly int _batchSize;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private int _disposed;
+    private int _executionState;
     private TaskCompletionSource? _executionCompleted;
 
     internal ResultAsyncEnumerableBatchProcessor(
@@ -24,7 +25,13 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
         _cancellationTokenSource = cancellationTokenSource;
     }
 
-    public async IAsyncEnumerable<TOutput> ExecuteAsync()
+    public IAsyncEnumerable<TOutput> ExecuteAsync()
+    {
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
+        return ExecuteCoreAsync();
+    }
+
+    private async IAsyncEnumerable<TOutput> ExecuteCoreAsync()
     {
         var executionCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _executionCompleted = executionCompleted;

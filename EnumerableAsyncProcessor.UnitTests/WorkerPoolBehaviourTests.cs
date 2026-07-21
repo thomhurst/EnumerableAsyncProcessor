@@ -4,17 +4,32 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EnumerableAsyncProcessor.Extensions;
+using EnumerableAsyncProcessor.RunnableProcessors;
 
 namespace EnumerableAsyncProcessor.UnitTests;
 
 /// <summary>
-/// Guards the worker-pool execution model used by the rate-limited, timed and
-/// throttled-parallel processors: the concurrency limit must hold, every item must be
+/// Guards the worker-pool execution model used by the bounded parallel and timed
+/// rate-limited processors: the concurrency limit must hold, every item must be
 /// processed exactly once, oversized limits must not break anything, and cancellation
 /// must promptly cancel the unprocessed remainder.
 /// </summary>
 public class WorkerPoolBehaviourTests
 {
+    [Test]
+    public async Task Positional_And_Named_Concurrency_Limits_Use_The_Same_Processor()
+    {
+        await using var positional = new[] { 1 }
+            .ForEachAsync(_ => Task.CompletedTask)
+            .ProcessInParallel(1);
+        await using var named = new[] { 1 }
+            .ForEachAsync(_ => Task.CompletedTask)
+            .ProcessInParallel(maxConcurrency: 1);
+
+        await Assert.That(positional.GetType()).IsEqualTo(typeof(ParallelAsyncProcessor<int>));
+        await Assert.That(named.GetType()).IsEqualTo(typeof(ParallelAsyncProcessor<int>));
+    }
+
     [Test, Repeat(3)]
     public async Task MaxConcurrency_Path_Obeys_The_Limit_And_Processes_Everything(CancellationToken cancellationToken)
     {
@@ -47,7 +62,7 @@ public class WorkerPoolBehaviourTests
     }
 
     [Test]
-    public async Task Every_Item_Is_Processed_Exactly_Once_Under_Rate_Limiting()
+    public async Task Every_Item_Is_Processed_Exactly_Once_With_Bounded_Concurrency()
     {
         const int itemCount = 500;
 
@@ -70,17 +85,17 @@ public class WorkerPoolBehaviourTests
     [Test]
     public async Task Parallelism_Limit_Larger_Than_Item_Count_Completes_Normally()
     {
-        await using var rateLimited = Enumerable.Range(0, 5).ToList()
+        await using var bounded = Enumerable.Range(0, 5).ToList()
             .ForEachAsync(_ => Task.CompletedTask)
             .ProcessInParallel(100);
-        await rateLimited.WaitAsync();
+        await bounded.WaitAsync();
 
         await using var throttled = Enumerable.Range(0, 5).ToList()
             .SelectAsync(i => Task.FromResult(i))
             .ProcessInParallel(maxConcurrency: 100);
         var results = await throttled.GetResultsAsync();
 
-        await Assert.That(rateLimited.GetEnumerableTasks().Count(x => x.IsCompletedSuccessfully)).IsEqualTo(5);
+        await Assert.That(bounded.GetEnumerableTasks().Count(x => x.IsCompletedSuccessfully)).IsEqualTo(5);
         await Assert.That(results.Length).IsEqualTo(5);
     }
 

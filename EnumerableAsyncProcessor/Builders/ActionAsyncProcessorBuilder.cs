@@ -29,52 +29,18 @@ public class ActionAsyncProcessorBuilder
         return new BatchAsyncProcessor(batchSize, _count, _taskSelector, _cancellationTokenSource).StartProcessing();
     }
     
-    public IAsyncProcessor ProcessInParallel(int levelOfParallelism)
+    public IAsyncProcessor ProcessInParallel(int maxConcurrency, TimeSpan timeSpan)
     {
-        return new RateLimitedParallelAsyncProcessor(_count, _taskSelector, levelOfParallelism, _cancellationTokenSource).StartProcessing();
-    }
-    
-    public IAsyncProcessor ProcessInParallel(int levelOfParallelism, TimeSpan timeSpan)
-    {
-        return new TimedRateLimitedParallelAsyncProcessor(_count, _taskSelector, levelOfParallelism, timeSpan, _cancellationTokenSource).StartProcessing();
+        return new TimedRateLimitedParallelAsyncProcessor(_count, _taskSelector, maxConcurrency, timeSpan, _cancellationTokenSource).StartProcessing();
     }
     
     /// <summary>
-    /// Process tasks in parallel without concurrency limits.
+    /// Process tasks in parallel, optionally limiting concurrency.
     /// </summary>
+    /// <param name="maxConcurrency">Maximum concurrent operations, or null for unbounded concurrency.</param>
+    /// <param name="scheduleOnThreadPool">For unbounded processing, schedules tasks on the thread pool when true.</param>
     /// <returns>An async processor configured for parallel execution.</returns>
-    public IAsyncProcessor ProcessInParallel()
-    {
-        return ProcessInParallel(null, false);
-    }
-    
-    /// <summary>
-    /// Process tasks in parallel without concurrency limits.
-    /// </summary>
-    /// <param name="scheduleOnThreadPool">If true, schedules tasks on thread pool to prevent blocking. Default is false for maximum performance.</param>
-    /// <returns>An async processor configured for parallel execution.</returns>
-    public IAsyncProcessor ProcessInParallel(bool scheduleOnThreadPool)
-    {
-        return ProcessInParallel(null, scheduleOnThreadPool);
-    }
-    
-    /// <summary>
-    /// Process tasks in parallel with specified concurrency limit.
-    /// </summary>
-    /// <param name="maxConcurrency">Maximum concurrent operations.</param>
-    /// <returns>An async processor configured for parallel execution.</returns>
-    public IAsyncProcessor ProcessInParallel(int? maxConcurrency)
-    {
-        return ProcessInParallel(maxConcurrency, false);
-    }
-    
-    /// <summary>
-    /// Process tasks in parallel with specified concurrency limit.
-    /// </summary>
-    /// <param name="maxConcurrency">Maximum concurrent operations.</param>
-    /// <param name="scheduleOnThreadPool">If true, schedules tasks on thread pool to prevent blocking.</param>
-    /// <returns>An async processor configured for parallel execution.</returns>
-    public IAsyncProcessor ProcessInParallel(int? maxConcurrency, bool scheduleOnThreadPool)
+    public IAsyncProcessor ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false)
     {
         return new ParallelAsyncProcessor(_count, _taskSelector, _cancellationTokenSource, maxConcurrency, scheduleOnThreadPool).StartProcessing();
     }

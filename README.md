@@ -28,23 +28,19 @@ Maybe you want it slow.
 Maybe you want it at a safe balance.
 Maybe you just don't want to write all the boilerplate code that comes with managing asynchronous operations!
 
-### Rate Limited Parallel Processor
+### Parallel Processor (Optional Concurrency Limit)
 
 **Types**  
 
-| Type                                                        | Source Object | Return Object | Method 1            | Method 2           |
-|--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
-| `RateLimitedParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
-| `RateLimitedParallelAsyncProcessor<TInput>`                | ✔             | ❌             | `.WithItems(IEnumerable<TInput>)` | `.ForEachAsync(delegate)` |
-| `ResultRateLimitedParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | `.WithExecutionCount(int)` | `.SelectAsync(delegate)`  |
-| `ResultRateLimitedParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
+| Type                                             | Source Object | Return Object | Method 1            | Method 2           |
+|--------------------------------------------------|---------------|---------------|---------------------|--------------------|
+| `ParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
+| `ParallelAsyncProcessor<TInput>`                 | ✔             | ❌             | `.WithItems(IEnumerable<TInput>)` | `.ForEachAsync(delegate)` |
+| `ResultParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | `.WithExecutionCount(int)` | `.SelectAsync(delegate)`  |
+| `ResultParallelAsyncProcessor<TInput, TOutput>`  | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
 
 **How it works**  
-Processes your Asynchronous Tasks in Parallel, but honouring the limit that you set. As one finishes, another will start.
-
-E.g. If you set a limit of 100, only 100 should ever run at any one time
-
-This is a hybrid between Parallel Processor and Batch Processor (see below) - Trying to address the caveats of both. Increasing the speed of batching, but not overwhelming the system by using full parallelisation.
+Processes asynchronous tasks in parallel. Pass `maxConcurrency` to bound the number of operations running at once, or omit it for unbounded concurrency.
 
 **Usage**  
 
@@ -54,15 +50,23 @@ var ids = Enumerable.Range(0, 5000).ToList();
 // SelectAsync for if you want to return something - using proper disposal
 await using var processor = ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
-        .ProcessInParallel(levelOfParallelism: 100);
+        .ProcessInParallel(maxConcurrency: 100);
 var results = await processor.GetResultsAsync();
 
 // ForEachAsync for when you have nothing to return - using proper disposal  
 await using var voidProcessor = ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
-        .ProcessInParallel(levelOfParallelism: 100);
+        .ProcessInParallel(maxConcurrency: 100);
 await voidProcessor.WaitAsync();
+
+// Omit maxConcurrency for unbounded parallel processing
+await using var unboundedProcessor = ids
+        .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None)
+        .ProcessInParallel();
+await unboundedProcessor.WaitAsync();
 ```
+
+Choose a concurrency limit that protects downstream resources. Unbounded processing can increase memory, CPU, and network pressure.
 
 ### Timed Rate Limited Parallel Processor (e.g. Limit RPS)
 
@@ -90,13 +94,13 @@ var ids = Enumerable.Range(0, 5000).ToList();
 // SelectAsync for if you want to return something - using proper disposal
 await using var processor = ids
         .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
-        .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
+        .ProcessInParallel(maxConcurrency: 100, TimeSpan.FromSeconds(1));
 var results = await processor.GetResultsAsync();
 
 // ForEachAsync for when you have nothing to return - using proper disposal
 await using var voidProcessor = ids
         .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
-        .ProcessInParallel(levelOfParallelism: 100, TimeSpan.FromSeconds(1));
+        .ProcessInParallel(maxConcurrency: 100, TimeSpan.FromSeconds(1));
 await voidProcessor.WaitAsync();
 ```
 
@@ -172,40 +176,6 @@ await ids
 
 - If even just 1 Task in a batch is slow or hangs, this will prevent the next batch from starting
 - If you set a batch of 100, and 70 have finished, you'll only have 30 left executing. This could slow things down
-
-### Parallel
-
-**Types**  
-
-| Type                                             | Source Object | Return Object | Method 1           | Method 2           |
-|--------------------------------------------------|---------------|---------------|--------------------| ------------------ |
-| `ParallelAsyncProcessor`                         | ❌             | ❌             | `.WithExecutionCount(int)` | `.ForEachAsync(delegate)` |
-| `ParallelAsyncProcessor<TInput>`                | ✔             | ❌             | `.WithItems(IEnumerable<TInput>)` | `.ForEachAsync(delegate)` |
-| `ResultParallelAsyncProcessor<TOutput>`          | ❌             | ✔             | `.WithExecutionCount(int)` | `.SelectAsync(delegate)`  |
-| `ResultParallelAsyncProcessor<TInput, TOutput>` | ✔             | ✔             | `.WithItems(IEnumerable<TInput>)` | `.SelectAsync(delegate)`  |
-
-**How it works**  
-Processes your Asynchronous Tasks as fast as it can. All at the same time if it can
-
-**Usage**  
-
-```csharp
-var ids = Enumerable.Range(0, 5000).ToList();
-
-// SelectAsync for if you want to return something
-var results = await ids
-        .SelectAsync(id => DoSomethingAndReturnSomethingAsync(id), CancellationToken.None)
-        .ProcessInParallel();
-
-// ForEachAsync for when you have nothing to return
-await ids
-        .ForEachAsync(id => DoSomethingAsync(id), CancellationToken.None) 
-        .ProcessInParallel();
-```
-
-**Caveats**  
-
-- Depending on how many operations you have, you could overwhelm your system. Memory and CPU and Network usage could spike, and cause bottlenecks / crashes / exceptions
 
 ### Processor Methods
 

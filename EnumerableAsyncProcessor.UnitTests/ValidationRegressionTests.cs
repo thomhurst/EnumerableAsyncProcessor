@@ -31,7 +31,7 @@ public class ValidationRegressionTests
     }
 
     [Test]
-    public async Task Zero_Parallelism_Throws_For_Void_And_Result_RateLimited_Processors()
+    public async Task Zero_MaxConcurrency_Throws_For_Positional_Void_And_Result_Calls()
     {
         await AssertThrows<ArgumentOutOfRangeException>(() =>
             new[] { 1 }.ForEachAsync(_ => Task.CompletedTask).ProcessInParallel(0));

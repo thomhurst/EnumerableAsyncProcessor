@@ -56,20 +56,4 @@ internal static class ValidationHelper
         }
     }
 
-    /// <summary>
-    /// Validates that a CancellationTokenSource is not null and not already cancelled.
-    /// </summary>
-    /// <param name="cancellationTokenSource">The CancellationTokenSource to validate.</param>
-    /// <param name="paramName">The parameter name for the exception.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the CancellationTokenSource is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when the CancellationTokenSource has already been cancelled.</exception>
-    public static void ValidateCancellationTokenSource([NotNull] CancellationTokenSource? cancellationTokenSource, [CallerArgumentExpression(nameof(cancellationTokenSource))] string? paramName = null)
-    {
-        ThrowIfNull(cancellationTokenSource, paramName);
-
-        if (cancellationTokenSource.IsCancellationRequested)
-        {
-            throw new ArgumentException($"'{paramName}' has already been cancelled.", paramName);
-        }
-    }
 }

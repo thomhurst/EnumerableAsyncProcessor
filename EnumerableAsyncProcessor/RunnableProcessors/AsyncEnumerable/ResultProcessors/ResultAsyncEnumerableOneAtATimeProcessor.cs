@@ -11,6 +11,7 @@ public sealed class ResultAsyncEnumerableOneAtATimeProcessor<TInput, TOutput> : 
     private readonly Func<TInput, Task<TOutput>> _taskSelector;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private int _disposed;
+    private int _executionState;
     private TaskCompletionSource? _executionCompleted;
 
     internal ResultAsyncEnumerableOneAtATimeProcessor(
@@ -23,7 +24,13 @@ public sealed class ResultAsyncEnumerableOneAtATimeProcessor<TInput, TOutput> : 
         _cancellationTokenSource = cancellationTokenSource;
     }
 
-    public async IAsyncEnumerable<TOutput> ExecuteAsync()
+    public IAsyncEnumerable<TOutput> ExecuteAsync()
+    {
+        StreamingExecution.GuardSingleUse(ref _executionState, Volatile.Read(ref _disposed), this);
+        return ExecuteCoreAsync();
+    }
+
+    private async IAsyncEnumerable<TOutput> ExecuteCoreAsync()
     {
         var executionCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _executionCompleted = executionCompleted;

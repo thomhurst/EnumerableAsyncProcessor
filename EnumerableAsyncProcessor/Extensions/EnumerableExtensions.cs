@@ -74,7 +74,7 @@ public static class EnumerableExtensions
     {
         foreach (var item in items)
         {
-            await foreach (var result in selector(item).WithCancellation(cancellationToken))
+            await foreach (var result in selector(item).WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 yield return result;
             }
@@ -131,7 +131,7 @@ public static class EnumerableExtensions
         {
             cancellationToken.ThrowIfCancellationRequested();
             var asyncEnum = await selector(item).ConfigureAwait(false);
-            await foreach (var result in asyncEnum.WithCancellation(cancellationToken))
+            await foreach (var result in asyncEnum.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
                 yield return result;
             }

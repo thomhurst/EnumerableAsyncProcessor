@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
 
 namespace EnumerableAsyncProcessor;
@@ -11,49 +10,86 @@ namespace EnumerableAsyncProcessor;
 /// </summary>
 internal static class AsyncEnumerableWorkerPool
 {
-    internal static async Task ProcessAsync<TInput>(
+    // Returned via a TaskCompletionSource rather than as the async method's own task so the
+    // result carries Task.WhenAll fidelity: awaiting it throws the first failure while
+    // Task.Exception.InnerExceptions preserves every queued failure.
+    internal static Task ProcessAsync<TInput>(
         IAsyncEnumerable<TInput> items,
         Func<TInput, Task> taskSelector,
         int workerCount,
         CancellationToken cancellationToken)
     {
-        using var pipelineCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var pipelineToken = pipelineCancellation.Token;
-        var channel = CreateChannel<TInput>(workerCount);
-        var exceptions = new ConcurrentQueue<Exception>();
-        var wasCanceled = 0;
-        var workers = StartWorkers(channel.Reader, taskSelector, workerCount, exceptions, () => Interlocked.Exchange(ref wasCanceled, 1), pipelineToken);
+        var completionSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _ = RunAsync();
+        return completionSource.Task;
 
-        try
+        async Task RunAsync()
         {
             try
             {
-                await foreach (var item in items.WithCancellation(pipelineToken).ConfigureAwait(false))
+                using var pipelineCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                var pipelineToken = pipelineCancellation.Token;
+                var channel = CreateChannel<TInput>(workerCount);
+                var exceptions = new ConcurrentQueue<Exception>();
+                var wasCanceled = 0;
+                var workers = StartWorkers(channel.Reader, taskSelector, workerCount, exceptions, () => Interlocked.Exchange(ref wasCanceled, 1), pipelineToken);
+
+                try
                 {
-                    await channel.Writer.WriteAsync(item, pipelineToken).ConfigureAwait(false);
+                    try
+                    {
+                        await foreach (var item in items.WithCancellation(pipelineToken).ConfigureAwait(false))
+                        {
+                            await channel.Writer.WriteAsync(item, pipelineToken).ConfigureAwait(false);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Interlocked.Exchange(ref wasCanceled, 1);
+                    }
+                    catch (Exception exception)
+                    {
+                        exceptions.Enqueue(exception);
+                    }
+                    finally
+                    {
+                        channel.Writer.TryComplete();
+                    }
+
+                    try
+                    {
+                        await Task.WhenAll(workers).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Interlocked.Exchange(ref wasCanceled, 1);
+                    }
+
+                    if (!exceptions.IsEmpty)
+                    {
+                        completionSource.TrySetException(exceptions);
+                    }
+                    else if (wasCanceled != 0)
+                    {
+                        completionSource.TrySetCanceled(
+                            cancellationToken.IsCancellationRequested ? cancellationToken : new CancellationToken(canceled: true));
+                    }
+                    else
+                    {
+                        completionSource.TrySetResult();
+                    }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                Interlocked.Exchange(ref wasCanceled, 1);
+                finally
+                {
+                    pipelineCancellation.Cancel();
+                    channel.Writer.TryComplete();
+                }
             }
             catch (Exception exception)
             {
-                exceptions.Enqueue(exception);
+                // Defensive: nothing above should throw, but the caller's task must always complete.
+                completionSource.TrySetException(exception);
             }
-            finally
-            {
-                channel.Writer.TryComplete();
-            }
-
-            await Task.WhenAll(workers).ConfigureAwait(false);
-
-            ThrowIfFailed(exceptions, wasCanceled, cancellationToken);
-        }
-        finally
-        {
-            pipelineCancellation.Cancel();
-            channel.Writer.TryComplete();
         }
     }
 
@@ -107,11 +143,17 @@ internal static class AsyncEnumerableWorkerPool
 
             try
             {
-                await Task.WhenAll(workers).ConfigureAwait(false);
+                // Bounded: a non-cancellation-aware in-flight item must not block iterator
+                // disposal indefinitely when the consumer abandons the stream early.
+                await Task.WhenAll(workers).WaitAsync(ProcessorLifecycle.DisposalTimeout).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (pipelineToken.IsCancellationRequested)
             {
                 // Expected when enumeration is canceled or the consumer stops early.
+            }
+            catch (TimeoutException)
+            {
+                // Work still running after the disposal window; abandoned results below stay observed.
             }
 
             // Results abandoned by cancellation or an earlier failure may still fault;
@@ -238,22 +280,6 @@ internal static class AsyncEnumerableWorkerPool
         }
 
         exceptions.Enqueue(exception);
-    }
-
-    private static void ThrowIfFailed(
-        ConcurrentQueue<Exception> exceptions,
-        int wasCanceled,
-        CancellationToken cancellationToken)
-    {
-        if (exceptions.TryDequeue(out var firstException))
-        {
-            ExceptionDispatchInfo.Capture(firstException).Throw();
-        }
-
-        if (wasCanceled != 0)
-        {
-            throw new OperationCanceledException(cancellationToken);
-        }
     }
 
     private readonly record struct ResultWorkItem<TInput, TOutput>(

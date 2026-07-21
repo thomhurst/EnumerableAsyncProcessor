@@ -151,26 +151,6 @@ public static class AsyncEnumerableExtensions
     }
     
     /// <summary>
-    /// Collects every item from the source into a list. This overload has no work to parallelize;
-    /// it is kept for binary compatibility with assemblies compiled against v3 (notably TUnit).
-    /// </summary>
-    [Obsolete("This overload only collects the stream and parallelizes nothing. Pass a selector, or enumerate the stream directly. It exists for binary compatibility with assemblies compiled against v3.")]
-    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public static async Task<IEnumerable<T>> ProcessInParallel<T>(
-        this IAsyncEnumerable<T> items,
-        CancellationToken cancellationToken = default)
-    {
-        var results = new List<T>();
-
-        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
-        {
-            results.Add(item);
-        }
-
-        return results;
-    }
-
-    /// <summary>
     /// Process items in parallel with transformation and return all results as IEnumerable when awaited.
     /// </summary>
     public static async Task<IEnumerable<TOutput>> ProcessInParallel<T, TOutput>(

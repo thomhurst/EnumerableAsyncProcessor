@@ -29,8 +29,6 @@ dotnet run --project EnumerableAsyncProcessor.UnitTests -f net10.0 -- --treenode
 
 TUnit test projects compile to executables; VSTest-style `dotnet test --filter` does not work. See the `tunit-testing` skill for full filter syntax.
 
-**TUnit itself depends on this library.** `TUnit.Engine` is compiled against EnumerableAsyncProcessor v3, and the locally built assembly shadows the copy TUnit shipped with (same assembly identity), so removing or changing a public member that TUnit.Engine binds to crashes test discovery with `MissingMethodException` before any test runs. The exact signatures TUnit needs are pinned by `V3BinaryCompatibilityTests` and marked as binary-compat members in the source — do not remove them until TUnit ships a build compiled against v4.
-
 CI (`.github/workflows/dotnet.yml`) runs the `EnumerableAsyncProcessor.Pipeline` project (a ModularPipelines app, `dotnet run -c Release` from that directory), which builds, tests, packs, and — on `main` — publishes to NuGet. Versioning comes from GitVersion (`GitVersion.yml` pins `next-version: 4.0.0`; keep that file present, its absence makes ModularPipelines generate a Mainline config that crashes on GitHub PR merge commits).
 
 ## Architecture

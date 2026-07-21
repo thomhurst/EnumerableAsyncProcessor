@@ -19,12 +19,32 @@ public class ItemAsyncProcessorBuilder<TInput>
         return new ItemActionAsyncProcessorBuilder<TInput, TOutput>(_items, taskSelector, cancellationToken);
     }
 
+    public ItemActionAsyncProcessorBuilder<TInput, TOutput> SelectAsync<TOutput>(Func<TInput, CancellationToken, Task<TOutput>> taskSelector)
+    {
+        return SelectAsync(taskSelector, CancellationToken.None);
+    }
+
+    public ItemActionAsyncProcessorBuilder<TInput, TOutput> SelectAsync<TOutput>(Func<TInput, CancellationToken, Task<TOutput>> taskSelector, CancellationToken cancellationToken)
+    {
+        return new ItemActionAsyncProcessorBuilder<TInput, TOutput>(_items, taskSelector, cancellationToken);
+    }
+
     public ItemActionAsyncProcessorBuilder<TInput> ForEachAsync(Func<TInput, Task> taskSelector)
     {
         return ForEachAsync(taskSelector, CancellationToken.None);
     }
 
     public ItemActionAsyncProcessorBuilder<TInput> ForEachAsync(Func<TInput, Task> taskSelector, CancellationToken cancellationToken)
+    {
+        return new ItemActionAsyncProcessorBuilder<TInput>(_items, taskSelector, cancellationToken);
+    }
+
+    public ItemActionAsyncProcessorBuilder<TInput> ForEachAsync(Func<TInput, CancellationToken, Task> taskSelector)
+    {
+        return ForEachAsync(taskSelector, CancellationToken.None);
+    }
+
+    public ItemActionAsyncProcessorBuilder<TInput> ForEachAsync(Func<TInput, CancellationToken, Task> taskSelector, CancellationToken cancellationToken)
     {
         return new ItemActionAsyncProcessorBuilder<TInput>(_items, taskSelector, cancellationToken);
     }

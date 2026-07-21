@@ -19,6 +19,16 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput>
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     }
 
+    public AsyncEnumerableActionAsyncProcessorBuilder(
+        IAsyncEnumerable<TInput> items,
+        Func<TInput, CancellationToken, Task> taskSelector,
+        CancellationToken cancellationToken)
+    {
+        _items = items;
+        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _taskSelector = item => taskSelector(item, _cancellationTokenSource.Token);
+    }
+
     /// <summary>
     /// Process items in parallel without concurrency limits.
     /// </summary>
@@ -69,7 +79,6 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput>
         return new AsyncEnumerableParallelProcessor<TInput>(
             _items, _taskSelector, maxConcurrency, scheduleOnThreadPool, _cancellationTokenSource);
     }
-    
     
     /// <summary>
     /// Process items one at a time (sequential processing).

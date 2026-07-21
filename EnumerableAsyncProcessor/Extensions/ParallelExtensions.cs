@@ -83,20 +83,8 @@ public static class ParallelExtensions
             semaphoreAcquired = true;
             
             cancellationToken.ThrowIfCancellationRequested();
-            var task = taskSelector(item);
-            
-            // Fast-path optimization for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                    throw task.Exception?.GetBaseException() ?? task.Exception!;
-                if (task.IsCanceled)
-                    throw new OperationCanceledException();
-                return task.Result;
-            }
 
-            // Await the task directly - it's already async so no need for Task.Run
-            return await task.ConfigureAwait(false);
+            return await taskSelector(item).ConfigureAwait(false);
         }
         finally
         {
@@ -121,20 +109,8 @@ public static class ParallelExtensions
             semaphoreAcquired = true;
             
             cancellationToken.ThrowIfCancellationRequested();
-            var task = taskSelector(item);
-            
-            // Fast-path optimization for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                    throw task.Exception?.GetBaseException() ?? task.Exception!;
-                if (task.IsCanceled)
-                    throw new OperationCanceledException();
-                return;
-            }
 
-            // Await the task directly - it's already async so no need for Task.Run
-            await task.ConfigureAwait(false);
+            await taskSelector(item).ConfigureAwait(false);
         }
         finally
         {

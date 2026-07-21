@@ -1,5 +1,6 @@
 ﻿using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
+using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
@@ -10,6 +11,9 @@ public class ResultTimedRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstr
 
     internal ResultTimedRateLimitedParallelAsyncProcessor(int count, Func<Task<TOutput>> taskSelector, int levelsOfParallelism, TimeSpan timeSpan, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
+        ValidationHelper.ValidateParallelism(levelsOfParallelism);
+        ValidationHelper.ValidateTimeSpan(timeSpan);
+
         _levelsOfParallelism = levelsOfParallelism;
         _timeSpan = timeSpan;
     }

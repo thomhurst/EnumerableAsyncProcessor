@@ -366,8 +366,8 @@ private static void StartProcessing(int[] input, CancellationToken token)
 
 When a processor is disposed:
 
-1. **Cancellation**: Internal `CancellationTokenSource` is cancelled
-2. **Task Waiting**: Waits up to 30 seconds for running tasks to complete
+1. **Cancellation**: Internal `CancellationTokenSource` is cancelled and any unstarted tasks complete as cancelled
+2. **Task Waiting**: `await DisposeAsync()` waits up to 30 seconds for in-flight tasks to finish; synchronous `Dispose()` cancels and releases without blocking
 3. **Resource Cleanup**: Disposes internal resources like `CancellationTokenSource`
 4. **Thread Safety**: All disposal operations are thread-safe
 

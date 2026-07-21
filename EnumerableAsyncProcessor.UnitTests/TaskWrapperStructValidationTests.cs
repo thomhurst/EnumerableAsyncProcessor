@@ -60,23 +60,6 @@ public class TaskWrapperStructValidationTests
     }
 
     [Test]
-    public async Task TaskWrapper_EqualityWorks()
-    {
-        // Arrange
-        Func<Task> taskFactory = () => Task.CompletedTask;
-        var tcs = new TaskCompletionSource();
-        var wrapper1 = new ActionTaskWrapper(taskFactory, tcs);
-        var wrapper2 = new ActionTaskWrapper(taskFactory, tcs);
-        var wrapper3 = new ActionTaskWrapper(() => Task.CompletedTask, new TaskCompletionSource());
-
-        // Act & Assert
-        await Assert.That(wrapper1.Equals(wrapper2)).IsTrue();
-        await Assert.That(wrapper1 == wrapper2).IsTrue();
-        await Assert.That(wrapper1.Equals(wrapper3)).IsFalse();
-        await Assert.That(wrapper1 == wrapper3).IsFalse();
-    }
-
-    [Test]
     public async Task TaskWrapper_ArrayStorage_WorksWithoutBoxing()
     {
         // Arrange

@@ -79,15 +79,23 @@ internal static class AsyncEnumerableWorkerPool
 
                 if (pendingResults.Count == workerCount)
                 {
-                    yield return await pendingResults.Dequeue().ConfigureAwait(false);
+                    // WaitAsync guards against a worker observing cancellation and exiting
+                    // between this item being written and it being claimed - the item's
+                    // completion source would otherwise never complete and this await
+                    // would hang forever.
+                    var value = await pendingResults.Peek().WaitAsync(pipelineToken).ConfigureAwait(false);
+                    pendingResults.Dequeue();
+                    yield return value;
                 }
             }
 
             channel.Writer.TryComplete();
 
-            while (pendingResults.TryDequeue(out var resultTask))
+            while (pendingResults.Count > 0)
             {
-                yield return await resultTask.ConfigureAwait(false);
+                var value = await pendingResults.Peek().WaitAsync(pipelineToken).ConfigureAwait(false);
+                pendingResults.Dequeue();
+                yield return value;
             }
 
             await Task.WhenAll(workers).ConfigureAwait(false);
@@ -104,6 +112,17 @@ internal static class AsyncEnumerableWorkerPool
             catch (OperationCanceledException) when (pipelineToken.IsCancellationRequested)
             {
                 // Expected when enumeration is canceled or the consumer stops early.
+            }
+
+            // Results abandoned by cancellation or an earlier failure may still fault;
+            // observe them so they cannot surface as UnobservedTaskException.
+            while (pendingResults.TryDequeue(out var abandonedResult))
+            {
+                _ = abandonedResult.ContinueWith(
+                    static t => _ = t.Exception,
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
             }
         }
     }
@@ -169,19 +188,33 @@ internal static class AsyncEnumerableWorkerPool
         {
             workers[i] = Task.Run(async () =>
             {
-                await foreach (var workItem in reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+                try
                 {
-                    Task<TOutput>? task = null;
+                    await foreach (var workItem in reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        Task<TOutput>? task = null;
 
-                    try
-                    {
-                        task = taskSelector(workItem.Input);
-                        workItem.CompletionSource.TrySetResult(await task.ConfigureAwait(false));
+                        try
+                        {
+                            task = taskSelector(workItem.Input);
+                            workItem.CompletionSource.TrySetResult(await task.ConfigureAwait(false));
+                        }
+                        catch (Exception exception)
+                        {
+                            workItem.CompletionSource.TrySetFromFault(task, exception, cancellationToken);
+                        }
                     }
-                    catch (Exception exception)
+                }
+                catch (OperationCanceledException)
+                {
+                    // Cancellation can strand items that were written but never claimed;
+                    // complete them so nothing awaiting their results hangs.
+                    while (reader.TryRead(out var abandonedItem))
                     {
-                        workItem.CompletionSource.TrySetFromFault(task, exception, cancellationToken);
+                        abandonedItem.CompletionSource.TrySetCanceled(cancellationToken);
                     }
+
+                    throw;
                 }
             }, cancellationToken);
         }

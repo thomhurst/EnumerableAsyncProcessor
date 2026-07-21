@@ -101,6 +101,57 @@ public class ExceptionFidelityTests
     }
 
     [Test]
+    public async Task Streaming_Results_Surface_The_Original_Exception_Unwrapped()
+    {
+        await using var processor = Enumerable.Range(0, 5).ToList()
+            .SelectAsync(i => i == 2
+                ? Task.FromException<int>(new InvalidOperationException("item 2 failed"))
+                : Task.FromResult(i))
+            .ProcessInParallel(2);
+
+        Exception? caught = null;
+        try
+        {
+            await foreach (var _ in processor.GetResultsAsyncEnumerable())
+            {
+            }
+        }
+        catch (Exception exception)
+        {
+            caught = exception;
+        }
+
+        await Assert.That(caught).IsNotNull();
+        await Assert.That(caught!.GetType()).IsEqualTo(typeof(InvalidOperationException));
+        await Assert.That(caught.Message).IsEqualTo("item 2 failed");
+    }
+
+    [Test]
+    public async Task Streaming_Results_Surface_Cancellation_As_OperationCanceledException_Not_AggregateException()
+    {
+        using var itemCancellation = new CancellationTokenSource();
+        itemCancellation.Cancel();
+
+        await using var processor = new[] { 1 }
+            .SelectAsync(_ => Task.FromCanceled<int>(itemCancellation.Token))
+            .ProcessInParallel(2);
+
+        Exception? caught = null;
+        try
+        {
+            await foreach (var _ in processor.GetResultsAsyncEnumerable())
+            {
+            }
+        }
+        catch (Exception exception)
+        {
+            caught = exception;
+        }
+
+        await Assert.That(caught is OperationCanceledException).IsTrue();
+    }
+
+    [Test]
     public async Task Item_Task_Continuations_Are_Not_Forced_Inline()
     {
         await using var processor = new[] { 1 }

@@ -1,4 +1,3 @@
-﻿using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 using EnumerableAsyncProcessor.Validation;
 
@@ -11,8 +10,8 @@ public class TimedRateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal TimedRateLimitedParallelAsyncProcessor(int count, Func<Task> taskSelector, int levelsOfParallelism, TimeSpan timeSpan, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
-        ValidationHelper.ValidateParallelism(levelsOfParallelism);
-        ValidationHelper.ValidateTimeSpan(timeSpan);
+        ValidationHelper.ThrowIfNegativeOrZero(levelsOfParallelism);
+        ValidationHelper.ThrowIfNegative(timeSpan);
 
         _levelsOfParallelism = levelsOfParallelism;
         _timeSpan = timeSpan;
@@ -20,13 +19,6 @@ public class TimedRateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal override Task Process()
     {
-        // For timed rate-limited processing, we want strict parallelism control
-        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
-            async taskWrapper =>
-            {
-                await Task.WhenAll(
-                    Task.Run(() => taskWrapper.Process(CancellationToken)),
-                    Task.Delay(_timeSpan, CancellationToken)).ConfigureAwait(false);
-            }, CancellationToken.None);
+        return WorkerPool.ProcessAsync(TaskWrappers, _levelsOfParallelism, minimumIterationTime: _timeSpan, CancellationToken);
     }
 }

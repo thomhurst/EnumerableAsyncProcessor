@@ -1,11 +1,59 @@
-using System.Runtime.CompilerServices;
-
 namespace EnumerableAsyncProcessor;
 
 /// <summary>
-/// A high-performance struct wrapper for action tasks to reduce heap allocations.
+/// Allows the worker-pool helpers to process any wrapper struct through a constrained
+/// generic type parameter without boxing.
 /// </summary>
-public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
+internal interface ITaskWrapper
+{
+    Task Process(CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Completes a completion source from a failed task-factory invocation, classifying the failure
+/// by the state of the task rather than the caught exception.
+/// </summary>
+internal static class TaskCompletionSourceExtensions
+{
+    internal static void TrySetFromFault(this TaskCompletionSource taskCompletionSource, Task? task, Exception exception, CancellationToken cancellationToken)
+    {
+        if (task is { IsCanceled: true })
+        {
+            taskCompletionSource.TrySetCanceled(cancellationToken);
+        }
+        else if (task is { IsFaulted: true })
+        {
+            // Preserve every failure from the task, not just the first
+            taskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
+        }
+        else
+        {
+            taskCompletionSource.TrySetException(exception);
+        }
+    }
+
+    internal static void TrySetFromFault<TOutput>(this TaskCompletionSource<TOutput> taskCompletionSource, Task? task, Exception exception, CancellationToken cancellationToken)
+    {
+        if (task is { IsCanceled: true })
+        {
+            taskCompletionSource.TrySetCanceled(cancellationToken);
+        }
+        else if (task is { IsFaulted: true })
+        {
+            // Preserve every failure from the task, not just the first
+            taskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
+        }
+        else
+        {
+            taskCompletionSource.TrySetException(exception);
+        }
+    }
+}
+
+/// <summary>
+/// A struct wrapper pairing an action task factory with its completion source.
+/// </summary>
+public readonly struct ActionTaskWrapper : ITaskWrapper
 {
     public readonly Func<Task> TaskFactory;
     public readonly TaskCompletionSource TaskCompletionSource;
@@ -16,7 +64,6 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
         TaskCompletionSource = taskCompletionSource;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public async Task Process(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -24,81 +71,25 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
             TaskCompletionSource.TrySetCanceled(cancellationToken);
             return;
         }
-        
+
+        Task? task = null;
         try
         {
-            // Removed Task.Yield - parallelism is now handled at the processor level
-            var task = TaskFactory.Invoke();
-            
-            // Fast-path for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                {
-                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
-                }
-                else if (task.IsCanceled)
-                {
-                    TaskCompletionSource.TrySetCanceled(cancellationToken);
-                }
-                else
-                {
-                    TaskCompletionSource.TrySetResult();
-                }
-                return;
-            }
-
+            task = TaskFactory.Invoke();
             await task.ConfigureAwait(false);
             TaskCompletionSource.TrySetResult();
         }
         catch (Exception e)
         {
-            TaskCompletionSource.TrySetException(e);
+            TaskCompletionSource.TrySetFromFault(task, e, cancellationToken);
         }
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(ActionTaskWrapper other) =>
-        ReferenceEquals(TaskFactory, other.TaskFactory) &&
-        ReferenceEquals(TaskCompletionSource, other.TaskCompletionSource);
-
-    public override bool Equals(object? obj) =>
-        obj is ActionTaskWrapper other && Equals(other);
-
-    public override int GetHashCode()
-    {
-#if NETSTANDARD2_0
-        unchecked
-        {
-            var hash = 17;
-            hash = hash * 23 + (TaskFactory?.GetHashCode() ?? 0);
-            hash = hash * 23 + (TaskCompletionSource?.GetHashCode() ?? 0);
-            return hash;
-        }
-#else
-        return HashCode.Combine(TaskFactory, TaskCompletionSource);
-#endif
-    }
-
-    public static bool operator ==(ActionTaskWrapper left, ActionTaskWrapper right) =>
-        left.Equals(right);
-
-    public static bool operator !=(ActionTaskWrapper left, ActionTaskWrapper right) =>
-        !left.Equals(right);
-
-#if NET6_0_OR_GREATER
-    public void Deconstruct(out Func<Task> taskFactory, out TaskCompletionSource taskCompletionSource)
-    {
-        taskFactory = TaskFactory;
-        taskCompletionSource = TaskCompletionSource;
-    }
-#endif
 }
 
 /// <summary>
-/// A high-performance struct wrapper for item tasks to reduce heap allocations.
+/// A struct wrapper pairing an input item and its task factory with a completion source.
 /// </summary>
-public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInput>>
+public readonly struct ItemTaskWrapper<TInput> : ITaskWrapper
 {
     public readonly TInput Input;
     public readonly Func<TInput, Task> TaskFactory;
@@ -111,7 +102,6 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
         TaskCompletionSource = taskCompletionSource;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public async Task Process(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -119,84 +109,25 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
             TaskCompletionSource.TrySetCanceled(cancellationToken);
             return;
         }
-        
+
+        Task? task = null;
         try
         {
-            // Removed Task.Yield - parallelism is now handled at the processor level
-            var task = TaskFactory.Invoke(Input);
-            
-            // Fast-path for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                {
-                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
-                }
-                else if (task.IsCanceled)
-                {
-                    TaskCompletionSource.TrySetCanceled(cancellationToken);
-                }
-                else
-                {
-                    TaskCompletionSource.TrySetResult();
-                }
-                return;
-            }
-
+            task = TaskFactory.Invoke(Input);
             await task.ConfigureAwait(false);
             TaskCompletionSource.TrySetResult();
         }
         catch (Exception e)
         {
-            TaskCompletionSource.TrySetException(e);
+            TaskCompletionSource.TrySetFromFault(task, e, cancellationToken);
         }
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(ItemTaskWrapper<TInput> other) =>
-        EqualityComparer<TInput>.Default.Equals(Input, other.Input) &&
-        ReferenceEquals(TaskFactory, other.TaskFactory) &&
-        ReferenceEquals(TaskCompletionSource, other.TaskCompletionSource);
-
-    public override bool Equals(object? obj) =>
-        obj is ItemTaskWrapper<TInput> other && Equals(other);
-
-    public override int GetHashCode()
-    {
-#if NETSTANDARD2_0
-        unchecked
-        {
-            var hash = 17;
-            hash = hash * 23 + (Input?.GetHashCode() ?? 0);
-            hash = hash * 23 + (TaskFactory?.GetHashCode() ?? 0);
-            hash = hash * 23 + (TaskCompletionSource?.GetHashCode() ?? 0);
-            return hash;
-        }
-#else
-        return HashCode.Combine(Input, TaskFactory, TaskCompletionSource);
-#endif
-    }
-
-    public static bool operator ==(ItemTaskWrapper<TInput> left, ItemTaskWrapper<TInput> right) =>
-        left.Equals(right);
-
-    public static bool operator !=(ItemTaskWrapper<TInput> left, ItemTaskWrapper<TInput> right) =>
-        !left.Equals(right);
-
-#if NET6_0_OR_GREATER
-    public void Deconstruct(out TInput input, out Func<TInput, Task> taskFactory, out TaskCompletionSource taskCompletionSource)
-    {
-        input = Input;
-        taskFactory = TaskFactory;
-        taskCompletionSource = TaskCompletionSource;
-    }
-#endif
 }
 
 /// <summary>
-/// A high-performance struct wrapper for item tasks with results to reduce heap allocations.
+/// A struct wrapper pairing an input item and its result-producing task factory with a completion source.
 /// </summary>
-public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWrapper<TInput, TOutput>>
+public readonly struct ItemTaskWrapper<TInput, TOutput> : ITaskWrapper
 {
     public readonly TInput Input;
     public readonly Func<TInput, Task<TOutput>> TaskFactory;
@@ -209,7 +140,6 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
         TaskCompletionSource = taskCompletionSource;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public async Task Process(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -217,83 +147,24 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
             TaskCompletionSource.TrySetCanceled(cancellationToken);
             return;
         }
-        
+
+        Task<TOutput>? task = null;
         try
         {
-            // Removed Task.Yield - parallelism is now handled at the processor level
-            var task = TaskFactory.Invoke(Input);
-            
-            // Fast-path for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                {
-                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
-                }
-                else if (task.IsCanceled)
-                {
-                    TaskCompletionSource.TrySetCanceled(cancellationToken);
-                }
-                else
-                {
-                    TaskCompletionSource.TrySetResult(task.Result);
-                }
-                return;
-            }
-
+            task = TaskFactory.Invoke(Input);
             TaskCompletionSource.TrySetResult(await task.ConfigureAwait(false));
         }
         catch (Exception e)
         {
-            TaskCompletionSource.TrySetException(e);
+            TaskCompletionSource.TrySetFromFault(task, e, cancellationToken);
         }
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(ItemTaskWrapper<TInput, TOutput> other) =>
-        EqualityComparer<TInput>.Default.Equals(Input, other.Input) &&
-        ReferenceEquals(TaskFactory, other.TaskFactory) &&
-        ReferenceEquals(TaskCompletionSource, other.TaskCompletionSource);
-
-    public override bool Equals(object? obj) =>
-        obj is ItemTaskWrapper<TInput, TOutput> other && Equals(other);
-
-    public override int GetHashCode()
-    {
-#if NETSTANDARD2_0
-        unchecked
-        {
-            var hash = 17;
-            hash = hash * 23 + (Input?.GetHashCode() ?? 0);
-            hash = hash * 23 + (TaskFactory?.GetHashCode() ?? 0);
-            hash = hash * 23 + (TaskCompletionSource?.GetHashCode() ?? 0);
-            return hash;
-        }
-#else
-        return HashCode.Combine(Input, TaskFactory, TaskCompletionSource);
-#endif
-    }
-
-    public static bool operator ==(ItemTaskWrapper<TInput, TOutput> left, ItemTaskWrapper<TInput, TOutput> right) =>
-        left.Equals(right);
-
-    public static bool operator !=(ItemTaskWrapper<TInput, TOutput> left, ItemTaskWrapper<TInput, TOutput> right) =>
-        !left.Equals(right);
-
-#if NET6_0_OR_GREATER
-    public void Deconstruct(out TInput input, out Func<TInput, Task<TOutput>> taskFactory, out TaskCompletionSource<TOutput> taskCompletionSource)
-    {
-        input = Input;
-        taskFactory = TaskFactory;
-        taskCompletionSource = TaskCompletionSource;
-    }
-#endif
 }
 
 /// <summary>
-/// A high-performance struct wrapper for action tasks with results to reduce heap allocations.
+/// A struct wrapper pairing a result-producing task factory with its completion source.
 /// </summary>
-public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper<TOutput>>
+public readonly struct ActionTaskWrapper<TOutput> : ITaskWrapper
 {
     public readonly Func<Task<TOutput>> TaskFactory;
     public readonly TaskCompletionSource<TOutput> TaskCompletionSource;
@@ -304,7 +175,6 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
         TaskCompletionSource = taskCompletionSource;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public async Task Process(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -312,73 +182,16 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
             TaskCompletionSource.TrySetCanceled(cancellationToken);
             return;
         }
-        
+
+        Task<TOutput>? task = null;
         try
         {
-            // Removed Task.Yield - parallelism is now handled at the processor level
-            var task = TaskFactory.Invoke();
-            
-            // Fast-path for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                {
-                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
-                }
-                else if (task.IsCanceled)
-                {
-                    TaskCompletionSource.TrySetCanceled(cancellationToken);
-                }
-                else
-                {
-                    TaskCompletionSource.TrySetResult(task.Result);
-                }
-                return;
-            }
-
+            task = TaskFactory.Invoke();
             TaskCompletionSource.TrySetResult(await task.ConfigureAwait(false));
         }
         catch (Exception e)
         {
-            TaskCompletionSource.TrySetException(e);
+            TaskCompletionSource.TrySetFromFault(task, e, cancellationToken);
         }
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(ActionTaskWrapper<TOutput> other) =>
-        ReferenceEquals(TaskFactory, other.TaskFactory) &&
-        ReferenceEquals(TaskCompletionSource, other.TaskCompletionSource);
-
-    public override bool Equals(object? obj) =>
-        obj is ActionTaskWrapper<TOutput> other && Equals(other);
-
-    public override int GetHashCode()
-    {
-#if NETSTANDARD2_0
-        unchecked
-        {
-            var hash = 17;
-            hash = hash * 23 + (TaskFactory?.GetHashCode() ?? 0);
-            hash = hash * 23 + (TaskCompletionSource?.GetHashCode() ?? 0);
-            return hash;
-        }
-#else
-        return HashCode.Combine(TaskFactory, TaskCompletionSource);
-#endif
-    }
-
-    public static bool operator ==(ActionTaskWrapper<TOutput> left, ActionTaskWrapper<TOutput> right) =>
-        left.Equals(right);
-
-    public static bool operator !=(ActionTaskWrapper<TOutput> left, ActionTaskWrapper<TOutput> right) =>
-        !left.Equals(right);
-
-#if NET6_0_OR_GREATER
-    public void Deconstruct(out Func<Task<TOutput>> taskFactory, out TaskCompletionSource<TOutput> taskCompletionSource)
-    {
-        taskFactory = TaskFactory;
-        taskCompletionSource = TaskCompletionSource;
-    }
-#endif
 }
-

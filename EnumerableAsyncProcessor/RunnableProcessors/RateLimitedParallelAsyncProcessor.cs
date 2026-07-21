@@ -1,4 +1,3 @@
-﻿using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 using EnumerableAsyncProcessor.Validation;
 
@@ -10,18 +9,13 @@ public class RateLimitedParallelAsyncProcessor : AbstractAsyncProcessor
 
     internal RateLimitedParallelAsyncProcessor(int count, Func<Task> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {
-        ValidationHelper.ValidateParallelism(levelsOfParallelism);
+        ValidationHelper.ThrowIfNegativeOrZero(levelsOfParallelism);
 
         _levelsOfParallelism = levelsOfParallelism;
     }
 
     internal override Task Process()
     {
-        // For rate-limited processing, we want strict parallelism control
-        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
-            async taskWrapper =>
-            {
-                await Task.Run(() => taskWrapper.Process(CancellationToken), CancellationToken).ConfigureAwait(false);
-            }, CancellationToken);
+        return WorkerPool.ProcessAsync(TaskWrappers, _levelsOfParallelism, minimumIterationTime: null, CancellationToken);
     }
 }

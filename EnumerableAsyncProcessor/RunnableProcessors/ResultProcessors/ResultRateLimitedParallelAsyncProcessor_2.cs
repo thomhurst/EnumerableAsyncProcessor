@@ -1,5 +1,5 @@
-using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
+using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
@@ -9,17 +9,13 @@ public class ResultRateLimitedParallelAsyncProcessor<TInput, TOutput> : ResultAb
     
     internal ResultRateLimitedParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task<TOutput>> taskSelector, int levelsOfParallelism, CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
+        ValidationHelper.ThrowIfNegativeOrZero(levelsOfParallelism);
+
         _levelsOfParallelism = levelsOfParallelism;
     }
 
     internal override Task Process()
     {
-        // For rate-limited processing, we want strict parallelism control
-        // TaskWrapper.Process already includes Task.Yield to prevent thread pool blocking
-        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
-            async taskWrapper =>
-            {
-                await taskWrapper.Process(CancellationToken).ConfigureAwait(false);
-            }, CancellationToken.None);
+        return WorkerPool.ProcessAsync(TaskWrappers, _levelsOfParallelism, minimumIterationTime: null, CancellationToken);
     }
 }

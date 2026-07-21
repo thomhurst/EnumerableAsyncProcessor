@@ -1,4 +1,5 @@
 using EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
+using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
@@ -9,6 +10,8 @@ public class ResultBatchAsyncProcessor<TInput, TOutput> : ResultAbstractAsyncPro
     internal ResultBatchAsyncProcessor(int batchSize, IEnumerable<TInput> items, Func<TInput, Task<TOutput>> taskSelector,
         CancellationTokenSource cancellationTokenSource) : base(items, taskSelector, cancellationTokenSource)
     {
+        ValidationHelper.ThrowIfNegativeOrZero(batchSize);
+
         _batchSize = batchSize;
     }
 

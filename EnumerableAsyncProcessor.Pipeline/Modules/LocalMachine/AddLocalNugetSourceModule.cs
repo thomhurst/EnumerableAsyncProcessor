@@ -1,4 +1,5 @@
-﻿using ModularPipelines.Attributes;
+using ModularPipelines.Attributes;
+using ModularPipelines.Configuration;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
@@ -11,21 +12,24 @@ namespace EnumerableAsyncProcessor.Pipeline.Modules.LocalMachine;
 [DependsOn<CreateLocalNugetFolderModule>]
 public class AddLocalNugetSourceModule : Module<CommandResult>
 {
-    protected override async Task<bool> ShouldIgnoreFailures(IPipelineContext context, Exception exception)
+    protected override ModuleConfiguration Configure()
     {
-        await Task.Yield();
-        return exception is CommandException commandException &&
-                               commandException.StandardOutput.Contains("The name specified has already been added to the list of available package sources");
+        return ModuleConfiguration.Create()
+            .WithIgnoreFailuresWhen((_, exception) =>
+                exception is CommandException commandException &&
+                commandException.StandardOutput.Contains("The name specified has already been added to the list of available package sources"))
+            .Build();
     }
 
-    protected override async Task<CommandResult?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
+    protected override async Task<CommandResult?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
-        var localNugetPathResult = await GetModule<CreateLocalNugetFolderModule>();
+        var localNugetPathResult = await context.GetModule<CreateLocalNugetFolderModule>();
 
         return await context.DotNet().Nuget.Add
-            .Source(new DotNetNugetAddSourceOptions(localNugetPathResult.Value!)
+            .Source(new DotNetNugetAddSourceOptions
             {
+                Packagesourcepath = localNugetPathResult.ValueOrDefault!.Path,
                 Name = "ModularPipelinesLocalNuGet"
-            }, cancellationToken);
+            }, cancellationToken: cancellationToken);
     }
 }

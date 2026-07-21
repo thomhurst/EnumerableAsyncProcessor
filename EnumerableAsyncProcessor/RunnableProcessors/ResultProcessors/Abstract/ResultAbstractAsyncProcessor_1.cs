@@ -1,40 +1,24 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
 public abstract class ResultAbstractAsyncProcessor<TOutput> : ResultAbstractAsyncProcessorBase<TOutput>
 {
-    private readonly ConcurrentDictionary<int, TaskCompletionSource<TOutput>> _taskCompletionSources = [];
+    protected readonly ActionTaskWrapper<TOutput>[] TaskWrappers;
 
-    protected readonly IEnumerable<ActionTaskWrapper<TOutput>> TaskWrappers;
+    private readonly TaskCompletionSource<TOutput>[] _taskCompletionSources;
+
+    protected override IReadOnlyList<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources => _taskCompletionSources;
 
     protected ResultAbstractAsyncProcessor(int count, Func<Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
-        ValidationHelper.ValidateCount(count);
+        ValidationHelper.ThrowIfNegative(count);
         ValidationHelper.ThrowIfNull(taskSelector);
 
-        // Provide optimization for empty collections
-        if (count == 0)
-        {
-            TaskWrappers = [];
-            return;
-        }
+        TaskWrappers = Enumerable.Range(0, count)
+            .Select(_ => new ActionTaskWrapper<TOutput>(taskSelector, new TaskCompletionSource<TOutput>(TaskCreationOptions.RunContinuationsAsynchronously)))
+            .ToArray();
 
-        // Provide performance warning for very large collections
-        var warning = ValidationHelper.GetPerformanceWarning(count);
-        if (warning != null)
-        {
-            // In a real application, you might want to log this warning
-            // For now, we'll just store it as a comment that could be used by logging
-            _ = warning;
-        }
-
-        TaskWrappers = Enumerable.Range(0, count).Select(index => new ActionTaskWrapper<TOutput>(taskSelector, _taskCompletionSources.GetOrAdd(index, new TaskCompletionSource<TOutput>())));
+        _taskCompletionSources = TaskWrappers.Select(x => x.TaskCompletionSource).ToArray();
     }
-
-    [field: AllowNull, MaybeNull]
-    protected override IEnumerable<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources =>
-        field ??= TaskWrappers.Select(x => x.TaskCompletionSource);
 }

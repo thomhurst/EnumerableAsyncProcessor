@@ -3,6 +3,7 @@ using EnumerableAsyncProcessor.Pipeline.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ModularPipelines.Attributes;
+using ModularPipelines.Configuration;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
@@ -23,57 +24,57 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
         _options = options;
     }
 
-    protected override async Task OnBeforeExecute(IPipelineContext context)
+    protected override ModuleConfiguration Configure()
     {
-        var packagePaths = await GetModule<PackagePathsParserModule>();
+        return ModuleConfiguration.Create()
+            .WithSkipWhen(async context =>
+            {
+                var gitVersionInfo = await context.Git().Versioning.GetGitVersioningInformation();
 
-        foreach (var packagePath in packagePaths.Value!)
+                if (gitVersionInfo.BranchName != "main")
+                {
+                    return SkipDecision.Skip("Not on the main branch");
+                }
+
+                var publishPackages = Environment.GetEnvironmentVariable("PUBLISH_PACKAGES");
+
+                if (!bool.TryParse(publishPackages, out var shouldPublishPackages) || !shouldPublishPackages)
+                {
+                    return SkipDecision.Skip("PUBLISH_PACKAGES is not set to true");
+                }
+
+                return SkipDecision.Of(false, "Publishing packages");
+            })
+            .Build();
+    }
+
+    protected override async Task OnBeforeExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+    {
+        var packagePaths = await context.GetModule<PackagePathsParserModule>();
+
+        foreach (var packagePath in packagePaths.ValueOrDefault ?? [])
         {
             context.Logger.LogInformation("Uploading {File}", packagePath);
         }
 
-        await base.OnBeforeExecute(context);
+        await base.OnBeforeExecuteAsync(context, cancellationToken);
     }
 
-    protected override async Task<SkipDecision> ShouldSkip(IPipelineContext context)
-    {
-        var gitVersionInfo = await context.Git().Versioning.GetGitVersioningInformation();
-
-        if (gitVersionInfo.BranchName != "main")
-        {
-            return true;
-        }
-        
-        var publishPackages =
-            context.Environment.EnvironmentVariables.GetEnvironmentVariable("PUBLISH_PACKAGES")!;
-
-        if (!bool.TryParse(publishPackages, out var shouldPublishPackages) || !shouldPublishPackages)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    protected override async Task<CommandResult[]?> ExecuteAsync(IPipelineContext context, CancellationToken cancellationToken)
+    protected override async Task<CommandResult[]?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(_options.Value.ApiKey);
 
-        var gitVersionInformation = await context.Git().Versioning.GetGitVersioningInformation();
+        var packagePaths = await context.GetModule<PackagePathsParserModule>();
 
-        if (gitVersionInformation.BranchName != "main")
-        {
-            return await NothingAsync();
-        }
-
-        var packagePaths = await GetModule<PackagePathsParserModule>();
-
-        return await packagePaths.Value!.SelectAsync(async file => await context.DotNet()
-            .Nuget
-            .Push(new DotNetNugetPushOptions(file)
-            {
-                Source = "https://api.nuget.org/v3/index.json",
-                ApiKey = _options.Value.ApiKey!
-            }, cancellationToken), cancellationToken: cancellationToken).ProcessOneAtATime();
+        return await packagePaths.ValueOrDefault!
+            .SelectAsync(file => context.DotNet()
+                .Nuget
+                .Push(new DotNetNugetPushOptions
+                {
+                    Path = file.Path,
+                    Source = "https://api.nuget.org/v3/index.json",
+                    ApiKey = _options.Value.ApiKey!
+                }, cancellationToken: cancellationToken), cancellationToken: cancellationToken)
+            .ProcessOneAtATime();
     }
 }

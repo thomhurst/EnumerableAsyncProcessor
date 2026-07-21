@@ -1,43 +1,36 @@
-﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using EnumerableAsyncProcessor.Interfaces;
 using EnumerableAsyncProcessor.Extensions;
-using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
 public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcessor<TOutput>, IAsyncDisposable, IDisposable
 {
-    protected abstract IEnumerable<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources { get; }
+    protected abstract IReadOnlyList<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources { get; }
     protected readonly CancellationToken CancellationToken;
 
-    [field: MaybeNull, AllowNull]
-    private IEnumerable<Task<TOutput>> EnumerableTasks => field ??= EnumerableTaskCompletionSources.Select(x => x.Task);
-    
-    private readonly CancellationTokenSource _cancellationTokenSource;
-    private volatile bool _disposed;
-    private readonly object _disposeLock = new();
-    
-    [field: AllowNull, MaybeNull]
-    private Task<TOutput[]> Results  => field ??= Task.WhenAll(EnumerableTasks);
+    private readonly ProcessorLifecycle _lifecycle;
+    private Task<TOutput[]>? _results;
 
+    private Task<TOutput[]> Results => _results ??= Task.WhenAll(GetEnumerableTasks());
 
     protected ResultAbstractAsyncProcessorBase(CancellationTokenSource cancellationTokenSource)
     {
-        ValidationHelper.ValidateCancellationTokenSource(cancellationTokenSource);
-        
-        _cancellationTokenSource = cancellationTokenSource;
-        
-        CancellationToken = cancellationTokenSource.Token;
-        CancellationToken.Register(Dispose);
-        CancellationToken.ThrowIfCancellationRequested();
+        _lifecycle = new ProcessorLifecycle(cancellationTokenSource, TrySetCanceledAll, TrySetExceptionAll);
+        CancellationToken = _lifecycle.Token;
     }
 
     internal abstract Task Process();
-    
+
+    internal IAsyncProcessor<TOutput> StartProcessing()
+    {
+        _lifecycle.Start(Process);
+        return this;
+    }
+
     public IEnumerable<Task<TOutput>> GetEnumerableTasks()
     {
-        return EnumerableTasks;
+        return EnumerableTaskCompletionSources.Select(x => x.Task);
     }
 
     public Task<TOutput[]> GetResultsAsync()
@@ -57,90 +50,28 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
 
     public void CancelAll()
     {
-        if (_disposed)
-            return;
-            
-        if (!_cancellationTokenSource.IsCancellationRequested)
-        {
-            _cancellationTokenSource.Cancel();
-        }
+        _lifecycle.CancelAll();
+    }
 
+    private void TrySetCanceledAll()
+    {
         foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
         {
             taskCompletionSource.TrySetCanceled(CancellationToken);
         }
     }
 
+    private void TrySetExceptionAll(Exception exception)
+    {
+        foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
+        {
+            taskCompletionSource.TrySetException(exception);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
-        if (_disposed)
-            return;
-
-        lock (_disposeLock)
-        {
-            if (_disposed)
-                return;
-            _disposed = true;
-        }
-
-        // Allow derived classes to dispose their resources first
-        await DisposeAsyncCore().ConfigureAwait(false);
-
-        // Cancel all operations
-        CancelAll();
-
-        // Wait for all running tasks to complete with timeout
-        try
-        {
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var allTasks = EnumerableTasks.ToList();
-            
-            if (allTasks.Count > 0)
-            {
-                var completionTasks = allTasks.Select(async task =>
-                {
-                    try
-                    {
-                        await task.WaitAsync(timeoutCts.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Expected when cancelled - ignore
-                    }
-                    catch (Exception)
-                    {
-                        // Task exceptions are expected - ignore during disposal
-                    }
-                }).ToList();
-
-                if (completionTasks.Count > 0)
-                {
-                    try
-                    {
-                        await Task.WhenAll(completionTasks).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Timeout occurred - continue with disposal
-                    }
-                }
-            }
-        }
-        catch (Exception)
-        {
-            // Swallow exceptions during disposal cleanup
-        }
-
-        // Dispose the cancellation token source
-        try
-        {
-            _cancellationTokenSource.Dispose();
-        }
-        catch (Exception)
-        {
-            // Swallow disposal exceptions
-        }
-
+        await _lifecycle.DisposeAsync(DisposeAsyncCore).ConfigureAwait(false);
         GC.SuppressFinalize(this);
     }
 
@@ -155,20 +86,7 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
 
     public void Dispose()
     {
-        // Use Task.Run to avoid deadlocks by running async disposal on thread pool
-        // Add timeout to prevent indefinite blocking
-        try
-        {
-            var disposeTask = Task.Run(async () => await DisposeAsync().ConfigureAwait(false));
-            if (!disposeTask.Wait(TimeSpan.FromSeconds(30)))
-            {
-                // Log warning if disposal times out, but don't throw
-                // as per IDisposable pattern
-            }
-        }
-        catch
-        {
-            // Suppress exceptions during disposal as per IDisposable pattern
-        }
+        _lifecycle.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

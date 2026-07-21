@@ -46,6 +46,6 @@ public class ParallelAsyncProcessor : AbstractAsyncProcessor
 
         // Throttled processing runs on a fixed worker pool: P worker tasks instead of
         // one queued task, closure and semaphore wait per item
-        await WorkerPool.ProcessAsync(TaskWrappers, _maxConcurrency.Value, minimumIterationTime: null, CancellationToken).ConfigureAwait(false);
+        await WorkerPool.ProcessAsync(TaskWrappers, _maxConcurrency.Value, rateLimiter: null, CancellationToken).ConfigureAwait(false);
     }
 }

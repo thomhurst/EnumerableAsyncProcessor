@@ -1,3 +1,5 @@
+using System.Threading.RateLimiting;
+
 namespace EnumerableAsyncProcessor;
 
 /// <summary>
@@ -7,14 +9,10 @@ namespace EnumerableAsyncProcessor;
 /// </summary>
 internal static class WorkerPool
 {
-    /// <param name="minimumIterationTime">
-    /// When set, each worker holds its slot for at least this long per item, which caps throughput
-    /// at (workerCount / minimumIterationTime) operations for the timed rate-limited processors.
-    /// </param>
     internal static Task ProcessAsync<TWrapper>(
         TWrapper[] taskWrappers,
         int workerCount,
-        TimeSpan? minimumIterationTime,
+        RateLimiter? rateLimiter,
         CancellationToken cancellationToken) where TWrapper : ITaskWrapper
     {
         workerCount = Math.Min(workerCount, taskWrappers.Length);
@@ -42,22 +40,49 @@ internal static class WorkerPool
                         return;
                     }
 
+                    if (rateLimiter is not null)
+                    {
+                        using var lease = await rateLimiter.AcquireAsync(1, cancellationToken).ConfigureAwait(false);
+
+                        if (!lease.IsAcquired)
+                        {
+                            throw new InvalidOperationException("The rate limiter could not acquire a permit.");
+                        }
+                    }
+
                     // Process never throws; it completes the item's TaskCompletionSource instead,
                     // so one failed item cannot stop the worker from draining the rest.
-                    var processTask = taskWrappers[index].Process(cancellationToken);
-
-                    if (minimumIterationTime is { } minimumTime)
-                    {
-                        await Task.WhenAll(processTask, Task.Delay(minimumTime, cancellationToken)).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        await processTask.ConfigureAwait(false);
-                    }
+                    await taskWrappers[index].Process(cancellationToken).ConfigureAwait(false);
                 }
             }, cancellationToken);
         }
 
         return Task.WhenAll(workers);
+    }
+
+    internal static async Task ProcessRateLimitedAsync<TWrapper>(
+        TWrapper[] taskWrappers,
+        int workerCount,
+        int permitsPerWindow,
+        TimeSpan window,
+        CancellationToken cancellationToken) where TWrapper : ITaskWrapper
+    {
+        if (window == TimeSpan.Zero)
+        {
+            await ProcessAsync(taskWrappers, workerCount, rateLimiter: null, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        using var rateLimiter = new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = permitsPerWindow,
+            TokensPerPeriod = permitsPerWindow,
+            ReplenishmentPeriod = window,
+            AutoReplenishment = true,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = workerCount
+        });
+
+        await ProcessAsync(taskWrappers, workerCount, rateLimiter, cancellationToken).ConfigureAwait(false);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -131,6 +132,71 @@ public class WorkerPoolBehaviourTests
         await Assert.That(processor.GetEnumerableTasks().Count(x => !x.IsCompleted)).IsEqualTo(0);
 
         await processor.DisposeAsync();
+    }
+
+    [Test, Timeout(10_000)]
+    public async Task Timed_Rate_Limit_Allows_Concurrency_Independent_Of_Permit_Count(CancellationToken cancellationToken)
+    {
+        const int itemCount = 6;
+
+        var startedCount = 0;
+        var allStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        await using var processor = Enumerable.Range(0, itemCount).ToList()
+            .ForEachAsync(async _ =>
+            {
+                if (Interlocked.Increment(ref startedCount) == itemCount)
+                {
+                    allStarted.TrySetResult();
+                }
+
+                await release.Task;
+            }, cancellationToken)
+            .ProcessInParallel(
+                permitsPerWindow: 2,
+                window: TimeSpan.FromMilliseconds(100),
+                maxConcurrency: itemCount);
+
+        try
+        {
+            await allStarted.Task.WaitAsync(TimeSpan.FromSeconds(3), cancellationToken);
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
+
+        await processor.WaitAsync();
+
+        await Assert.That(startedCount).IsEqualTo(itemCount);
+    }
+
+    [Test, Retry(3), Timeout(10_000)]
+    public async Task Timed_Rate_Limit_Does_Not_Exceed_Permits_At_Replenishment(CancellationToken cancellationToken)
+    {
+        const int permitsPerWindow = 3;
+        var window = TimeSpan.FromMilliseconds(200);
+        var startedAt = new ConcurrentBag<TimeSpan>();
+        var stopwatch = Stopwatch.StartNew();
+
+        await using var processor = Enumerable.Range(0, 9).ToList()
+            .ForEachAsync(_ =>
+            {
+                startedAt.Add(stopwatch.Elapsed);
+                return Task.CompletedTask;
+            }, cancellationToken)
+            .ProcessInParallel(permitsPerWindow, window, maxConcurrency: 9);
+
+        await processor.WaitAsync();
+
+        var orderedStarts = startedAt.OrderBy(x => x).ToArray();
+
+        for (var i = permitsPerWindow; i < orderedStarts.Length; i++)
+        {
+            await Assert.That(orderedStarts[i] - orderedStarts[i - permitsPerWindow])
+                .IsGreaterThan(window / 2);
+        }
     }
 
     [Test]

@@ -76,7 +76,7 @@ public static class DisposalExample
         }
 
         // 🔥 RESOURCE LEAK: The processor goes out of scope without being disposed,
-        // potentially leaving tasks running and resources uncleaned
+        // leaving its disposal resources uncleaned
         return results;
     }
     

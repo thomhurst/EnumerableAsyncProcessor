@@ -6,15 +6,23 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <Version>99.99.99</Version>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IsAotCompatible>true</IsAotCompatible>
         <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017</WarningsAsErrors>
-        <!-- Existing overload families intentionally retain optional parameters. -->
-        <NoWarn>$(NoWarn);RS0026</NoWarn>
+        <!-- RS0026: existing overload families intentionally retain optional parameters.
+             CS1591: not every public member has XML docs yet; don't block the build on it. -->
+        <NoWarn>$(NoWarn);RS0026;CS1591</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Authors>Tom Longhurst</Authors>
+        <Description>Various Enumerable Async Processors - Batch / Parallel / Rate Limited / One at a time</Description>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/thomhurst/EnumerableAsyncProcessor</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/thomhurst/EnumerableAsyncProcessor</RepositoryUrl>
+        <PackageTags>async enumerable ienumerable linq array list processor delegate task tasks</PackageTags>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -41,15 +49,5 @@
         <AdditionalFiles Include="PublicAPI.Shipped.txt" />
         <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
     </ItemGroup>
-
-    <PropertyGroup>
-        <Authors>Tom Longhurst</Authors>
-        <Description>Various Enumerable Async Processors - Batch / Parallel / Rate Limited / One at a time</Description>
-        <RepositoryType>git</RepositoryType>
-        <PackageProjectUrl>https://github.com/thomhurst/EnumerableAsyncProcessor</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/thomhurst/EnumerableAsyncProcessor</RepositoryUrl>
-        <PackageTags>async enumerable ienumerable linq array list processor delegate task tasks</PackageTags>
-    </PropertyGroup>
-
 
 </Project>

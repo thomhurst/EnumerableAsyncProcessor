@@ -53,7 +53,7 @@ internal static class TaskCompletionSourceExtensions
 /// <summary>
 /// A struct wrapper pairing an action task factory with its completion source.
 /// </summary>
-public readonly struct ActionTaskWrapper : ITaskWrapper
+internal readonly struct ActionTaskWrapper : ITaskWrapper
 {
     public readonly Func<Task> TaskFactory;
     public readonly TaskCompletionSource TaskCompletionSource;
@@ -89,7 +89,7 @@ public readonly struct ActionTaskWrapper : ITaskWrapper
 /// <summary>
 /// A struct wrapper pairing an input item and its task factory with a completion source.
 /// </summary>
-public readonly struct ItemTaskWrapper<TInput> : ITaskWrapper
+internal readonly struct ItemTaskWrapper<TInput> : ITaskWrapper
 {
     public readonly TInput Input;
     public readonly Func<TInput, Task> TaskFactory;
@@ -127,7 +127,7 @@ public readonly struct ItemTaskWrapper<TInput> : ITaskWrapper
 /// <summary>
 /// A struct wrapper pairing an input item and its result-producing task factory with a completion source.
 /// </summary>
-public readonly struct ItemTaskWrapper<TInput, TOutput> : ITaskWrapper
+internal readonly struct ItemTaskWrapper<TInput, TOutput> : ITaskWrapper
 {
     public readonly TInput Input;
     public readonly Func<TInput, Task<TOutput>> TaskFactory;
@@ -164,7 +164,7 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : ITaskWrapper
 /// <summary>
 /// A struct wrapper pairing a result-producing task factory with its completion source.
 /// </summary>
-public readonly struct ActionTaskWrapper<TOutput> : ITaskWrapper
+internal readonly struct ActionTaskWrapper<TOutput> : ITaskWrapper
 {
     public readonly Func<Task<TOutput>> TaskFactory;
     public readonly TaskCompletionSource<TOutput> TaskCompletionSource;

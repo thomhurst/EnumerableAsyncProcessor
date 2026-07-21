@@ -138,18 +138,6 @@ public static class EnumerableExtensions
         }
     }
     
-    private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
-        this IEnumerable<T> items,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        foreach (var item in items)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            yield return item;
-        }
-        await Task.CompletedTask; // Suppress CS1998 warning
-    }
-
     internal static async IAsyncEnumerable<T> ToIAsyncEnumerable<T>(this IEnumerable<Task<T>> tasks, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
 #if NET9_0_OR_GREATER

@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EnumerableAsyncProcessor.Extensions;
 
@@ -126,5 +128,133 @@ public class DisposalRegressionTests
         processor.CancelAll();
 
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.IsCompletedSuccessfully)).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task AsyncEnumerable_Processor_Disposal_Is_Idempotent_After_Execution()
+    {
+        var processedCount = 0;
+
+        var processor = GenerateAsyncEnumerable(5)
+            .ForEachAsync(_ =>
+            {
+                Interlocked.Increment(ref processedCount);
+                return Task.CompletedTask;
+            })
+            .ProcessInParallel(maxConcurrency: 2);
+
+        await processor.ExecuteAsync();
+
+        // ExecuteAsync disposes internal resources on completion; explicit disposal stays safe.
+        await processor.DisposeAsync();
+        processor.Dispose();
+
+        await Assert.That(processedCount).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task AsyncEnumerable_Result_Processor_Supports_Await_Using_Without_Execution()
+    {
+        await using (GenerateAsyncEnumerable(3).SelectAsync(i => Task.FromResult(i)).ProcessInParallel(2))
+        {
+            // Never executed - disposal alone must not throw.
+        }
+    }
+
+    [Test, Timeout(30_000)]
+    public async Task AsyncEnumerable_Processor_Dispose_During_Execution_Cancels_Processing(CancellationToken cancellationToken)
+    {
+        var firstItemStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var processor = InfiniteAsyncEnumerable()
+            .ForEachAsync(async _ =>
+            {
+                firstItemStarted.TrySetResult();
+                await Task.Yield();
+            })
+            .ProcessInParallel(maxConcurrency: 1);
+
+        var executeTask = processor.ExecuteAsync();
+        await firstItemStarted.Task;
+
+        processor.Dispose();
+
+        Exception? caught = null;
+        try
+        {
+            await executeTask.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            caught = exception;
+        }
+
+        // A TimeoutException here means disposal did not cancel the in-flight run.
+        await Assert.That(caught is OperationCanceledException).IsTrue();
+    }
+
+    [Test, Timeout(30_000)]
+    public async Task AsyncEnumerable_Processor_DisposeAsync_Waits_For_InFlight_Selector(CancellationToken cancellationToken)
+    {
+        var firstItemStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseItem = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var itemsCompleted = 0;
+
+        var processor = InfiniteAsyncEnumerable()
+            .ForEachAsync(async _ =>
+            {
+                firstItemStarted.TrySetResult();
+                await releaseItem.Task;
+                Interlocked.Increment(ref itemsCompleted);
+            })
+            .ProcessInParallel(maxConcurrency: 1);
+
+        var executeTask = processor.ExecuteAsync();
+        await firstItemStarted.Task;
+
+        var disposeTask = processor.DisposeAsync().AsTask();
+
+        // The selector ignores cancellation and is still blocked, so disposal must still be waiting.
+        await Assert.That(disposeTask.IsCompleted).IsFalse();
+
+        releaseItem.TrySetResult();
+        await disposeTask.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+
+        // At least the in-flight item finished before disposal returned; the worker may also
+        // drain one already-buffered item before it observes cancellation.
+        await Assert.That(itemsCompleted).IsGreaterThanOrEqualTo(1);
+
+        Exception? caught = null;
+        try
+        {
+            await executeTask.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            caught = exception;
+        }
+
+        await Assert.That(caught is OperationCanceledException).IsTrue();
+    }
+
+    private static async IAsyncEnumerable<int> InfiniteAsyncEnumerable(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var i = 0;
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return i++;
+            await Task.Yield();
+        }
+    }
+
+    private static async IAsyncEnumerable<int> GenerateAsyncEnumerable(int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            await Task.Yield();
+            yield return i;
+        }
     }
 }

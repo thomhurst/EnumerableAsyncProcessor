@@ -3,7 +3,7 @@ using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors;
 
-public class BatchAsyncProcessor : AbstractAsyncProcessor
+public sealed class BatchAsyncProcessor : AbstractAsyncProcessor
 {
     private readonly int _batchSize;
 

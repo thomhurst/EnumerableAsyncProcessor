@@ -4,7 +4,7 @@ using EnumerableAsyncProcessor.Extensions;
 
 namespace EnumerableAsyncProcessor.Builders;
 
-public class ActionAsyncProcessorBuilder
+public sealed class ActionAsyncProcessorBuilder
 {
     private readonly int _count;
     private readonly Func<Task> _taskSelector;
@@ -52,6 +52,16 @@ public class ActionAsyncProcessorBuilder
     public IAsyncProcessor ProcessInParallel(int? maxConcurrency = null, bool scheduleOnThreadPool = false)
     {
         return new ParallelAsyncProcessor(_count, _taskSelector, _cancellationTokenSource, maxConcurrency, scheduleOnThreadPool).StartProcessing();
+    }
+
+    /// <summary>
+    /// Processes items in parallel with bounded concurrency. Binary-compatible with assemblies
+    /// compiled against v3 (equivalent to <c>ProcessInParallel(maxConcurrency: n)</c>).
+    /// </summary>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public IAsyncProcessor ProcessInParallel(int maxConcurrency)
+    {
+        return ProcessInParallel((int?)maxConcurrency);
     }
     
     public IAsyncProcessor ProcessOneAtATime()

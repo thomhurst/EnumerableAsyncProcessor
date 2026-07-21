@@ -1,9 +1,9 @@
-using EnumerableAsyncProcessor.Extensions;
+using EnumerableAsyncProcessor.Interfaces;
 using EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors;
 
 namespace EnumerableAsyncProcessor.Builders;
 
-public class AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
+public sealed class AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
 {
     private readonly IAsyncEnumerable<TInput> _items;
     private readonly Func<TInput, Task<TOutput>> _taskSelector;
@@ -26,7 +26,9 @@ public class AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>
     {
         _items = items;
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _taskSelector = item => taskSelector(item, _cancellationTokenSource.Token);
+        // Capture the token now: the source may be disposed by the time a late item runs the selector.
+        var processorToken = _cancellationTokenSource.Token;
+        _taskSelector = item => taskSelector(item, processorToken);
     }
 
     /// <summary>

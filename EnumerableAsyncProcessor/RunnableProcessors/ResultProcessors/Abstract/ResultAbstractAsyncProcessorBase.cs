@@ -6,15 +6,15 @@ namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
 public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcessor<TOutput>, IAsyncDisposable, IDisposable
 {
-    protected abstract IReadOnlyList<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources { get; }
-    protected readonly CancellationToken CancellationToken;
+    private protected abstract IReadOnlyList<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources { get; }
+    private protected readonly CancellationToken CancellationToken;
 
     private readonly ProcessorLifecycle _lifecycle;
     private Task<TOutput[]>? _results;
 
     private Task<TOutput[]> Results => _results ??= Task.WhenAll(GetEnumerableTasks());
 
-    protected ResultAbstractAsyncProcessorBase(CancellationTokenSource cancellationTokenSource)
+    private protected ResultAbstractAsyncProcessorBase(CancellationTokenSource cancellationTokenSource)
     {
         _lifecycle = new ProcessorLifecycle(cancellationTokenSource, TrySetCanceledAll, TrySetExceptionAll);
         CancellationToken = _lifecycle.Token;
@@ -75,7 +75,7 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
         GC.SuppressFinalize(this);
     }
 
-    protected virtual ValueTask DisposeAsyncCore()
+    private protected virtual ValueTask DisposeAsyncCore()
     {
         return ValueTask.CompletedTask;
     }

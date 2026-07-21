@@ -25,13 +25,16 @@ Version 4 requires .NET 8 or later. The package targets and tests `net8.0`, `net
 Version 4 is a major release. Review these source and behaviour changes before upgrading:
 
 - **.NET 8 is the minimum runtime.** The `net6.0` and `netstandard2.0` targets, the Polyfill dependency, and the `TaskCompletionSource` compatibility shim were removed. The package targets and tests `net8.0`, `net9.0`, and `net10.0`.
-- **Parallel processing has one API.** Use `ProcessInParallel(maxConcurrency: 100)` for bounded concurrency and `ProcessInParallel()` for unbounded concurrency. The old non-timed `RateLimitedParallelAsyncProcessor*` types and duplicate overload family were removed. Rename named `levelOfParallelism` arguments to `maxConcurrency`; replace positional `ProcessInParallel(true)` calls with `ProcessInParallel(scheduleOnThreadPool: true)`.
+- **Parallel processing has one API.** Use `ProcessInParallel(maxConcurrency: 100)` for bounded concurrency and `ProcessInParallel()` for unbounded concurrency. The old non-timed `RateLimitedParallelAsyncProcessor*` types and duplicate overload family were removed. Rename named `levelOfParallelism` arguments to `maxConcurrency` on the `ProcessInParallel` builder family (`InParallelAsync` keeps its `levelOfParallelism` parameter name); replace positional `ProcessInParallel(true)` calls with `ProcessInParallel(scheduleOnThreadPool: true)`.
+- **The parameterized no-selector `IAsyncEnumerable<T>.ProcessInParallel(maxConcurrency, ...)` overloads were removed.** They only buffered the stream into a list — their `maxConcurrency`/`scheduleOnThreadPool` parameters had no effect. Pass a selector (`items.ProcessInParallel(item => Task.FromResult(item), maxConcurrency)`) instead. The parameterless `ProcessInParallel(cancellationToken)` overload remains for binary compatibility with v3-compiled assemblies (notably TUnit) and is documented as a plain collect.
+- **`IAsyncEnumerableProcessor` moved to `EnumerableAsyncProcessor.Interfaces`** (previously `EnumerableAsyncProcessor.Extensions`) and now implements `IAsyncDisposable`/`IDisposable`. Processors returned by the `IAsyncEnumerable<T>` builder path dispose their internal resources automatically when `ExecuteAsync` completes; they are single-use.
+- **Processor and builder classes are sealed.** None of them were externally subclassable in practice (their pipelines hinge on internal members); v4 makes that explicit.
 - **Timed processing is a real start-rate limit.** It now uses a shared token bucket instead of holding each worker slot for at least one window. `ProcessInParallel(permitsPerWindow, window, maxConcurrency)` controls start rate and in-flight concurrency independently. The existing two-argument overload remains and uses its first value for both limits.
 - **`IEnumerable<T>` input is materialized once when the processor is built.** One-shot enumerables are now supported and side effects run once. Iterator exceptions surface from the terminal builder call, such as `ProcessInParallel(...)`, instead of later from an awaiter.
 - **Synchronous disposal no longer waits.** `Dispose()` cancels pending work and releases resources without blocking. Use `await DisposeAsync()` or `await using` when shutdown must wait for in-flight work; the async wait is bounded to 30 seconds.
 - **Arbitrary upper limits were removed.** Task counts and batch sizes may exceed 10,000, and time windows may exceed 24 hours. Validity checks remain: counts, batch sizes, concurrency, and permit counts must be positive; time windows cannot be negative.
 - **Validation is consistent and eager.** Invalid `maxConcurrency`, parallelism, batch, and timed-rate arguments now throw while the processor is built for both action and result variants.
-- **Incidental `TaskWrapper` API was removed.** `IEquatable<T>`, equality operators, `Deconstruct`, and custom `GetHashCode` members were implementation details and are no longer public. Recompile consumers that referenced those members.
+- **`TaskWrapper` types and processor plumbing are internal.** The `ActionTaskWrapper`/`ItemTaskWrapper` structs and the previously `protected` members of the abstract processor base classes (`TaskWrappers`, `EnumerableTaskCompletionSources`, `CancellationToken`, constructors) were implementation details that could not be meaningfully used outside the library, and are no longer public.
 - **Synchronous `InParallelAsync` delegates now run concurrently.** The `Func<TSource, TResult>` and `Action<TSource>` overloads use thread-pool workers instead of executing delegates sequentially on the caller. Do not depend on their previous thread affinity or execution order.
 
 Version 4 also adds cancellation-aware selectors. Use `(item, cancellationToken) => ...` when in-flight work must observe external cancellation, `CancelAll()`, or disposal:
@@ -391,13 +394,14 @@ When a processor is disposed:
 
 ### Extension Method Disposal
 
-Note that the convenience extension methods like `IAsyncEnumerable<T>.ProcessInParallel()` handle disposal automatically and return the final results directly:
+Note that the convenience extension methods like `IAsyncEnumerable<T>.ProcessInParallel(selector)` handle disposal automatically and return the final results directly:
 
 ```csharp
 // These extension methods handle disposal internally
-var results = await asyncEnumerable.ProcessInParallel();
 var transformedResults = await asyncEnumerable.ProcessInParallel(async x => await TransformAsync(x));
 ```
+
+Processors built from an `IAsyncEnumerable<T>` source (`IAsyncEnumerableProcessor`) also dispose their internal resources automatically when `ExecuteAsync` completes; `await using` is still supported and safe if `ExecuteAsync` is never called.
 
 The disposal guidance above applies when you're working with the processor objects directly (using the builder pattern).
 

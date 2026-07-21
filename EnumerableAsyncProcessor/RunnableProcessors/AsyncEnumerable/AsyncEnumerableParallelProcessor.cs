@@ -69,27 +69,32 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
         {
             // Unbounded parallel processing
             var tasks = new List<Task>();
-            
-            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+
+            try
             {
-                var capturedItem = item;
-                
-                Task task;
-                if (_scheduleOnThreadPool)
+                await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
                 {
-                    task = Task.Run(async () => await _taskSelector(capturedItem).ConfigureAwait(false), cancellationToken);
+                    var capturedItem = item;
+
+                    Task task;
+                    if (_scheduleOnThreadPool)
+                    {
+                        task = Task.Run(() => _taskSelector(capturedItem), cancellationToken);
+                    }
+                    else
+                    {
+                        task = _taskSelector(capturedItem);
+                    }
+
+                    tasks.Add(task);
                 }
-                else
-                {
-                    task = _taskSelector(capturedItem);
-                }
-                
-                tasks.Add(task);
             }
-            
-            if (tasks.Count > 0)
+            finally
             {
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+                if (tasks.Count > 0)
+                {
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                }
             }
         }
     }

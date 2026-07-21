@@ -17,6 +17,13 @@ public class ItemActionAsyncProcessorBuilder<TInput, TOutput>
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     }
 
+    internal ItemActionAsyncProcessorBuilder(IEnumerable<TInput> items, Func<TInput, CancellationToken, Task<TOutput>> taskSelector, CancellationToken cancellationToken)
+    {
+        _items = items;
+        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _taskSelector = item => taskSelector(item, _cancellationTokenSource.Token);
+    }
+
     /// <summary>
     /// Processes items in batches of the specified size.
     /// </summary>

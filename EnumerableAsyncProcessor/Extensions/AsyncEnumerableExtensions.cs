@@ -17,10 +17,28 @@ public static class AsyncEnumerableExtensions
         return items.ToAsyncProcessorBuilder()
             .SelectAsync(taskSelector, cancellationToken);
     }
+
+    public static AsyncEnumerableActionAsyncProcessorBuilder<T, TOutput> SelectAsync<T, TOutput>(
+        this IAsyncEnumerable<T> items,
+        Func<T, CancellationToken, Task<TOutput>> taskSelector,
+        CancellationToken cancellationToken = default)
+    {
+        return items.ToAsyncProcessorBuilder()
+            .SelectAsync(taskSelector, cancellationToken);
+    }
     
     public static AsyncEnumerableActionAsyncProcessorBuilder<T> ForEachAsync<T>(
         this IAsyncEnumerable<T> items, 
         Func<T, Task> taskSelector, 
+        CancellationToken cancellationToken = default)
+    {
+        return items.ToAsyncProcessorBuilder()
+            .ForEachAsync(taskSelector, cancellationToken);
+    }
+
+    public static AsyncEnumerableActionAsyncProcessorBuilder<T> ForEachAsync<T>(
+        this IAsyncEnumerable<T> items,
+        Func<T, CancellationToken, Task> taskSelector,
         CancellationToken cancellationToken = default)
     {
         return items.ToAsyncProcessorBuilder()

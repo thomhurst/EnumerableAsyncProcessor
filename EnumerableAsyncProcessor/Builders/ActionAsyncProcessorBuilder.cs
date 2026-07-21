@@ -17,6 +17,13 @@ public class ActionAsyncProcessorBuilder
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     }
 
+    public ActionAsyncProcessorBuilder(int count, Func<CancellationToken, Task> taskSelector, CancellationToken cancellationToken)
+    {
+        _count = count;
+        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _taskSelector = () => taskSelector(_cancellationTokenSource.Token);
+    }
+
     public IAsyncProcessor ProcessInBatches(int batchSize)
     {
         return new BatchAsyncProcessor(batchSize, _count, _taskSelector, _cancellationTokenSource).StartProcessing();

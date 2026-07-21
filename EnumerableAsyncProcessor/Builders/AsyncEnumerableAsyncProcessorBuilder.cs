@@ -22,6 +22,19 @@ public class AsyncEnumerableAsyncProcessorBuilder<TInput>
         return new AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>(_items, taskSelector, cancellationToken);
     }
 
+    public AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput> SelectAsync<TOutput>(
+        Func<TInput, CancellationToken, Task<TOutput>> taskSelector)
+    {
+        return SelectAsync(taskSelector, CancellationToken.None);
+    }
+
+    public AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput> SelectAsync<TOutput>(
+        Func<TInput, CancellationToken, Task<TOutput>> taskSelector,
+        CancellationToken cancellationToken)
+    {
+        return new AsyncEnumerableActionAsyncProcessorBuilder<TInput, TOutput>(_items, taskSelector, cancellationToken);
+    }
+
     public AsyncEnumerableActionAsyncProcessorBuilder<TInput> ForEachAsync(
         Func<TInput, Task> taskSelector)
     {
@@ -30,6 +43,19 @@ public class AsyncEnumerableAsyncProcessorBuilder<TInput>
 
     public AsyncEnumerableActionAsyncProcessorBuilder<TInput> ForEachAsync(
         Func<TInput, Task> taskSelector, 
+        CancellationToken cancellationToken)
+    {
+        return new AsyncEnumerableActionAsyncProcessorBuilder<TInput>(_items, taskSelector, cancellationToken);
+    }
+
+    public AsyncEnumerableActionAsyncProcessorBuilder<TInput> ForEachAsync(
+        Func<TInput, CancellationToken, Task> taskSelector)
+    {
+        return ForEachAsync(taskSelector, CancellationToken.None);
+    }
+
+    public AsyncEnumerableActionAsyncProcessorBuilder<TInput> ForEachAsync(
+        Func<TInput, CancellationToken, Task> taskSelector,
         CancellationToken cancellationToken)
     {
         return new AsyncEnumerableActionAsyncProcessorBuilder<TInput>(_items, taskSelector, cancellationToken);

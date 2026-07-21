@@ -27,6 +27,15 @@ public static class EnumerableExtensions
         return items.ToAsyncProcessorBuilder()
             .SelectAsync(taskSelector, cancellationToken);
     }
+
+    /// <summary>
+    /// Creates an async processor builder with a transformation that observes processor cancellation.
+    /// </summary>
+    public static ItemActionAsyncProcessorBuilder<T, TOutput> SelectAsync<T, TOutput>(this IEnumerable<T> items, Func<T, CancellationToken, Task<TOutput>> taskSelector, CancellationToken cancellationToken = default)
+    {
+        return items.ToAsyncProcessorBuilder()
+            .SelectAsync(taskSelector, cancellationToken);
+    }
     
     /// <summary>
     /// Creates an async processor builder for operations that don't return results.
@@ -41,6 +50,15 @@ public static class EnumerableExtensions
     /// Use 'await using var processor = items.ForEachAsync(...).ProcessInParallel();' for automatic disposal.
     /// </remarks>
     public static ItemActionAsyncProcessorBuilder<T> ForEachAsync<T>(this IEnumerable<T> items, Func<T, Task> taskSelector, CancellationToken cancellationToken = default)
+    {
+        return items.ToAsyncProcessorBuilder()
+            .ForEachAsync(taskSelector, cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates an async processor builder with an operation that observes processor cancellation.
+    /// </summary>
+    public static ItemActionAsyncProcessorBuilder<T> ForEachAsync<T>(this IEnumerable<T> items, Func<T, CancellationToken, Task> taskSelector, CancellationToken cancellationToken = default)
     {
         return items.ToAsyncProcessorBuilder()
             .ForEachAsync(taskSelector, cancellationToken);

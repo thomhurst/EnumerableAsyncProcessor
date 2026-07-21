@@ -91,27 +91,44 @@ public class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IAsyncEnu
         else
         {
             // Unbounded parallel processing
-            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+            try
             {
-                var capturedItem = item;
-                
-                Task<TOutput> task;
-                if (_scheduleOnThreadPool)
+                await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
                 {
-                    task = Task.Run(async () => await _taskSelector(capturedItem).ConfigureAwait(false), cancellationToken);
+                    var capturedItem = item;
+
+                    Task<TOutput> task;
+                    if (_scheduleOnThreadPool)
+                    {
+                        task = Task.Run(() => _taskSelector(capturedItem), cancellationToken);
+                    }
+                    else
+                    {
+                        task = _taskSelector(capturedItem);
+                    }
+
+                    tasks.Add(task);
                 }
-                else
+
+                // Yield all results as they complete
+                await foreach (var result in tasks.ToIAsyncEnumerable(cancellationToken).ConfigureAwait(false))
                 {
-                    task = _taskSelector(capturedItem);
+                    yield return result;
                 }
-                
-                tasks.Add(task);
             }
-            
-            // Yield all results as they complete
-            await foreach (var result in tasks.ToIAsyncEnumerable(cancellationToken).ConfigureAwait(false))
+            finally
             {
-                yield return result;
+                if (tasks.Count > 0)
+                {
+                    try
+                    {
+                        await Task.WhenAll(tasks).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // Preserve the exception already propagating from enumeration or result consumption.
+                    }
+                }
             }
         }
     }

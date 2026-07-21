@@ -50,6 +50,9 @@ public class ValidationRegressionTests
         // The result variant previously skipped this validation entirely
         await AssertThrows<ArgumentOutOfRangeException>(() =>
             new[] { 1 }.SelectAsync(i => Task.FromResult(i)).ProcessInParallel(0, TimeSpan.FromSeconds(1)));
+
+        await AssertThrows<ArgumentOutOfRangeException>(() =>
+            new[] { 1 }.SelectAsync(i => Task.FromResult(i)).ProcessInParallel(1, TimeSpan.FromSeconds(1), 0));
     }
 
     [Test]

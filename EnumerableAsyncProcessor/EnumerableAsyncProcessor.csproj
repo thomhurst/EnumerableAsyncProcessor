@@ -29,6 +29,7 @@
         <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" />
         
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.301" PrivateAssets="All"/>
+        <PackageReference Include="System.Threading.RateLimiting" Version="10.0.10" />
 
     </ItemGroup>
 

@@ -31,7 +31,16 @@ public class ActionAsyncProcessorBuilder
     
     public IAsyncProcessor ProcessInParallel(int maxConcurrency, TimeSpan timeSpan)
     {
-        return new TimedRateLimitedParallelAsyncProcessor(_count, _taskSelector, maxConcurrency, timeSpan, _cancellationTokenSource).StartProcessing();
+        return ProcessInParallel(maxConcurrency, timeSpan, maxConcurrency);
+    }
+
+    /// <summary>Processes tasks with independent start-rate and concurrency limits.</summary>
+    /// <param name="permitsPerWindow">Maximum operations that may start in each window.</param>
+    /// <param name="window">Rate-limit replenishment window.</param>
+    /// <param name="maxConcurrency">Maximum operations that may remain in flight.</param>
+    public IAsyncProcessor ProcessInParallel(int permitsPerWindow, TimeSpan window, int maxConcurrency)
+    {
+        return new TimedRateLimitedParallelAsyncProcessor(_count, _taskSelector, permitsPerWindow, window, maxConcurrency, _cancellationTokenSource).StartProcessing();
     }
     
     /// <summary>

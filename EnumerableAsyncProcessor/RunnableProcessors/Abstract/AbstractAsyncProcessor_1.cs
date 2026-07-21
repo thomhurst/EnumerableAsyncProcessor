@@ -4,13 +4,13 @@ namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBase
 {
-    protected readonly ItemTaskWrapper<TInput>[] TaskWrappers;
+    private protected readonly ItemTaskWrapper<TInput>[] TaskWrappers;
 
     private readonly TaskCompletionSource[] _taskCompletionSources;
 
-    protected override IReadOnlyList<TaskCompletionSource> EnumerableTaskCompletionSources => _taskCompletionSources;
+    private protected override IReadOnlyList<TaskCompletionSource> EnumerableTaskCompletionSources => _taskCompletionSources;
 
-    protected AbstractAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
+    private protected AbstractAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(cancellationTokenSource)
     {
         ValidationHelper.ThrowIfNull(items);
         ValidationHelper.ThrowIfNull(taskSelector);

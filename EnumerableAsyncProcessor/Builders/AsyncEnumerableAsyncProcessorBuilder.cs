@@ -1,6 +1,6 @@
 namespace EnumerableAsyncProcessor.Builders;
 
-public class AsyncEnumerableAsyncProcessorBuilder<TInput>
+public sealed class AsyncEnumerableAsyncProcessorBuilder<TInput>
 {
     private readonly IAsyncEnumerable<TInput> _items;
 

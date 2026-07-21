@@ -3,7 +3,7 @@ using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
-public class ResultTimedRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<TOutput>
+public sealed class ResultTimedRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<TOutput>
 {
     private readonly int _permitsPerWindow;
     private readonly TimeSpan _window;

@@ -3,7 +3,7 @@ using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors;
 
-public class ParallelAsyncProcessor : AbstractAsyncProcessor
+public sealed class ParallelAsyncProcessor : AbstractAsyncProcessor
 {
     private readonly int? _maxConcurrency;
     private readonly bool _scheduleOnThreadPool;

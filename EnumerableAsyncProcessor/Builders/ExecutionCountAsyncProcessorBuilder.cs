@@ -1,6 +1,6 @@
 ﻿namespace EnumerableAsyncProcessor.Builders;
 
-public class ExecutionCountAsyncProcessorBuilder
+public sealed class ExecutionCountAsyncProcessorBuilder
 {
     private readonly int _count;
 

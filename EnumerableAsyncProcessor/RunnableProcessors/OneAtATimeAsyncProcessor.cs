@@ -2,7 +2,7 @@ using EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors;
 
-public class OneAtATimeAsyncProcessor : AbstractAsyncProcessor
+public sealed class OneAtATimeAsyncProcessor : AbstractAsyncProcessor
 {
     internal OneAtATimeAsyncProcessor(int count, Func<Task> taskSelector, CancellationTokenSource cancellationTokenSource) : base(count, taskSelector, cancellationTokenSource)
     {

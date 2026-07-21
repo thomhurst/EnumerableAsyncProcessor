@@ -29,6 +29,8 @@ dotnet run --project EnumerableAsyncProcessor.UnitTests -f net10.0 -- --treenode
 
 TUnit test projects compile to executables; VSTest-style `dotnet test --filter` does not work. See the `tunit-testing` skill for full filter syntax.
 
+**TUnit itself depends on this library.** `TUnit.Engine` is compiled against EnumerableAsyncProcessor v3, and the locally built assembly shadows the copy TUnit shipped with (same assembly identity), so removing or changing a public member that TUnit.Engine binds to crashes test discovery with `MissingMethodException` before any test runs. The exact signatures TUnit needs are pinned by `V3BinaryCompatibilityTests` and marked as binary-compat members in the source — do not remove them until TUnit ships a build compiled against v4.
+
 CI (`.github/workflows/dotnet.yml`) runs the `EnumerableAsyncProcessor.Pipeline` project (a ModularPipelines app, `dotnet run -c Release` from that directory), which builds, tests, packs, and — on `main` — publishes to NuGet. Versioning comes from GitVersion (`GitVersion.yml` pins `next-version: 4.0.0`; keep that file present, its absence makes ModularPipelines generate a Mainline config that crashes on GitHub PR merge commits).
 
 ## Architecture
@@ -45,17 +47,17 @@ Processor classes vary along three axes, reflected in naming:
 
 - **Input**: with items (`<TInput>`) vs. execution-count only (non-generic).
 - **Output**: `Result*`-prefixed classes (in `RunnableProcessors/ResultProcessors/`) return values via `IAsyncProcessor<TOutput>` (`GetResultsAsync()`, `GetResultsAsyncEnumerable()`, `GetEnumerableTasks()`); unprefixed classes are fire-and-await (`WaitAsync()`).
-- **Strategy**: `OneAtATime`, `Batch`, `Parallel`, `RateLimitedParallel`, `TimedRateLimitedParallel`.
+- **Strategy**: `OneAtATime`, `Batch`, `Parallel`, `TimedRateLimitedParallel`.
 
-`RunnableProcessors/AsyncEnumerable/` holds parallel variants for `IAsyncEnumerable<T>` sources. File-name suffixes `_1`/`_2` distinguish generic arity (e.g. `BatchAsyncProcessor_1.cs` is `BatchAsyncProcessor<TInput>`).
+`RunnableProcessors/AsyncEnumerable/` holds the `IAsyncEnumerable<T>`-source variants (Parallel, OneAtATime, Batch). File-name suffixes `_1`/`_2` distinguish generic arity (e.g. `BatchAsyncProcessor_1.cs` is `BatchAsyncProcessor<TInput>`).
 
 ### Core mechanics (read these before changing behavior)
 
 - **`ProcessorLifecycle.cs`**: owns start/cancel/dispose shared by both base-class hierarchies. `AbstractAsyncProcessorBase` (void) and `ResultAbstractAsyncProcessorBase` (results) cannot share an ancestor because they fan out to differently typed `TaskCompletionSource` lists, so both delegate to this class. Cancellation is registered in `Start`, not the constructor, so a pre-cancelled token can never fire on a partially built instance. `DisposeAsync` waits up to 30 seconds for in-flight tasks; sync `Dispose` cancels without blocking.
 - **TCS-per-item**: each item gets a `TaskCompletionSource`; `TaskWrapper.Process` never throws — it completes the item's TCS with the failure/cancellation instead, so one failed item cannot kill the run or leave awaiters hanging.
-- **`WorkerPool.cs`**: rate-limited processors run a fixed pool of worker loops claiming items via `Interlocked.Increment` (P `Task.Run` tasks total, not N throttled tasks + semaphore). `minimumIterationTime` is how timed rate limiting is implemented: each worker holds its slot for at least that duration per item.
+- **`WorkerPool.cs`**: rate-limited processors run a fixed pool of worker loops claiming items via `Interlocked.Increment` (P `Task.Run` tasks total, not N throttled tasks + semaphore). Timed rate limiting is a shared `TokenBucketRateLimiter` (`System.Threading.RateLimiting`): workers acquire a permit before starting each item, so `permitsPerWindow`/`window` bound the start rate independently of `maxConcurrency`.
 - **Multi-targeting**: `EnumerableExtensions.ToIAsyncEnumerable` uses `Task.WhenEach` on `NET9_0_OR_GREATER` and a completion-order-bucket fallback otherwise. The test project targets `net8.0` specifically to exercise the fallback path — don't drop that TFM.
 
 ### Disposal contract
 
-All processors implement `IDisposable`/`IAsyncDisposable`; the README documents the patterns users rely on (`await using`, safe double/early disposal). The builder extension shortcuts on `IAsyncEnumerable<T>` dispose internally; processors returned from the builder pattern are the caller's responsibility. Preserve these semantics — there are dedicated regression tests (`DisposalRegressionTests`, `ExceptionFidelityTests`, `InputEnumerationRegressionTests`).
+All processors implement `IDisposable`/`IAsyncDisposable`; the README documents the patterns users rely on (`await using`, safe double/early disposal). `IAsyncEnumerableProcessor` implementations are single-use and additionally dispose their internal linked `CancellationTokenSource` when `ExecuteAsync` completes; `IAsyncProcessor` objects returned from the builder pattern are the caller's responsibility. Preserve these semantics — there are dedicated regression tests (`DisposalRegressionTests`, `ExceptionFidelityTests`, `InputEnumerationRegressionTests`).

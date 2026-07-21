@@ -15,10 +15,10 @@ public static class ProcessInParallelExample
         Console.WriteLine("ProcessInParallel Extension Examples");
         Console.WriteLine("====================================\n");
         
-        // Example 1: Simple parallel processing without transformation
-        Console.WriteLine("Example 1: Simple parallel processing (no transformation needed!)");
+        // Example 1: Simple parallel processing with an identity transformation
+        Console.WriteLine("Example 1: Simple parallel processing");
         var asyncEnumerable1 = GenerateAsyncEnumerable(5);
-        IEnumerable<int> results1 = await asyncEnumerable1.ProcessInParallel();  // <-- This is the simple extension!
+        IEnumerable<int> results1 = await asyncEnumerable1.ProcessInParallel(item => Task.FromResult(item));
         Console.WriteLine($"Results: {string.Join(", ", results1)}");
         
         // Example 2: Parallel processing with transformation

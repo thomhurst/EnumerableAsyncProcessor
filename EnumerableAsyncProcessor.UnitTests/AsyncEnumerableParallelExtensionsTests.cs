@@ -33,23 +33,12 @@ public class AsyncEnumerableParallelExtensionsTests
     }
 
     [Test]
-    public async Task ProcessInParallel_WithoutTransformation_ReturnsAllItems()
-    {
-        var asyncEnumerable = GenerateAsyncEnumerable(10);
-        
-        var results = await asyncEnumerable.ProcessInParallel();
-        
-        await Assert.That(results.Count()).IsEqualTo(10);
-        await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 10));
-    }
-
-    [Test]
     public async Task ProcessInParallel_WithMaxConcurrency_ReturnsAllItems()
     {
         var asyncEnumerable = GenerateAsyncEnumerable(20);
-        
-        var results = await asyncEnumerable.ProcessInParallel(5);
-        
+
+        var results = await asyncEnumerable.ProcessInParallel(item => Task.FromResult(item), 5);
+
         await Assert.That(results.Count()).IsEqualTo(20);
         await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 20));
     }
@@ -94,7 +83,7 @@ public class AsyncEnumerableParallelExtensionsTests
         using var cts = new CancellationTokenSource();
         var asyncEnumerable = GenerateDelayedAsyncEnumerable(100, 50);
         
-        var task = asyncEnumerable.ProcessInParallel(cancellationToken: cts.Token);
+        var task = asyncEnumerable.ProcessInParallel(item => Task.FromResult(item), cancellationToken: cts.Token);
         
         // Cancel after a short delay
         cts.CancelAfter(100);
@@ -160,23 +149,10 @@ public class AsyncEnumerableParallelExtensionsTests
     public async Task ProcessInParallel_EmptyEnumerable_ReturnsEmptyResult()
     {
         var asyncEnumerable = GenerateAsyncEnumerable(0);
-        
-        var results = await asyncEnumerable.ProcessInParallel();
-        
-        await Assert.That(results.Count()).IsEqualTo(0);
-    }
 
-    [Test]
-    public async Task ProcessInParallel_WithScheduleOnThreadPool_ProcessesAllItems()
-    {
-        var asyncEnumerable = GenerateAsyncEnumerable(10);
-        
-        var results = await asyncEnumerable.ProcessInParallel(
-            maxConcurrency: null,
-            scheduleOnThreadPool: true);
-        
-        await Assert.That(results.Count()).IsEqualTo(10);
-        await Assert.That(results.OrderBy(x => x)).IsEquivalentTo(Enumerable.Range(1, 10));
+        var results = await asyncEnumerable.ProcessInParallel(item => Task.FromResult(item));
+
+        await Assert.That(results.Count()).IsEqualTo(0);
     }
 
     [Test]

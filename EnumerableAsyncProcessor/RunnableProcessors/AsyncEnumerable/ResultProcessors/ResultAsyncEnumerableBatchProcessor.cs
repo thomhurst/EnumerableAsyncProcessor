@@ -1,8 +1,9 @@
-using EnumerableAsyncProcessor.Extensions;
+using System.Runtime.CompilerServices;
+using EnumerableAsyncProcessor.Interfaces;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable.ResultProcessors;
 
-public class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyncEnumerableProcessor<TOutput>
+public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyncEnumerableProcessor<TOutput>
 {
     private readonly IAsyncEnumerable<TInput> _items;
     private readonly Func<TInput, Task<TOutput>> _taskSelector;
@@ -24,40 +25,59 @@ public class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyncEnumer
     public async IAsyncEnumerable<TOutput> ExecuteAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
-        var batch = new List<TInput>(_batchSize);
-        
-        await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+
+        try
         {
-            batch.Add(item);
-            
-            if (batch.Count >= _batchSize)
+            var batch = new List<TInput>(_batchSize);
+
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+            {
+                batch.Add(item);
+
+                if (batch.Count >= _batchSize)
+                {
+                    await foreach (var result in ProcessBatch(batch, cancellationToken).ConfigureAwait(false))
+                    {
+                        yield return result;
+                    }
+                    batch = new List<TInput>(_batchSize);
+                }
+            }
+
+            // Process any remaining items in the final batch
+            if (batch.Count > 0)
             {
                 await foreach (var result in ProcessBatch(batch, cancellationToken).ConfigureAwait(false))
                 {
                     yield return result;
                 }
-                batch = new List<TInput>(_batchSize);
             }
         }
-        
-        // Process any remaining items in the final batch
-        if (batch.Count > 0)
+        finally
         {
-            await foreach (var result in ProcessBatch(batch, cancellationToken).ConfigureAwait(false))
-            {
-                yield return result;
-            }
+            _cancellationTokenSource.Dispose();
         }
     }
-    
-    private async IAsyncEnumerable<TOutput> ProcessBatch(List<TInput> batch, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+
+    private async IAsyncEnumerable<TOutput> ProcessBatch(List<TInput> batch, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var tasks = batch.Select(item => _taskSelector(item)).ToArray();
         var results = await Task.WhenAll(tasks).ConfigureAwait(false);
-        
+
         foreach (var result in results)
         {
             yield return result;
         }
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Dispose();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 }

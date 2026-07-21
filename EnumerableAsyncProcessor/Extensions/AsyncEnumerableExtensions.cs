@@ -151,33 +151,11 @@ public static class AsyncEnumerableExtensions
     }
     
     /// <summary>
-    /// Process items in parallel and return all results as IEnumerable when awaited.
+    /// Collects every item from the source into a list. This overload has no work to parallelize;
+    /// it is kept for binary compatibility with assemblies compiled against v3 (notably TUnit).
     /// </summary>
     public static async Task<IEnumerable<T>> ProcessInParallel<T>(
         this IAsyncEnumerable<T> items,
-        CancellationToken cancellationToken = default)
-    {
-        return await items.ProcessInParallel(null, false, cancellationToken).ConfigureAwait(false);
-    }
-    
-    /// <summary>
-    /// Process items in parallel with specified concurrency and return all results as IEnumerable when awaited.
-    /// </summary>
-    public static async Task<IEnumerable<T>> ProcessInParallel<T>(
-        this IAsyncEnumerable<T> items,
-        int maxConcurrency,
-        CancellationToken cancellationToken = default)
-    {
-        return await items.ProcessInParallel((int?)maxConcurrency, false, cancellationToken).ConfigureAwait(false);
-    }
-    
-    /// <summary>
-    /// Process items in parallel with optional concurrency and thread pool scheduling, return all results as IEnumerable when awaited.
-    /// </summary>
-    public static async Task<IEnumerable<T>> ProcessInParallel<T>(
-        this IAsyncEnumerable<T> items,
-        int? maxConcurrency,
-        bool scheduleOnThreadPool,
         CancellationToken cancellationToken = default)
     {
         var results = new List<T>();
@@ -189,7 +167,7 @@ public static class AsyncEnumerableExtensions
 
         return results;
     }
-    
+
     /// <summary>
     /// Process items in parallel with transformation and return all results as IEnumerable when awaited.
     /// </summary>
@@ -224,12 +202,16 @@ public static class AsyncEnumerableExtensions
         CancellationToken cancellationToken = default)
     {
         var results = new List<TOutput>();
-        
+
         if (maxConcurrency.HasValue)
         {
+            Func<T, Task<TOutput>> effectiveSelector = scheduleOnThreadPool
+                ? item => Task.Run(() => taskSelector(item), cancellationToken)
+                : taskSelector;
+
             await foreach (var result in AsyncEnumerableWorkerPool.ProcessResultsAsync(
                                items,
-                               taskSelector,
+                               effectiveSelector,
                                maxConcurrency.Value,
                                cancellationToken).ConfigureAwait(false))
             {

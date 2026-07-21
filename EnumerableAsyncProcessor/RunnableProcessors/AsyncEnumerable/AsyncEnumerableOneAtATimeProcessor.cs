@@ -1,11 +1,11 @@
-using EnumerableAsyncProcessor.Extensions;
+using EnumerableAsyncProcessor.Interfaces;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable;
 
 /// <summary>
 /// Sequential processor that processes items one at a time from an IAsyncEnumerable.
 /// </summary>
-public class AsyncEnumerableOneAtATimeProcessor<TInput> : IAsyncEnumerableProcessor
+public sealed class AsyncEnumerableOneAtATimeProcessor<TInput> : IAsyncEnumerableProcessor
 {
     private readonly IAsyncEnumerable<TInput> _items;
     private readonly Func<TInput, Task> _taskSelector;
@@ -25,9 +25,27 @@ public class AsyncEnumerableOneAtATimeProcessor<TInput> : IAsyncEnumerableProces
     {
         var cancellationToken = _cancellationTokenSource.Token;
 
-        await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+        try
         {
-            await _taskSelector(item).ConfigureAwait(false);
+            await foreach (var item in _items.WithCancellation(cancellationToken).ConfigureAwait(false))
+            {
+                await _taskSelector(item).ConfigureAwait(false);
+            }
         }
+        finally
+        {
+            _cancellationTokenSource.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Dispose();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 }

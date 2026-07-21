@@ -1,9 +1,9 @@
-using EnumerableAsyncProcessor.Extensions;
+using EnumerableAsyncProcessor.Interfaces;
 using EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable;
 
 namespace EnumerableAsyncProcessor.Builders;
 
-public class AsyncEnumerableActionAsyncProcessorBuilder<TInput>
+public sealed class AsyncEnumerableActionAsyncProcessorBuilder<TInput>
 {
     private readonly IAsyncEnumerable<TInput> _items;
     private readonly Func<TInput, Task> _taskSelector;

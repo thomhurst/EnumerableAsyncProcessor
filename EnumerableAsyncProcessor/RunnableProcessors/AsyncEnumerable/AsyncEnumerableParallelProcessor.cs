@@ -1,8 +1,8 @@
-using EnumerableAsyncProcessor.Extensions;
+using EnumerableAsyncProcessor.Interfaces;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.AsyncEnumerable;
 
-public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcessor
+public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcessor
 {
     private readonly IAsyncEnumerable<TInput> _items;
     private readonly Func<TInput, Task> _taskSelector;
@@ -27,19 +27,24 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
     public async Task ExecuteAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
-        
-        if (_maxConcurrency.HasValue)
-        {
-            await AsyncEnumerableWorkerPool.ProcessAsync(
-                _items,
-                _taskSelector,
-                _maxConcurrency.Value,
-                cancellationToken).ConfigureAwait(false);
 
-            return;
-        }
-        else
+        try
         {
+            if (_maxConcurrency.HasValue)
+            {
+                Func<TInput, Task> taskSelector = _scheduleOnThreadPool
+                    ? item => Task.Run(() => _taskSelector(item), cancellationToken)
+                    : _taskSelector;
+
+                await AsyncEnumerableWorkerPool.ProcessAsync(
+                    _items,
+                    taskSelector,
+                    _maxConcurrency.Value,
+                    cancellationToken).ConfigureAwait(false);
+
+                return;
+            }
+
             // Unbounded parallel processing
             var tasks = new List<Task>();
 
@@ -70,5 +75,20 @@ public class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableProcesso
                 }
             }
         }
+        finally
+        {
+            _cancellationTokenSource.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Dispose();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 }

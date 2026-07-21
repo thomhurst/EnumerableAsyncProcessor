@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EnumerableAsyncProcessor.Extensions;
 
@@ -126,5 +128,45 @@ public class DisposalRegressionTests
         processor.CancelAll();
 
         await Assert.That(processor.GetEnumerableTasks().Count(x => x.IsCompletedSuccessfully)).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task AsyncEnumerable_Processor_Disposal_Is_Idempotent_After_Execution()
+    {
+        var processedCount = 0;
+
+        var processor = GenerateAsyncEnumerable(5)
+            .ForEachAsync(_ =>
+            {
+                Interlocked.Increment(ref processedCount);
+                return Task.CompletedTask;
+            })
+            .ProcessInParallel(maxConcurrency: 2);
+
+        await processor.ExecuteAsync();
+
+        // ExecuteAsync disposes internal resources on completion; explicit disposal stays safe.
+        await processor.DisposeAsync();
+        processor.Dispose();
+
+        await Assert.That(processedCount).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task AsyncEnumerable_Result_Processor_Supports_Await_Using_Without_Execution()
+    {
+        await using (GenerateAsyncEnumerable(3).SelectAsync(i => Task.FromResult(i)).ProcessInParallel(2))
+        {
+            // Never executed - disposal alone must not throw.
+        }
+    }
+
+    private static async IAsyncEnumerable<int> GenerateAsyncEnumerable(int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            await Task.Yield();
+            yield return i;
+        }
     }
 }

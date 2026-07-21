@@ -1,10 +1,20 @@
-﻿#if NETSTANDARD2_0
+#if NETSTANDARD2_0
 
 namespace EnumerableAsyncProcessor
 {
     /// <inheritdoc cref="TaskCompletionSource{TResult}"/>
     public class TaskCompletionSource : TaskCompletionSource<object?>
     {
+        /// <inheritdoc cref="TaskCompletionSource{TResult}()"/>
+        public TaskCompletionSource()
+        {
+        }
+
+        /// <inheritdoc cref="TaskCompletionSource{TResult}(TaskCreationOptions)"/>
+        public TaskCompletionSource(TaskCreationOptions creationOptions) : base(creationOptions)
+        {
+        }
+
         /// <inheritdoc cref="TaskCompletionSource{TResult}.TrySetResult"/>
         public bool TrySetResult()
         {

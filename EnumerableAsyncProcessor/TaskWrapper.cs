@@ -25,35 +25,28 @@ public readonly struct ActionTaskWrapper : IEquatable<ActionTaskWrapper>
             return;
         }
         
+        Task? task = null;
         try
         {
-            // Removed Task.Yield - parallelism is now handled at the processor level
-            var task = TaskFactory.Invoke();
-            
-            // Fast-path for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                {
-                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
-                }
-                else if (task.IsCanceled)
-                {
-                    TaskCompletionSource.TrySetCanceled(cancellationToken);
-                }
-                else
-                {
-                    TaskCompletionSource.TrySetResult();
-                }
-                return;
-            }
-
+            task = TaskFactory.Invoke();
             await task.ConfigureAwait(false);
             TaskCompletionSource.TrySetResult();
         }
         catch (Exception e)
         {
-            TaskCompletionSource.TrySetException(e);
+            if (task is { IsCanceled: true })
+            {
+                TaskCompletionSource.TrySetCanceled(cancellationToken);
+            }
+            else if (task is { IsFaulted: true })
+            {
+                // Preserve every failure from the task, not just the first
+                TaskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
+            }
+            else
+            {
+                TaskCompletionSource.TrySetException(e);
+            }
         }
     }
 
@@ -120,35 +113,28 @@ public readonly struct ItemTaskWrapper<TInput> : IEquatable<ItemTaskWrapper<TInp
             return;
         }
         
+        Task? task = null;
         try
         {
-            // Removed Task.Yield - parallelism is now handled at the processor level
-            var task = TaskFactory.Invoke(Input);
-            
-            // Fast-path for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                {
-                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
-                }
-                else if (task.IsCanceled)
-                {
-                    TaskCompletionSource.TrySetCanceled(cancellationToken);
-                }
-                else
-                {
-                    TaskCompletionSource.TrySetResult();
-                }
-                return;
-            }
-
+            task = TaskFactory.Invoke(Input);
             await task.ConfigureAwait(false);
             TaskCompletionSource.TrySetResult();
         }
         catch (Exception e)
         {
-            TaskCompletionSource.TrySetException(e);
+            if (task is { IsCanceled: true })
+            {
+                TaskCompletionSource.TrySetCanceled(cancellationToken);
+            }
+            else if (task is { IsFaulted: true })
+            {
+                // Preserve every failure from the task, not just the first
+                TaskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
+            }
+            else
+            {
+                TaskCompletionSource.TrySetException(e);
+            }
         }
     }
 
@@ -218,34 +204,27 @@ public readonly struct ItemTaskWrapper<TInput, TOutput> : IEquatable<ItemTaskWra
             return;
         }
         
+        Task<TOutput>? task = null;
         try
         {
-            // Removed Task.Yield - parallelism is now handled at the processor level
-            var task = TaskFactory.Invoke(Input);
-            
-            // Fast-path for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                {
-                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
-                }
-                else if (task.IsCanceled)
-                {
-                    TaskCompletionSource.TrySetCanceled(cancellationToken);
-                }
-                else
-                {
-                    TaskCompletionSource.TrySetResult(task.Result);
-                }
-                return;
-            }
-
+            task = TaskFactory.Invoke(Input);
             TaskCompletionSource.TrySetResult(await task.ConfigureAwait(false));
         }
         catch (Exception e)
         {
-            TaskCompletionSource.TrySetException(e);
+            if (task is { IsCanceled: true })
+            {
+                TaskCompletionSource.TrySetCanceled(cancellationToken);
+            }
+            else if (task is { IsFaulted: true })
+            {
+                // Preserve every failure from the task, not just the first
+                TaskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
+            }
+            else
+            {
+                TaskCompletionSource.TrySetException(e);
+            }
         }
     }
 
@@ -313,34 +292,27 @@ public readonly struct ActionTaskWrapper<TOutput> : IEquatable<ActionTaskWrapper
             return;
         }
         
+        Task<TOutput>? task = null;
         try
         {
-            // Removed Task.Yield - parallelism is now handled at the processor level
-            var task = TaskFactory.Invoke();
-            
-            // Fast-path for already completed tasks
-            if (task.IsCompleted)
-            {
-                if (task.IsFaulted)
-                {
-                    TaskCompletionSource.TrySetException(task.Exception?.GetBaseException() ?? task.Exception!);
-                }
-                else if (task.IsCanceled)
-                {
-                    TaskCompletionSource.TrySetCanceled(cancellationToken);
-                }
-                else
-                {
-                    TaskCompletionSource.TrySetResult(task.Result);
-                }
-                return;
-            }
-
+            task = TaskFactory.Invoke();
             TaskCompletionSource.TrySetResult(await task.ConfigureAwait(false));
         }
         catch (Exception e)
         {
-            TaskCompletionSource.TrySetException(e);
+            if (task is { IsCanceled: true })
+            {
+                TaskCompletionSource.TrySetCanceled(cancellationToken);
+            }
+            else if (task is { IsFaulted: true })
+            {
+                // Preserve every failure from the task, not just the first
+                TaskCompletionSource.TrySetException(task.Exception!.InnerExceptions);
+            }
+            else
+            {
+                TaskCompletionSource.TrySetException(e);
+            }
         }
     }
 

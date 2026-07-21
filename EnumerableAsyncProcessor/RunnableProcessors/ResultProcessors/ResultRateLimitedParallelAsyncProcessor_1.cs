@@ -15,11 +15,9 @@ public class ResultRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstractAs
 
     internal override Task Process()
     {
-        // For rate-limited processing, we want strict parallelism control
-        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
-            async taskWrapper =>
-            {
-                await Task.Run(() => taskWrapper.Process(CancellationToken)).ConfigureAwait(false);
-            }, CancellationToken.None);
+        // Task.Run guards the shared worker slots against synchronous code in user delegates
+        return TaskWrappers.InParallelAsync(_levelsOfParallelism,
+            taskWrapper => Task.Run(() => taskWrapper.Process(CancellationToken), CancellationToken),
+            CancellationToken);
     }
 }

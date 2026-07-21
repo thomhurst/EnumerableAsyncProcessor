@@ -1,4 +1,3 @@
-﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using EnumerableAsyncProcessor.Interfaces;
 using EnumerableAsyncProcessor.Extensions;
@@ -8,36 +7,65 @@ namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
 public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcessor<TOutput>, IAsyncDisposable, IDisposable
 {
-    protected abstract IEnumerable<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources { get; }
+    private static readonly TimeSpan DisposalTimeout = TimeSpan.FromSeconds(30);
+
+    protected abstract IReadOnlyList<TaskCompletionSource<TOutput>> EnumerableTaskCompletionSources { get; }
     protected readonly CancellationToken CancellationToken;
 
-    [field: MaybeNull, AllowNull]
-    private IEnumerable<Task<TOutput>> EnumerableTasks => field ??= EnumerableTaskCompletionSources.Select(x => x.Task);
-    
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private CancellationTokenRegistration _cancellationTokenRegistration;
+    private Task<TOutput[]>? _results;
+    private Task? _processTask;
     private volatile bool _disposed;
     private readonly object _disposeLock = new();
-    
-    [field: AllowNull, MaybeNull]
-    private Task<TOutput[]> Results  => field ??= Task.WhenAll(EnumerableTasks);
 
+    private Task<TOutput[]> Results => _results ??= Task.WhenAll(EnumerableTaskCompletionSources.Select(x => x.Task));
 
     protected ResultAbstractAsyncProcessorBase(CancellationTokenSource cancellationTokenSource)
     {
         ValidationHelper.ValidateCancellationTokenSource(cancellationTokenSource);
-        
+
         _cancellationTokenSource = cancellationTokenSource;
-        
         CancellationToken = cancellationTokenSource.Token;
-        CancellationToken.Register(Dispose);
-        CancellationToken.ThrowIfCancellationRequested();
     }
 
     internal abstract Task Process();
-    
+
+    // Cancellation is registered here rather than in the constructor so that a token cancelled
+    // during construction can never invoke CancelAll on a partially constructed instance.
+    internal void Start()
+    {
+        _cancellationTokenRegistration = CancellationToken.Register(CancelAll);
+        _processTask = RunProcess();
+    }
+
+    private async Task RunProcess()
+    {
+        try
+        {
+            await Process().ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
+            {
+                taskCompletionSource.TrySetCanceled(CancellationToken);
+            }
+        }
+        catch (Exception exception)
+        {
+            // A failure outside the per-item wrappers (e.g. cancellation plumbing) would otherwise
+            // leave awaiters of the per-item tasks hanging forever.
+            foreach (var taskCompletionSource in EnumerableTaskCompletionSources)
+            {
+                taskCompletionSource.TrySetException(exception);
+            }
+        }
+    }
+
     public IEnumerable<Task<TOutput>> GetEnumerableTasks()
     {
-        return EnumerableTasks;
+        return EnumerableTaskCompletionSources.Select(x => x.Task);
     }
 
     public Task<TOutput[]> GetResultsAsync()
@@ -59,7 +87,12 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
     {
         if (_disposed)
             return;
-            
+
+        CancelAllCore();
+    }
+
+    private void CancelAllCore()
+    {
         if (!_cancellationTokenSource.IsCancellationRequested)
         {
             _cancellationTokenSource.Cancel();
@@ -73,9 +106,6 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed)
-            return;
-
         lock (_disposeLock)
         {
             if (_disposed)
@@ -86,60 +116,24 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
         // Allow derived classes to dispose their resources first
         await DisposeAsyncCore().ConfigureAwait(false);
 
-        // Cancel all operations
-        CancelAll();
+        CancelAllCore();
+        _cancellationTokenRegistration.Dispose();
 
-        // Wait for all running tasks to complete with timeout
-        try
+        // Give in-flight tasks a bounded window to observe cancellation and finish
+        if (_processTask is { IsCompleted: false })
         {
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var allTasks = EnumerableTasks.ToList();
-            
-            if (allTasks.Count > 0)
+            try
             {
-                var completionTasks = allTasks.Select(async task =>
-                {
-                    try
-                    {
-                        await task.WaitAsync(timeoutCts.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Expected when cancelled - ignore
-                    }
-                    catch (Exception)
-                    {
-                        // Task exceptions are expected - ignore during disposal
-                    }
-                }).ToList();
-
-                if (completionTasks.Count > 0)
-                {
-                    try
-                    {
-                        await Task.WhenAll(completionTasks).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Timeout occurred - continue with disposal
-                    }
-                }
+                using var timeoutCts = new CancellationTokenSource(DisposalTimeout);
+                await _processTask.WaitAsync(timeoutCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Timed out waiting for in-flight tasks - continue with disposal
             }
         }
-        catch (Exception)
-        {
-            // Swallow exceptions during disposal cleanup
-        }
 
-        // Dispose the cancellation token source
-        try
-        {
-            _cancellationTokenSource.Dispose();
-        }
-        catch (Exception)
-        {
-            // Swallow disposal exceptions
-        }
+        _cancellationTokenSource.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -155,20 +149,19 @@ public abstract class ResultAbstractAsyncProcessorBase<TOutput> : IAsyncProcesso
 
     public void Dispose()
     {
-        // Use Task.Run to avoid deadlocks by running async disposal on thread pool
-        // Add timeout to prevent indefinite blocking
-        try
+        lock (_disposeLock)
         {
-            var disposeTask = Task.Run(async () => await DisposeAsync().ConfigureAwait(false));
-            if (!disposeTask.Wait(TimeSpan.FromSeconds(30)))
-            {
-                // Log warning if disposal times out, but don't throw
-                // as per IDisposable pattern
-            }
+            if (_disposed)
+                return;
+            _disposed = true;
         }
-        catch
-        {
-            // Suppress exceptions during disposal as per IDisposable pattern
-        }
+
+        // Cancel and release without blocking; in-flight tasks complete against
+        // already-cancelled completion sources, which is a no-op.
+        CancelAllCore();
+        _cancellationTokenRegistration.Dispose();
+        _cancellationTokenSource.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }

@@ -197,29 +197,6 @@ internal static class ValidationHelper
     }
 
     /// <summary>
-    /// Validates that an enumerable collection is not null and provides optimization hints.
-    /// </summary>
-    /// <typeparam name="T">The type of items in the collection.</typeparam>
-    /// <param name="items">The collection to validate.</param>
-    /// <param name="paramName">The parameter name for the exception.</param>
-    /// <returns>True if the collection is empty (optimization hint).</returns>
-    /// <exception cref="ArgumentNullException">Thrown when the collection is null.</exception>
-    public static bool ValidateEnumerable<T>([NotNull] IEnumerable<T>? items, [CallerArgumentExpression(nameof(items))] string? paramName = null)
-    {
-        ThrowIfNull(items, paramName);
-
-        // Check if collection is empty for potential optimization
-        if (items is ICollection<T> collection)
-        {
-            return collection.Count == 0;
-        }
-
-        // For other enumerables, we need to check if it has any elements
-        // This is a more expensive operation but necessary for optimization
-        return !items.Any();
-    }
-
-    /// <summary>
     /// Validates that a CancellationTokenSource is not null.
     /// </summary>
     /// <param name="cancellationTokenSource">The CancellationTokenSource to validate.</param>

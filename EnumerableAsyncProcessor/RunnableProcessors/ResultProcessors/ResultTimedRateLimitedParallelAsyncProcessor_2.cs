@@ -16,14 +16,12 @@ public class ResultTimedRateLimitedParallelAsyncProcessor<TInput, TOutput> : Res
 
     internal override Task Process()
     {
-        // For timed rate-limited processing, we want strict parallelism control
-        // TaskWrapper.Process already includes Task.Yield to prevent thread pool blocking
-        return TaskWrappers.InParallelAsync(_levelsOfParallelism, 
-            async taskWrapper =>
-            {
-                await Task.WhenAll(
-                    taskWrapper.Process(CancellationToken),
-                    Task.Delay(_timeSpan, CancellationToken)).ConfigureAwait(false);
-            }, CancellationToken.None);
+        // Each worker slot holds an item for at least _timeSpan to honour the rate limit.
+        // Task.Run guards the shared worker slots against synchronous code in user delegates
+        return TaskWrappers.InParallelAsync(_levelsOfParallelism,
+            taskWrapper => Task.WhenAll(
+                Task.Run(() => taskWrapper.Process(CancellationToken), CancellationToken),
+                Task.Delay(_timeSpan, CancellationToken)),
+            CancellationToken);
     }
 }

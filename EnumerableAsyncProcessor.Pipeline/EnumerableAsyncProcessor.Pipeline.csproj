@@ -13,4 +13,9 @@
       <PackageReference Include="ModularPipelines.Git" Version="3.2.8" />
     </ItemGroup>
 
+    <ItemGroup>
+      <!-- Pipeline.CreateBuilder resolves configuration relative to the output directory -->
+      <None Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
 </Project>

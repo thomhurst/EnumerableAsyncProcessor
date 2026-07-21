@@ -4,7 +4,7 @@ namespace EnumerableAsyncProcessor.RunnableProcessors.Abstract;
 
 public abstract class AbstractAsyncProcessor<TInput> : AbstractAsyncProcessorBase
 {
-    protected readonly IReadOnlyList<ItemTaskWrapper<TInput>> TaskWrappers;
+    protected readonly ItemTaskWrapper<TInput>[] TaskWrappers;
 
     private readonly TaskCompletionSource[] _taskCompletionSources;
 

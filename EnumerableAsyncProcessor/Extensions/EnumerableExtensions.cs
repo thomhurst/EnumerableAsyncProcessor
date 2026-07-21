@@ -140,38 +140,29 @@ public static class EnumerableExtensions
             yield return task.Result;
         }
 #else
-        var managedTasksList = tasks.ToList();
+        // Interleaving via completion-order buckets: each task's continuation claims the next
+        // bucket, so streaming N tasks is O(N) rather than the O(N^2) of a WhenAny loop.
+        var inputTasks = tasks.ToList();
 
-        // Create a cancellation task that will complete when cancellation is requested
-        using var cancellationTcs = new CancellationTokenSource();
-        var cancellationTask = Task.Delay(Timeout.Infinite, cancellationTcs.Token);
-        
-        // Register callback to trigger the cancellation task
-        using var registration = cancellationToken.Register(() => cancellationTcs.Cancel());
-
-        while (managedTasksList.Count != 0)
+        var buckets = new TaskCompletionSource<Task<T>>[inputTasks.Count];
+        for (var i = 0; i < buckets.Length; i++)
         {
-            // Check for cancellation before each iteration
-            cancellationToken.ThrowIfCancellationRequested();
-            
-            // Include the cancellation task in WhenAny
-            var allTasks = new List<Task>(managedTasksList.Count + 1);
-            allTasks.AddRange(managedTasksList);
-            allTasks.Add(cancellationTask);
-            
-            var finishedTask = await Task.WhenAny(allTasks).ConfigureAwait(false);
-            
-            // If the cancellation task completed, throw cancellation
-            if (finishedTask == cancellationTask)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                // This should not happen as cancellation should throw above, but as a safety measure:
-                throw new OperationCanceledException(cancellationToken);
-            }
-            
-            // Remove and yield the completed task
-            var completedTask = (Task<T>)finishedTask;
-            managedTasksList.Remove(completedTask);
+            buckets[i] = new TaskCompletionSource<Task<T>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
+
+        var nextBucketIndex = -1;
+        foreach (var task in inputTasks)
+        {
+            _ = task.ContinueWith(
+                completedTask => buckets[Interlocked.Increment(ref nextBucketIndex)].TrySetResult(completedTask),
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }
+
+        foreach (var bucket in buckets)
+        {
+            var completedTask = await bucket.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
             yield return await completedTask.ConfigureAwait(false);
         }
 #endif

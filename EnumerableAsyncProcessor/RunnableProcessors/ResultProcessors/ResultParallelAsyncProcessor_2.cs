@@ -1,4 +1,5 @@
 using EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
+using EnumerableAsyncProcessor.Validation;
 
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
@@ -6,9 +7,14 @@ public class ResultParallelAsyncProcessor<TInput, TOutput> : ResultAbstractAsync
 {
     private readonly int? _maxConcurrency;
     private readonly bool _scheduleOnThreadPool;
-    
+
     internal ResultParallelAsyncProcessor(IEnumerable<TInput> items, Func<TInput, Task<TOutput>> taskSelector, CancellationTokenSource cancellationTokenSource, int? maxConcurrency = null, bool scheduleOnThreadPool = false) : base(items, taskSelector, cancellationTokenSource)
     {
+        if (maxConcurrency is { } concurrencyLimit)
+        {
+            ValidationHelper.ThrowIfNegativeOrZero(concurrencyLimit, nameof(maxConcurrency));
+        }
+
         _maxConcurrency = maxConcurrency;
         _scheduleOnThreadPool = scheduleOnThreadPool;
     }
@@ -38,38 +44,8 @@ public class ResultParallelAsyncProcessor<TInput, TOutput> : ResultAbstractAsync
             return;
         }
 
-        // Use semaphore for concurrency throttling
-        using var semaphore = new SemaphoreSlim(_maxConcurrency.Value, _maxConcurrency.Value);
-        
-        // Materialize tasks immediately to ensure they all start in parallel (up to concurrency limit)
-        var tasks = _scheduleOnThreadPool
-            ? // Use Task.Run to prevent synchronous code from blocking thread pool threads
-              TaskWrappers.Select(taskWrapper => Task.Run(async () =>
-        {
-            await semaphore.WaitAsync(CancellationToken).ConfigureAwait(false);
-            try
-            {
-                await taskWrapper.Process(CancellationToken).ConfigureAwait(false);
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-              }, CancellationToken)).ToList()
-            : // Direct execution for maximum performance
-              TaskWrappers.Select(async taskWrapper =>
-              {
-                  await semaphore.WaitAsync(CancellationToken).ConfigureAwait(false);
-                  try
-                  {
-                      await taskWrapper.Process(CancellationToken).ConfigureAwait(false);
-                  }
-                  finally
-                  {
-                      semaphore.Release();
-                  }
-              }).ToList(); // Force immediate task creation
-
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        // Throttled processing runs on a fixed worker pool: P worker tasks instead of
+        // one queued task, closure and semaphore wait per item
+        await WorkerPool.ProcessAsync(TaskWrappers, _maxConcurrency.Value, minimumIterationTime: null, CancellationToken).ConfigureAwait(false);
     }
 }

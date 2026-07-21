@@ -1,6 +1,15 @@
 namespace EnumerableAsyncProcessor;
 
 /// <summary>
+/// Allows the worker-pool helpers to process any wrapper struct through a constrained
+/// generic type parameter without boxing.
+/// </summary>
+internal interface ITaskWrapper
+{
+    Task Process(CancellationToken cancellationToken);
+}
+
+/// <summary>
 /// Completes a completion source from a failed task-factory invocation, classifying the failure
 /// by the state of the task rather than the caught exception.
 /// </summary>
@@ -44,7 +53,7 @@ internal static class TaskCompletionSourceExtensions
 /// <summary>
 /// A struct wrapper pairing an action task factory with its completion source.
 /// </summary>
-public readonly struct ActionTaskWrapper
+public readonly struct ActionTaskWrapper : ITaskWrapper
 {
     public readonly Func<Task> TaskFactory;
     public readonly TaskCompletionSource TaskCompletionSource;
@@ -80,7 +89,7 @@ public readonly struct ActionTaskWrapper
 /// <summary>
 /// A struct wrapper pairing an input item and its task factory with a completion source.
 /// </summary>
-public readonly struct ItemTaskWrapper<TInput>
+public readonly struct ItemTaskWrapper<TInput> : ITaskWrapper
 {
     public readonly TInput Input;
     public readonly Func<TInput, Task> TaskFactory;
@@ -118,7 +127,7 @@ public readonly struct ItemTaskWrapper<TInput>
 /// <summary>
 /// A struct wrapper pairing an input item and its result-producing task factory with a completion source.
 /// </summary>
-public readonly struct ItemTaskWrapper<TInput, TOutput>
+public readonly struct ItemTaskWrapper<TInput, TOutput> : ITaskWrapper
 {
     public readonly TInput Input;
     public readonly Func<TInput, Task<TOutput>> TaskFactory;
@@ -155,7 +164,7 @@ public readonly struct ItemTaskWrapper<TInput, TOutput>
 /// <summary>
 /// A struct wrapper pairing a result-producing task factory with its completion source.
 /// </summary>
-public readonly struct ActionTaskWrapper<TOutput>
+public readonly struct ActionTaskWrapper<TOutput> : ITaskWrapper
 {
     public readonly Func<Task<TOutput>> TaskFactory;
     public readonly TaskCompletionSource<TOutput> TaskCompletionSource;

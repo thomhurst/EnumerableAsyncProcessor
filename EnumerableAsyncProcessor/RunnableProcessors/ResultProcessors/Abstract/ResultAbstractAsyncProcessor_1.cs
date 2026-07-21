@@ -4,7 +4,7 @@ namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 
 public abstract class ResultAbstractAsyncProcessor<TOutput> : ResultAbstractAsyncProcessorBase<TOutput>
 {
-    protected readonly IReadOnlyList<ActionTaskWrapper<TOutput>> TaskWrappers;
+    protected readonly ActionTaskWrapper<TOutput>[] TaskWrappers;
 
     private readonly TaskCompletionSource<TOutput>[] _taskCompletionSources;
 

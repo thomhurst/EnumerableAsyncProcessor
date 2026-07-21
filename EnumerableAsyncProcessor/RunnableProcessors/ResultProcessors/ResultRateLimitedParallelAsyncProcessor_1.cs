@@ -1,5 +1,4 @@
 
-using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 using EnumerableAsyncProcessor.Validation;
 
@@ -18,9 +17,6 @@ public class ResultRateLimitedParallelAsyncProcessor<TOutput> : ResultAbstractAs
 
     internal override Task Process()
     {
-        // Task.Run guards the shared worker slots against synchronous code in user delegates
-        return TaskWrappers.InParallelAsync(_levelsOfParallelism,
-            taskWrapper => Task.Run(() => taskWrapper.Process(CancellationToken), CancellationToken),
-            CancellationToken);
+        return WorkerPool.ProcessAsync(TaskWrappers, _levelsOfParallelism, minimumIterationTime: null, CancellationToken);
     }
 }

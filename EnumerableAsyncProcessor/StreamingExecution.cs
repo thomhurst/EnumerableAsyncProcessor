@@ -11,7 +11,7 @@ internal static class StreamingExecution
     /// Marks the processor as executed. A second call throws <see cref="InvalidOperationException"/>;
     /// a first call on a disposed processor throws <see cref="ObjectDisposedException"/>.
     /// </summary>
-    public static void GuardSingleUse(ref int executionState, int disposed, object processor)
+    public static void GuardSingleUse(ref int executionState, ref int disposed, object processor)
     {
         if (Interlocked.Exchange(ref executionState, 1) != 0)
         {
@@ -19,7 +19,9 @@ internal static class StreamingExecution
                 $"{processor.GetType().Name} is single-use; ExecuteAsync may only be called once.");
         }
 
-        if (disposed != 0)
+        // Read after the exchange (a full fence) so a disposal that completed before this
+        // call claimed execution is always seen, not a stale pre-claim snapshot.
+        if (Volatile.Read(ref disposed) != 0)
         {
             throw new ObjectDisposedException(processor.GetType().Name);
         }

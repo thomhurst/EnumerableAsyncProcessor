@@ -93,6 +93,31 @@ public class AsyncEnumerableExceptionFidelityTests
     }
 
     [Test]
+    public async Task Batch_Void_All_Items_Cancelled_Completes_As_Cancelled_Not_Successful()
+    {
+        using var itemCancellation = new CancellationTokenSource();
+        itemCancellation.Cancel();
+
+        var executeTask = Source(2)
+            .ForEachAsync(_ => Task.FromCanceled(itemCancellation.Token))
+            .ProcessInBatches(2)
+            .ExecuteAsync();
+
+        Exception? caught = null;
+        try
+        {
+            await executeTask;
+        }
+        catch (Exception exception)
+        {
+            caught = exception;
+        }
+
+        await Assert.That(caught is OperationCanceledException).IsTrue();
+        await Assert.That(executeTask.IsCanceled).IsTrue();
+    }
+
+    [Test]
     public async Task Unbounded_Void_Source_Failure_Stays_Primary_When_InFlight_Tasks_Also_Fail()
     {
         var taskStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -27,7 +27,7 @@ public sealed class ResultAsyncEnumerableBatchProcessor<TInput, TOutput> : IAsyn
 
     public IAsyncEnumerable<TOutput> ExecuteAsync()
     {
-        StreamingExecution.GuardSingleUse(ref _executionState, Volatile.Read(ref _disposed), this);
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
         return ExecuteCoreAsync();
     }
 

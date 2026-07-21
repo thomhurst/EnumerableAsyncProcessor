@@ -26,7 +26,7 @@ public sealed class ResultAsyncEnumerableOneAtATimeProcessor<TInput, TOutput> : 
 
     public IAsyncEnumerable<TOutput> ExecuteAsync()
     {
-        StreamingExecution.GuardSingleUse(ref _executionState, Volatile.Read(ref _disposed), this);
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
         return ExecuteCoreAsync();
     }
 

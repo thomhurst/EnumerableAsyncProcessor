@@ -29,7 +29,7 @@ public sealed class AsyncEnumerableParallelProcessor<TInput> : IAsyncEnumerableP
 
     public Task ExecuteAsync()
     {
-        StreamingExecution.GuardSingleUse(ref _executionState, Volatile.Read(ref _disposed), this);
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
 
         // A TaskCompletionSource rather than the async method's own task, so the returned task
         // carries every failure (Task.WhenAll fidelity) instead of only the first one awaited.

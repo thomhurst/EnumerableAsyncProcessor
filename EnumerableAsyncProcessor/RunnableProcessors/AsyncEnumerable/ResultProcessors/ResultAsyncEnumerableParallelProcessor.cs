@@ -36,7 +36,7 @@ public sealed class ResultAsyncEnumerableParallelProcessor<TInput, TOutput> : IA
 
     public IAsyncEnumerable<TOutput> ExecuteAsync()
     {
-        StreamingExecution.GuardSingleUse(ref _executionState, Volatile.Read(ref _disposed), this);
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
         return ExecuteCoreAsync();
     }
 

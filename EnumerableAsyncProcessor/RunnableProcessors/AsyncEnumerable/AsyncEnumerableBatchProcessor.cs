@@ -26,7 +26,7 @@ public sealed class AsyncEnumerableBatchProcessor<TInput> : IAsyncEnumerableProc
 
     public Task ExecuteAsync()
     {
-        StreamingExecution.GuardSingleUse(ref _executionState, Volatile.Read(ref _disposed), this);
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
 
         // A TaskCompletionSource rather than the async method's own task, so the returned task
         // carries every failure from a failing batch (Task.WhenAll fidelity) instead of only
@@ -86,6 +86,8 @@ public sealed class AsyncEnumerableBatchProcessor<TInput> : IAsyncEnumerableProc
 
     // Returns false when the batch failed, which stops subsequent batches (a failing batch has
     // always halted the run); every failure in the batch is collected, not just the first.
+    // Pure cancellation (no fault) is excluded by the filter and propagates to the caller's
+    // OperationCanceledException handler, which completes the execution task as canceled.
     private async Task<bool> ProcessBatch(List<TInput> batch, List<Exception> exceptions)
     {
         var tasks = batch.Select(item => _taskSelector(item)).ToArray();
@@ -98,8 +100,15 @@ public sealed class AsyncEnumerableBatchProcessor<TInput> : IAsyncEnumerableProc
         }
         catch (Exception exception) when (exception is not OperationCanceledException || whenAll.IsFaulted)
         {
-            var wasCanceled = false;
-            StreamingExecution.CollectFailures(whenAll, exception, exceptions, ref wasCanceled);
+            if (whenAll.IsFaulted)
+            {
+                exceptions.AddRange(whenAll.Exception!.InnerExceptions);
+            }
+            else
+            {
+                exceptions.Add(exception);
+            }
+
             return false;
         }
     }

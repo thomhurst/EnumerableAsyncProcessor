@@ -26,7 +26,7 @@ public sealed class AsyncEnumerableOneAtATimeProcessor<TInput> : IAsyncEnumerabl
 
     public Task ExecuteAsync()
     {
-        StreamingExecution.GuardSingleUse(ref _executionState, Volatile.Read(ref _disposed), this);
+        StreamingExecution.GuardSingleUse(ref _executionState, ref _disposed, this);
 
         // A TaskCompletionSource rather than the async method's own task, so a multi-fault
         // item task surfaces every inner exception instead of only the first one awaited.

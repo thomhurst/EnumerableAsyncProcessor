@@ -1,7 +1,6 @@
 using EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors.Abstract;
 using EnumerableAsyncProcessor.Validation;
 
-
 namespace EnumerableAsyncProcessor.RunnableProcessors.ResultProcessors;
 
 public class ResultBatchAsyncProcessor<TOutput> : ResultAbstractAsyncProcessor<TOutput>

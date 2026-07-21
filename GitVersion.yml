@@ -1,6 +1,7 @@
 # ModularPipelines generates a Mainline-strategy config when this file is absent,
 # which crashes GitVersion on GitHub PR merge commits. Keep default strategies and
 # give main stable (non pre-release) versions for publishing.
+next-version: 4.0.0
 branches:
   main:
     mode: ContinuousDeployment

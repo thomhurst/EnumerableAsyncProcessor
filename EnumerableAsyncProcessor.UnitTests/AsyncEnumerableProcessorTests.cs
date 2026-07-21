@@ -278,6 +278,34 @@ public class AsyncEnumerableProcessorTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await task);
         await Assert.That(exception!.Message).IsEqualTo("Test exception");
     }
+
+    [Test, Timeout(10_000)]
+    public async Task ForEachAsync_WithConcurrentExceptions_PropagatesOriginalException(
+        CancellationToken cancellationToken)
+    {
+        var startedCount = 0;
+        var workersStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseWorkers = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var task = GenerateAsyncEnumerable(2)
+            .ForEachAsync(async _ =>
+            {
+                if (Interlocked.Increment(ref startedCount) == 2)
+                {
+                    workersStarted.TrySetResult();
+                }
+
+                await releaseWorkers.Task.WaitAsync(cancellationToken);
+                throw new InvalidOperationException("Concurrent failure");
+            })
+            .ProcessInParallel(2)
+            .ExecuteAsync();
+
+        await workersStarted.Task.WaitAsync(cancellationToken);
+        releaseWorkers.TrySetResult();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => task);
+    }
     
     [Test]
     public async Task ForEachAsync_ProcessInParallel_UnboundedConcurrency_ProcessesAllItems()

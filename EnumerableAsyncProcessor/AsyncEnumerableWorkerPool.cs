@@ -214,14 +214,7 @@ internal static class AsyncEnumerableWorkerPool
     {
         if (exceptions.TryDequeue(out var firstException))
         {
-            if (exceptions.IsEmpty)
-            {
-                ExceptionDispatchInfo.Capture(firstException).Throw();
-            }
-
-            var allExceptions = new List<Exception> { firstException };
-            allExceptions.AddRange(exceptions);
-            throw new AggregateException(allExceptions);
+            ExceptionDispatchInfo.Capture(firstException).Throw();
         }
 
         if (wasCanceled != 0)

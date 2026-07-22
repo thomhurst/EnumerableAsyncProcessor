@@ -34,7 +34,7 @@ public static class ParallelExtensions
     /// <param name="source">The items to process. The sequence is materialized once before workers start.</param>
     /// <param name="levelOfParallelism">Maximum concurrent operations. Zero or negative uses <see cref="Environment.ProcessorCount"/>.</param>
     /// <param name="taskSelector">The async operation to perform on each item. Any result carried by a returned <c>Task&lt;T&gt;</c> is not collected.</param>
-    /// <param name="cancellationToken">Stops claiming new items when cancelled; the returned task then completes as canceled.</param>
+    /// <param name="cancellationToken">Stops claiming new items when cancelled. The returned task then completes as canceled, unless items had already failed - their exceptions take precedence.</param>
     /// <returns>
     /// A task that completes when every item has been processed. When multiple items fail, awaiting it
     /// throws the first failure while <c>Task.Exception.InnerExceptions</c> carries every failure.
@@ -55,7 +55,7 @@ public static class ParallelExtensions
     /// <param name="source">The items to process. The sequence is materialized once before workers start.</param>
     /// <param name="levelOfParallelism">Maximum concurrent operations. Zero or negative uses <see cref="Environment.ProcessorCount"/>.</param>
     /// <param name="taskSelector">The synchronous operation to perform on each item.</param>
-    /// <param name="cancellationToken">Stops claiming new items when cancelled; the returned task then completes as canceled.</param>
+    /// <param name="cancellationToken">Stops claiming new items when cancelled. The returned task then completes as canceled, unless items had already failed - their exceptions take precedence.</param>
     /// <returns>
     /// A task that completes when every item has been processed. When multiple items fail, awaiting it
     /// throws the first failure while <c>Task.Exception.InnerExceptions</c> carries every failure.

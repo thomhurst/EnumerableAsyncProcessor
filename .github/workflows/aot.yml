@@ -1,0 +1,33 @@
+# Publishes the unit tests as Native AOT binaries and runs them, verifying the library
+# behaves correctly under AOT compilation (IsAotCompatible only runs compile-time analyzers).
+
+name: AOT Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  aot-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # net8.0 also exercises the pre-net9 completion-order streaming path in ToIAsyncEnumerable
+        framework: [net8.0, net10.0]
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish tests as Native AOT
+        run: dotnet publish EnumerableAsyncProcessor.UnitTests -f ${{ matrix.framework }} -r linux-x64 -c Release -p:PublishAot=true
+      - name: Run AOT tests
+        run: ./EnumerableAsyncProcessor.UnitTests/bin/Release/${{ matrix.framework }}/linux-x64/publish/EnumerableAsyncProcessor.UnitTests

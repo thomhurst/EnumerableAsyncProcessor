@@ -2,6 +2,4 @@
 description: Loop on open issues/PRs autonomously until stopped
 ---
 
-Invoke the `issue-pr-loop` skill and start the loop.
-
-Continue iterating (maintain open PRs first, then pick up the next issue) until I tell you to stop or there is nothing actionable left.
+Read `.agents/skills/issue-pr-loop/SKILL.md` from the repository root and run that skill, including its repository reference. Follow the skill's continuous loop and completion contract.

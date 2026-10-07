@@ -57,3 +57,7 @@ Processor classes vary along three axes, reflected in naming:
 ### Disposal contract
 
 All processors implement `IDisposable`/`IAsyncDisposable`; the README documents the patterns users rely on (`await using`, safe double/early disposal). `IAsyncEnumerableProcessor` implementations are single-use and additionally dispose their internal linked `CancellationTokenSource` when `ExecuteAsync` completes; `IAsyncProcessor` objects returned from the builder pattern are the caller's responsibility. Preserve these semantics — there are dedicated regression tests (`DisposalRegressionTests`, `ExceptionFidelityTests`, `InputEnumerationRegressionTests`).
+
+## Pull request reviews
+
+- Resolve each PR review thread, whether a human or a bot opened it, as soon as you have dispositioned it: the fix is pushed to the PR head and your reply names the commit, or your reply pushes back on the finding with evidence. Leave a thread open only while it has no disposition. If the reviewer replies after your disposition, unresolve the thread and handle the reply.

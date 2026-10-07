@@ -73,7 +73,7 @@ A `COMMENTED` review body can block with zero unresolved threads. Address outsta
 | Pending | Take another item. After a fix push, allow a subsequent bot review/CI cycle before considering merge in a later iteration. |
 | Merge candidate | Confirm every condition below, then invoke the wrapper. |
 
-Resolve a bot-opened thread under the PR lock only after replying with a fix commit or concrete disposition, confirming any promised fix is in the current head, and a subsequent bot review/CI cycle completes without rebuttal. A current-head `REVIEW_VERDICT: CLEAR` is strongest evidence. Do not resolve newer rebuttals, unaddressed findings, or human threads awaiting response. Use GraphQL `resolveReviewThread`, then re-fetch reviews, threads, checks, and head SHA.
+Resolve every review thread under the PR lock, whether a human or a bot opened it, as soon as it is dispositioned: the fix commit is in the remote PR head and the reply names it, or the reply pushes back on the finding with evidence. Do not wait for another review/CI cycle to resolve a dispositioned thread; that cycle still gates merging. Leave a thread open only while it has no disposition: the fix is not pushed, the item waits on the user, or the reviewer replied after your disposition. On each later review cycle, re-fetch every thread, resolved ones included; a reviewer reply newer than your disposition reopens it: run GraphQL `unresolveReviewThread` and handle it as reaffirmed feedback. Reply to addressed review-body findings and request re-review when an outstanding changes-requested review needs updating; do not dismiss reviews to bypass approval requirements. Use GraphQL `resolveReviewThread`, then re-fetch reviews, threads, checks, and head SHA.
 
 ### Merge gate
 

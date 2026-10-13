@@ -29,7 +29,9 @@
 #   `git worktree list`, so the sweep also scans the directories where worktrees are
 #   known to live and reaps any dir that provably WAS a worktree of this repo
 #   (its .git file targets $mainRepo/.git/worktrees/* and that gitdir is gone).
-#   Dirs without a .git worktree marker (artifacts, scratch output) are never touched.
+#   Dirs without a .git worktree marker (artifacts, scratch output) are never touched,
+#   except remnants of a removal that WorktreeCleanup.ps1 recorded before a busy
+#   directory interrupted it (Complete-PendingWorktreeRemovals).
 #
 # Guards (never delete work):
 #   - skip the main checkout and anything inside it (.claude/worktrees is harness-managed)
@@ -226,8 +228,11 @@ try {
         }
     }
 
+    # Removals that a busy directory interrupted, whatever started them.
+    $pendingRemoved = Complete-PendingWorktreeRemovals -Repo $mainRepo -WhatIf:$WhatIf
+
     git -C $mainRepo worktree prune
-    Write-Host "sweep: removed $removed merged worktree(s), $orphansRemoved orphaned dir(s)."
+    Write-Host "sweep: removed $removed merged worktree(s), $orphansRemoved orphaned dir(s), $pendingRemoved pending removal(s)."
 }
 catch {
     Warn "unexpected sweep error (ignored, loop continues): $_"

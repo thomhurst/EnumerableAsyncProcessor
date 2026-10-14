@@ -32,7 +32,8 @@
 #              exit 0 (silent)           -> TTL re-armed. Call only for a unit that may
 #                                           run past the TTL, or once with -Worktree to
 #                                           write the auto-derive marker.
-#              stderr = "LOST", exit 4   -> ownership lost; abandon the item
+#              stderr = "LOST", exit 4   -> another owner holds it; abandon the item
+#                                           (a FREE lock is taken back with the cached token)
 #   status   [-LockName pr-1234]
 #              stdout = HELD-BY-ME | HELD | FREE, exit 0
 #   ping                                  (no lock name or owner needed)
@@ -161,11 +162,24 @@ function Ensure-AgentRedis {
     # 'false' = stopped, 'true' = running. Warm path (the common loop case) costs
     # this single call — no separate `docker ps` or a redundant PING; the verb's
     # own Redis command is the connectivity check.
-    $running = docker inspect -f '{{.State.Running}}' $redisContainer 2>$null
-    if ($LASTEXITCODE -eq 0 -and $running -eq 'true') { return }
+    $state = docker inspect -f '{{.State.Running}} {{join .Args " "}}' $redisContainer 2>$null
+    $found = $LASTEXITCODE -eq 0
+    if ($found -and $state -like 'true *') { return }
 
-    if ($LASTEXITCODE -ne 0) {
-        docker run -d --name $redisContainer redis:7-alpine redis-server --save '' --appendonly no | Out-Null
+    # Locks and deferral records must survive a Docker restart, or a restart strips every
+    # running unit of its lock. A stopped container holds no data in memory, so replacing
+    # one created without the append-only file loses nothing. Only a plain `redis-server`
+    # command is replaced; `docker rm` without -f refuses a container that another caller
+    # has just started.
+    if ($found -and ([string]$state -split ' ')[1] -eq 'redis-server' -and $state -notlike '*--appendonly yes*') {
+        docker rm $redisContainer 2>$null | Out-Null
+        # Another caller may have removed or replaced it first; act on what exists now.
+        $state = docker inspect -f '{{.State.Running}} {{join .Args " "}}' $redisContainer 2>$null
+        $found = $LASTEXITCODE -eq 0
+    }
+    if (-not $found) {
+        docker run -d --name $redisContainer --restart unless-stopped -v "${redisContainer}-data:/data" redis:7-alpine `
+            redis-server --save '' --appendonly yes --appendfsync everysec 2>$null | Out-Null
     }
     else {
         docker start $redisContainer | Out-Null
@@ -219,8 +233,10 @@ switch ($Verb) {
         # persist the auto-derive marker via -Worktree. Skip entirely for normal units.
         $token = Read-Token
         if (-not $token) { Die 1 "no cached token for $LockName" }
-        # Re-arm TTL on lock + meta only if we still own the token.
-        $script = "if redis.call('GET', KEYS[1]) == ARGV[1] then redis.call('EXPIRE', KEYS[1], ARGV[2]); redis.call('SET', KEYS[2], ARGV[3], 'EX', ARGV[2]); return 1; else return 0; end"
+        # Re-arm TTL on lock + meta only if we still own the token. A free lock means Redis
+        # lost the key (a restart, or a unit that ran past the TTL) and no one else took
+        # the item, so take it back with the same token. Another owner's lock is LOST.
+        $script = "local held = redis.call('GET', KEYS[1]); if held == ARGV[1] or (not held and redis.call('SET', KEYS[1], ARGV[1], 'NX', 'EX', ARGV[2])) then redis.call('EXPIRE', KEYS[1], ARGV[2]); redis.call('SET', KEYS[2], ARGV[3], 'EX', ARGV[2]); return 1; else return 0; end"
         if ((Redis EVAL $script 2 $lockKey $metaKey $token $lockTtlSeconds (New-Meta $token)) -ne '1') {
             Die 4 'LOST'
         }

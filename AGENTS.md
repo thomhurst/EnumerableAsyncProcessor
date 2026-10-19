@@ -61,3 +61,11 @@ All processors implement `IDisposable`/`IAsyncDisposable`; the README documents 
 ## Pull request reviews
 
 - Resolve each PR review thread, whether a human or a bot opened it, as soon as you have dispositioned it: the fix is pushed to the PR head and your reply names the commit, or your reply pushes back on the finding with evidence. Leave a thread open only while it has no disposition. If the reviewer replies after your disposition, unresolve the thread and handle the reply.
+
+## Autonomous self-improvement
+
+Treat every problem you notice as work to act on, whether you find it while testing, developing, reading code, reviewing, or doing anything else. Examples include bugs, flaky or failing tests, incorrect docs, misleading comments, broken tooling, and gaps in these instructions.
+
+- If the fix is trivial and low-risk, fix it as part of the current work and mention it in the PR description.
+- If the fix is out of scope for the current work, raise a GitHub issue at the point you discover it so it can be fixed later. Include what you saw, where you saw it (file and line, command, or CI run), how to reproduce it, and the expected behavior. Search existing issues first, and add to a matching issue instead of opening a duplicate.
+- Do not ignore a problem because it existed before your change or is unrelated to it.

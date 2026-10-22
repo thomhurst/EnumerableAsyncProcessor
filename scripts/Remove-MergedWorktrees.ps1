@@ -134,13 +134,17 @@ try {
         if ($w.Branch -and $mergedNames.ContainsKey($w.Branch)) { $why = "merged PR head branch '$($w.Branch)'" }
 
         $sha = $null
+        $freshBranch = $false
         if (-not $why) {
             $sha = git -C $w.Path rev-parse HEAD 2>$null
             if ($LASTEXITCODE -ne 0) { $sha = $null }
             if ($sha -and $openOids.ContainsKey($sha)) { continue }          # tip of an open PR — keep
+            # A named branch with no commits beyond main is proven merged only by tier 1.
+            $freshBranch = $sha -and $w.Branch -and -not $w.Detached -and
+                (Test-HeadHasNoWorkBeyondMain -Repo $mainRepo -Head $sha -MainTip $mainTip)
 
             # Tier 2: detached or renamed checkout sitting exactly on a merged PR's tip.
-            if ($sha -and $mergedOids.ContainsKey($sha)) { $why = 'merged PR head tip SHA' }
+            if ($sha -and -not $freshBranch -and $mergedOids.ContainsKey($sha)) { $why = 'merged PR head tip SHA' }
         }
 
         # Tier 3 (detached only): checkout of a commit already reachable from main —
@@ -153,7 +157,7 @@ try {
 
         # Tier 4: GitHub's commit→PR association. Survives squash merges, branch
         # deletion, and the 1000-PR list window. One API call, only for leftovers.
-        if (-not $why -and $sha -and $slug) {
+        if (-not $why -and $sha -and -not $freshBranch -and $slug) {
             $assocRaw = gh api "repos/$slug/commits/$sha/pulls" 2>$null
             if ($LASTEXITCODE -eq 0 -and $assocRaw) {
                 $assoc = @(($assocRaw -join "`n") | ConvertFrom-Json)

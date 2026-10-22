@@ -123,6 +123,13 @@ $worktreeRoot = Join-Path (Split-Path $repo -Parent) ($repoName + '-worktrees')
 
 Verify the repository and intended base; examples use `origin/main`. Use a writable temporary `<repoName>-worktrees` root if needed. Choose a unique worktree path when one already exists.
 
+Write nothing loose beside the repository. Every file an agent produces outside a worktree has one home, so cleanup can find it:
+
+- Evidence (build and test logs, reports, PR and comment body drafts, diffs, validation projects) goes in `<repo-parent>/<repoName>-evidence/<lock-name>/`, for example `C:/git/EnumerableAsyncProcessor-evidence/issue-123/build.log`. `Remove-MergedWorktrees.ps1` deletes an entry once its newest file is older than `-EvidenceRetentionDays` (default 7).
+- Throwaway checkouts and baselines are worktrees under `$worktreeRoot`, never plain copies.
+- Downloaded SDKs and CLI tools go in `C:/git/toolchains/<name>-<version>/`, shared by every repository.
+- Never write to `C:/git` itself or to the main checkout.
+
 Acquire the Redis lock before acting on an item: `pr-<N>` for PR work or recovery, `issue-<N>` for new implementation. Always invoke the absolute shared-checkout `$agentLocks` path for every verb; older branch copies can have incompatible token caches.
 
 | Command | Result |

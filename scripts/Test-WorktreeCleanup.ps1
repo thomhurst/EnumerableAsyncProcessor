@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # Local regression suite for WorktreeCleanup.ps1: requires Git and PowerShell 7.
 # A process whose current directory is inside a worktree blocks its deletion on
 # Windows. Cleanup must record the interrupted removal and finish it later.

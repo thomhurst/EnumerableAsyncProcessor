@@ -12,16 +12,17 @@
 #   3. Skips drafts, `needs-human` and `on-hold` items, PRs whose checks are still
 #      running (unless they conflict, have unresolved review threads, or have a
 #      changes-requested review newer than the last push), and items whose GitHub state
-#      is unchanged since an agent last deferred them. Also skips issues that cannot be worked yet: issues with open native
-#      sub-issues or open `blocked_by` dependencies, issues that already have an open
-#      closing PR, and bot-owned tracking issues. Stranded branches follow the same
-#      rules. Ranks local `issue-*` branches with unpublished commits and no open PR
-#      above new issues. Starts no new issue while -MaxOpenPrs or more of the loop's
-#      PRs are open and not parked, because every PR in flight is another chance of a
-#      conflict; existing PRs, stranded branches, and stale claims still run. Then come
-#      parents whose sub-issues are all closed, then issues that
-#      block the most other issues. An item that a deferral named as its blocker goes
-#      first, so the next unit works the blocker instead of the blocked item.
+#      is unchanged since an agent last deferred them. Also skips issues that cannot be
+#      worked yet: issues with open native sub-issues or open `blocked_by` dependencies,
+#      issues that already have an open closing PR, and bot-owned tracking issues.
+#      Stranded branches follow the same rules. Ranks local `issue-*` branches with
+#      unpublished commits and no open PR above new issues. Starts no new issue while
+#      -MaxOpenPrs or more of the loop's PRs (drafts included) are open and not parked,
+#      because every PR in flight is another chance of a conflict; existing PRs,
+#      stranded branches, and stale claims still run. Then come parents whose
+#      sub-issues are all closed, then issues that block the most other issues. An item
+#      that a deferral named as its blocker goes first, so the next unit works the
+#      blocker instead of the blocked item.
 #   4. Acquires the item's Redis lock, moving on to the next candidate when another
 #      worker holds it.
 #   5. Starts the agent on that one item, with lower reasoning effort for PRs that

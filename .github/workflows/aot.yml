@@ -26,7 +26,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
       - name: Publish tests as Native AOT
         run: dotnet publish EnumerableAsyncProcessor.UnitTests -f ${{ matrix.framework }} -r linux-x64 -c Release -p:PublishAot=true
       - name: Run AOT tests

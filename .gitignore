@@ -353,3 +353,6 @@ MigrationBackup/
 .claude/settings.local.json
 
 .playwright-mcp/
+
+# ModularPipelines run history
+.modularpipelines/run-history/

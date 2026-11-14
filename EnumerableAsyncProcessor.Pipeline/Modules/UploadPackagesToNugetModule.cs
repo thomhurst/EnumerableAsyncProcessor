@@ -2,14 +2,9 @@ using EnumerableAsyncProcessor.Extensions;
 using EnumerableAsyncProcessor.Pipeline.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ModularPipelines.Attributes;
-using ModularPipelines.Configuration;
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
-using ModularPipelines.Git.Extensions;
-using ModularPipelines.Models;
-using ModularPipelines.Modules;
 
 namespace EnumerableAsyncProcessor.Pipeline.Modules;
 
@@ -24,12 +19,12 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
         _options = options;
     }
 
-    protected override ModuleConfiguration Configure()
+    protected override void Configure(ModuleConfigurationBuilder module)
     {
-        return ModuleConfiguration.Create()
-            .WithSkipWhen(async context =>
+        module
+            .WithSkipWhen(async (context, cancellationToken) =>
             {
-                var gitVersionInfo = await context.Git().Versioning.GetGitVersioningInformation();
+                var gitVersionInfo = await context.Tools.Git.Versioning.GetVersioningInformationAsync(cancellationToken);
 
                 if (gitVersionInfo.BranchName != "main")
                 {
@@ -43,9 +38,8 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
                     return SkipDecision.Skip("PUBLISH_PACKAGES is not set to true");
                 }
 
-                return SkipDecision.Of(false, "Publishing packages");
-            })
-            .Build();
+                return SkipDecision.When(false, "Publishing packages");
+            });
     }
 
     protected override async Task OnBeforeExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
@@ -60,18 +54,17 @@ public class UploadPackagesToNugetModule : Module<CommandResult[]>
         await base.OnBeforeExecuteAsync(context, cancellationToken);
     }
 
-    protected override async Task<CommandResult[]?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+    protected override async Task<CommandResult[]> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(_options.Value.ApiKey);
 
         var packagePaths = await context.GetModule<PackagePathsParserModule>();
 
         return await packagePaths.ValueOrDefault!
-            .SelectAsync(file => context.DotNet()
-                .Nuget
-                .Push(new DotNetNugetPushOptions
+            .SelectAsync(file => context.Tools.DotNet
+                .NuGet
+                .PushAsync(new DotNetNuGetPushOptions([file.Path])
                 {
-                    Path = file.Path,
                     Source = "https://api.nuget.org/v3/index.json",
                     ApiKey = _options.Value.ApiKey!
                 }, cancellationToken: cancellationToken), cancellationToken: cancellationToken)

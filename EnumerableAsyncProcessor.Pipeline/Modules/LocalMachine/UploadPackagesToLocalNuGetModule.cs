@@ -1,11 +1,8 @@
 using EnumerableAsyncProcessor.Extensions;
 using Microsoft.Extensions.Logging;
-using ModularPipelines.Attributes;
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
-using ModularPipelines.Models;
-using ModularPipelines.Modules;
 
 namespace EnumerableAsyncProcessor.Pipeline.Modules.LocalMachine;
 
@@ -26,17 +23,16 @@ public class UploadPackagesToLocalNuGetModule : Module<CommandResult[]>
         await base.OnBeforeExecuteAsync(context, cancellationToken);
     }
 
-    protected override async Task<CommandResult[]?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+    protected override async Task<CommandResult[]> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         var localRepoLocation = await context.GetModule<CreateLocalNugetFolderModule>();
         var packagePaths = await context.GetModule<PackagePathsParserModule>();
 
         return await packagePaths.ValueOrDefault!
-            .SelectAsync(file => context.DotNet()
-                .Nuget
-                .Push(new DotNetNugetPushOptions
+            .SelectAsync(file => context.Tools.DotNet
+                .NuGet
+                .PushAsync(new DotNetNuGetPushOptions([file.Path])
                 {
-                    Path = file.Path,
                     Source = localRepoLocation.ValueOrDefault!.Path,
                 }, cancellationToken: cancellationToken), cancellationToken: cancellationToken)
             .ProcessOneAtATime();

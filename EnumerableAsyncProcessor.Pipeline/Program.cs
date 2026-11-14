@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using ModularPipelines.Extensions;
 using EnumerableAsyncProcessor.Pipeline.Modules;
 using EnumerableAsyncProcessor.Pipeline.Modules.LocalMachine;
 using EnumerableAsyncProcessor.Pipeline.Settings;
@@ -34,5 +33,5 @@ builder.AddModule<BuildBenchmarkProjectsModule>()
     .AddModule<PackageFilesRemovalModule>()
     .AddModule<PackagePathsParserModule>();
 
-await using var pipeline = builder.Build();
+await using var pipeline = await builder.BuildAsync();
 await pipeline.RunAsync();

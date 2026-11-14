@@ -1,16 +1,13 @@
+using ModularPipelines;
 using ModularPipelines.Context;
-using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
-using ModularPipelines.Git.Extensions;
-using ModularPipelines.Models;
-using ModularPipelines.Modules;
 using ModularPipelines.Options;
 
 namespace EnumerableAsyncProcessor.Pipeline.Modules;
 
 public class BuildBenchmarkProjectsModule : Module<List<CommandResult>>
 {
-    protected override async Task<List<CommandResult>?> ExecuteAsync(
+    protected override async Task<List<CommandResult>> ExecuteAsync(
         IModuleContext context,
         CancellationToken cancellationToken)
     {
@@ -20,12 +17,11 @@ public class BuildBenchmarkProjectsModule : Module<List<CommandResult>>
             ThrowOnNonZeroExitCode = true,
         };
 
-        foreach (var benchmarkProjectFile in context
-                     .Git().RootDirectory
+        foreach (var benchmarkProjectFile in (await context.Tools.Git.Information.GetRequiredInfoAsync(cancellationToken)).Root
                      .GetFiles(file => file.Path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)
                                        && file.Path.Contains("Benchmarks", StringComparison.OrdinalIgnoreCase)))
         {
-            results.Add(await context.DotNet().Build(new DotNetBuildOptions
+            results.Add(await context.Tools.DotNet.BuildAsync(new DotNetBuildOptions
             {
                 ProjectSolution = benchmarkProjectFile.Path,
                 Configuration = "Release",
